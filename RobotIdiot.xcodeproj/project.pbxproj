@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7ADBE6123096B70000FBECB3 /* RobotIdiotCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7ADBE6113096B70000FBECB3 /* RobotIdiotCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		7ADBE5DE3096B60200FBECB3 /* RobotIdiot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RobotIdiot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7ADBE6123096B70000FBECB3 /* RobotIdiotCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = RobotIdiot;
 			packageProductDependencies = (
+				7ADBE6113096B70000FBECB3 /* RobotIdiotCore */,
 			);
 			productName = RobotIdiot;
 			productReference = 7ADBE5DE3096B60200FBECB3 /* RobotIdiot.app */;
@@ -107,6 +113,9 @@
 			);
 			mainGroup = 7ADBE5D53096B60200FBECB3;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				7ADBE6103096B70000FBECB3 /* XCLocalSwiftPackageReference "Packages/RobotIdiotCore" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7ADBE5DF3096B60200FBECB3 /* Products */;
 			projectDirPath = "";
@@ -150,9 +159,8 @@
 				INFOPLIST_FILE = RobotIdiot/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -182,9 +190,8 @@
 				INFOPLIST_FILE = RobotIdiot/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -345,6 +352,21 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		7ADBE6103096B70000FBECB3 /* XCLocalSwiftPackageReference "Packages/RobotIdiotCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/RobotIdiotCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7ADBE6113096B70000FBECB3 /* RobotIdiotCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7ADBE6103096B70000FBECB3 /* XCLocalSwiftPackageReference "Packages/RobotIdiotCore" */;
+			productName = RobotIdiotCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7ADBE5D63096B60200FBECB3 /* Project object */;
 }

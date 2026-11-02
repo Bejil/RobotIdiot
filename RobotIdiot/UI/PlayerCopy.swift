@@ -1,0 +1,358 @@
+import Foundation
+import RobotIdiotCore
+
+enum PlaybackTempo {
+    case normal
+    case fast
+
+    var title: String {
+        switch self {
+        case .normal: return "Normale"
+        case .fast: return "Rapide"
+        }
+    }
+
+    func moveDuration(reduceMotion: Bool) -> TimeInterval {
+        if reduceMotion { return 0.01 }
+        switch self {
+        case .normal: return 0.34
+        case .fast: return 0.1
+        }
+    }
+
+    func turnDuration(reduceMotion: Bool) -> TimeInterval {
+        if reduceMotion { return 0.01 }
+        switch self {
+        case .normal: return 0.24
+        case .fast: return 0.08
+        }
+    }
+
+    var toggled: PlaybackTempo {
+        switch self {
+        case .normal: return .fast
+        case .fast: return .normal
+        }
+    }
+}
+
+enum PlayerCopy {
+    static func commandTitle(_ command: CommandType) -> String {
+        switch command {
+        case .moveForward: return "Avance"
+        case .moveBackward: return "Recule"
+        case .turnLeft: return "Tourne à gauche"
+        case .turnRight: return "Tourne à droite"
+        case .pickUp: return "Ramasse"
+        case .use: return "Utilise"
+        case .push: return "Pousse"
+        case .activate: return "Active"
+        case .forever: return "Répète"
+        case .ifBlock: return "Si"
+        }
+    }
+
+    static func commandShortTitle(_ command: CommandType) -> String {
+        switch command {
+        case .moveForward: return "Avance"
+        case .moveBackward: return "Recule"
+        case .turnLeft: return "Gauche"
+        case .turnRight: return "Droite"
+        case .pickUp: return "Ramasse"
+        case .use: return "Utilise"
+        case .push: return "Pousse"
+        case .activate: return "Active"
+        case .forever: return "Répète"
+        case .ifBlock: return "Si"
+        }
+    }
+
+    static func commandSymbol(_ command: CommandType) -> String {
+        switch command {
+        case .moveForward: return "arrow.up"
+        case .moveBackward: return "arrow.down"
+        case .turnLeft: return "arrow.counterclockwise"
+        case .turnRight: return "arrow.clockwise"
+        case .pickUp: return "key.fill"
+        case .use: return "lock.open"
+        case .push: return "shippingbox"
+        case .activate: return "switch.2"
+        case .forever: return "infinity"
+        case .ifBlock: return "questionmark.diamond"
+        }
+    }
+
+    static func directionPhrase(_ direction: Direction) -> String {
+        switch direction {
+        case .north: return "le haut"
+        case .east: return "la droite"
+        case .south: return "le bas"
+        case .west: return "la gauche"
+        }
+    }
+
+    static func conditionTitle(_ condition: ConditionType) -> String {
+        switch condition {
+        case .obstacleAhead: return "obstacle devant"
+        case .cellAheadFree: return "case devant libre"
+        case .objectPresent: return "objet ici"
+        case .doorClosed: return "porte fermée"
+        case .switchActivated: return "interrupteur activé"
+        case .carryingItem: return "transporte un objet"
+        }
+    }
+
+    static func executionAlert(for fault: ExecutionFault?, game: GameState) -> (headline: String, detail: String) {
+        guard let fault else {
+            return ("Drapeau non atteint :", "le programme est terminé, mais le drapeau n'a pas été atteint.")
+        }
+        switch fault {
+        case .pathBlocked(_, _, let forward, let attempted):
+            let cell = game.grid.cell(at: attempted)
+            let obstacle: String
+            if cell?.containsCrate == true {
+                obstacle = "une caisse"
+            } else if cell?.containsClosedDoor == true {
+                obstacle = "une porte"
+            } else {
+                obstacle = "un mur"
+            }
+            if forward {
+                return ("Déplacement impossible :", "le robot est bloqué par \(obstacle).")
+            }
+            return ("Déplacement impossible :", "le robot ne peut pas reculer, il est bloqué par \(obstacle).")
+        case .commandUnavailable:
+            return ("Commande impossible :", "cette commande n'est pas disponible dans ce niveau.")
+        case .nothingToPickUp:
+            return ("Ramassage impossible :", "il n'y a rien à ramasser ici.")
+        case .nothingToUse:
+            return ("Utilisation impossible :", "le robot n'a rien dans les mains.")
+        case .incompatibleUse:
+            return ("Utilisation impossible :", "cet objet ne marche pas ici.")
+        case .nothingToPush:
+            return ("Poussée impossible :", "il n'y a rien à pousser devant le robot.")
+        case .pushBlocked:
+            return ("Poussée impossible :", "la caisse ne peut pas aller plus loin.")
+        case .nothingToActivate:
+            return ("Activation impossible :", "il n'y a pas d'interrupteur à activer.")
+        case .missingCondition:
+            return ("Condition manquante :", "ce Si n'a pas de condition.")
+        case .cycle:
+            return ("Boucle détectée :", "le robot recommence exactement les mêmes gestes.")
+        case .safetyStop:
+            return ("Arrêt de sécurité :", "le robot a été arrêté par sécurité.")
+        }
+    }
+
+    static func explain(_ fault: ExecutionFault) -> String {
+        switch fault {
+        case .pathBlocked(_, _, let forward, _):
+            if forward {
+                return "Le robot ne peut pas avancer : la case devant lui est bloquée."
+            }
+            return "Le robot ne peut pas reculer : la case derrière lui est bloquée."
+        case .commandUnavailable:
+            return "Cette commande n'est pas disponible dans ce niveau."
+        case .nothingToPickUp:
+            return "Il n'y a rien à ramasser ici."
+        case .nothingToUse:
+            return "Le robot n'a rien dans les mains."
+        case .incompatibleUse:
+            return "Cet objet ne marche pas ici."
+        case .nothingToPush:
+            return "Il n'y a rien à pousser devant le robot."
+        case .pushBlocked:
+            return "La caisse ne peut pas aller plus loin."
+        case .nothingToActivate:
+            return "Il n'y a pas d'interrupteur à activer."
+        case .missingCondition:
+            return "Ce Si n'a pas de condition."
+        case .cycle:
+            return "Le robot recommence exactement les mêmes gestes."
+        case .safetyStop:
+            return "Le robot a été arrêté par sécurité."
+        }
+    }
+
+    static func explain(_ issue: ProgramIssue) -> String {
+        switch issue {
+        case .commandNotAllowed:
+            return "Cette commande n'est pas disponible dans ce niveau."
+        case .leafHasChildren:
+            return "Seuls Répète et Si peuvent contenir d'autres commandes."
+        case .missingCondition:
+            return "Ce Si n'a pas de condition."
+        case .unexpectedCondition:
+            return "Seule la commande Si a une condition."
+        case .emptyForever:
+            return "Répète doit contenir au moins une commande."
+        case .nestingTooDeep:
+            return "Ce bloc est déjà au plus profond autorisé."
+        case .tooManyBlocks(let limit):
+            return limit <= 1 ? "Ce niveau autorise \(limit) bloc." : "Ce niveau autorise \(limit) blocs."
+        }
+    }
+
+    static func title(for level: Level) -> String {
+        if level.id.hasPrefix("gen-") {
+            return "Graine \(level.seed)"
+        }
+        switch level.id {
+        case PrototypeLevel.firstSteps.id: return "Premier pas"
+        case PrototypeLevel.corridor.id: return "La boucle"
+        case PrototypeLevel.corner.id: return "Le coin"
+        default: return "Niveau \(level.levelNumber)"
+        }
+    }
+
+    static func listTitle(for level: Level) -> String {
+        "Niveau \(level.levelNumber) · \(title(for: level))"
+    }
+
+    static func limits(for level: Level) -> String {
+        let blocks: String
+        if let maxBlocks = level.programConstraints.maxBlocks {
+            blocks = maxBlocks <= 1 ? "\(maxBlocks) commande max" : "\(maxBlocks) commandes max"
+        } else {
+            blocks = "Commandes libres"
+        }
+        let depth = level.programConstraints.maxNestingDepth
+        let nesting = depth <= 1 ? "sans imbrication" : "imbrication \(depth)"
+        return [blocks, nesting].joined(separator: " · ")
+    }
+
+    static func briefing(for level: Level) -> String {
+        if level.id.hasPrefix("gen-") {
+            if level.allowedCommands.contains(.push) {
+                return "Pousse la caisse pour dégager le chemin jusqu'au drapeau."
+            }
+            if level.allowedCommands.contains(.activate) {
+                return "Active l'interrupteur pour ouvrir la porte."
+            }
+            if level.allowedCommands.contains(.pickUp) {
+                return "Ramasse la clé, puis utilise-la devant la porte."
+            }
+            if level.allowedCommands.contains(.ifBlock) {
+                return "Le chemin tourne. Une boucle et un test suffisent."
+            }
+            if level.allowedCommands.contains(.forever) {
+                return "Peu de blocs. Une boucle suffit."
+            }
+            return "Atteins le drapeau."
+        }
+        switch level.id {
+        case PrototypeLevel.corridor.id:
+            return "Cinq cases, deux blocs. Une boucle suffit."
+        case PrototypeLevel.corner.id:
+            return "Le chemin tourne. Teste l'obstacle devant."
+        default:
+            return "Atteins le drapeau."
+        }
+    }
+
+    static func ready(direction: Direction) -> String {
+        "Prêt. Le robot regarde vers \(directionPhrase(direction))."
+    }
+
+    static func blockCount(_ count: Int) -> String {
+        count <= 1 ? "\(count) bloc" : "\(count) blocs"
+    }
+
+    static func actionCount(_ count: Int) -> String {
+        count <= 1 ? "\(count) action exécutée" : "\(count) actions exécutées"
+    }
+
+    static func improvement(rating: StarRating, rules: ScoringRules) -> String {
+        if rating.count == 3 {
+            return "Tu as atteint la solution de référence."
+        }
+        return rules.referenceNote + " Tu peux encore simplifier ton programme."
+    }
+
+    static func boardSummary(robot: RobotState) -> String {
+        var text = "Plateau vu du dessus. Le robot regarde vers \(directionPhrase(robot.orientation))."
+        if robot.inventory.contains(where: { $0.kind == ObjectKind.key }) {
+            text += " Il transporte une clé."
+        }
+        return text
+    }
+
+    static func worldTitle(_ world: Int) -> String {
+        "Monde \(world)"
+    }
+
+    static func themeName(_ theme: ThemeIdentifier) -> String {
+        switch theme {
+        case .orchard: return "Verger"
+        case .night: return "Nuit"
+        case .foundry: return "Fonderie"
+        default: return "Laboratoire"
+        }
+    }
+
+    static func mechanicTitle(_ families: [PuzzleFamily]) -> String {
+        let keys = families.contains(.keyDoor)
+        let plates = families.contains(.switchDoor)
+        let crates = families.contains(.cratePush)
+        switch (keys, plates, crates) {
+        case (true, false, false):
+            return "Clés"
+        case (true, true, false):
+            return "Portes"
+        case (false, true, false):
+            return "Interrupteurs"
+        case (false, false, true), (false, true, true):
+            return "Caisses"
+        case (true, _, true):
+            return "Mécanismes"
+        default:
+            if families.contains(.wallFollow) { return "Conditions" }
+            if families.contains(.infiniteCorridor) { return "Boucles" }
+            return "Déplacements"
+        }
+    }
+
+    static func levelSlotTitle(level: Int, finale: Bool) -> String {
+        finale ? "Niveau final" : "Niveau \(level)"
+    }
+
+    static func paceTitle(_ pace: LevelPace) -> String {
+        switch pace {
+        case .accessible: return "Accessible"
+        case .intermediate: return "Intermédiaire"
+        case .demanding: return "Exigeant"
+        }
+    }
+
+    static func starCount(_ stars: Int) -> String {
+        stars <= 1 ? "\(stars) étoile" : "\(stars) étoiles"
+    }
+
+    static func campaignTitle(_ address: LevelAddress) -> String {
+        let slot = levelSlotTitle(level: address.level, finale: CampaignLayout.standard.isFinale(address.level))
+        return "\(worldTitle(address.world)) · \(slot)"
+    }
+
+    static func continueTitle(hasProgress: Bool, address: LevelAddress) -> String {
+        guard hasProgress else { return "Commencer" }
+        return "Continuer · \(campaignTitle(address))"
+    }
+
+    static func challengeHeading(_ recipe: ChallengeRecipe) -> String {
+        guard let family = recipe.request().family else { return "Parcours" }
+        switch family {
+        case .openWalk, .obstacleWalk: return "Déplacements"
+        case .infiniteCorridor: return "Boucles"
+        case .wallFollow: return "Conditions"
+        case .keyDoor: return "Clés"
+        case .switchDoor: return "Interrupteurs"
+        case .cratePush: return "Caisses"
+        }
+    }
+
+    static func difficultyTitle(_ value: Double) -> String {
+        if value < 0.35 { return "Accessible" }
+        if value < 0.7 { return "Intermédiaire" }
+        return "Exigeant"
+    }
+}
