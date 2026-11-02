@@ -194,6 +194,9 @@ enum PlayerCopy {
     }
 
     static func title(for level: Level) -> String {
+        if level.id.hasPrefix("RI-") {
+            return "Monde \(level.worldNumber) · Niveau \(level.levelNumber)"
+        }
         if level.id.hasPrefix("gen-") {
             return "Graine \(level.seed)"
         }
@@ -222,6 +225,21 @@ enum PlayerCopy {
     }
 
     static func briefing(for level: Level) -> String {
+        if level.id.hasPrefix("RI-") {
+            if level.validation.notes.contains("hold_key") {
+                return "Ramasse la clé, puis atteins le drapeau en la gardant."
+            }
+            switch level.validation.notes.first {
+            case "key_door":
+                return "Ramasse la clé sur sa case, puis utilise-la face à la porte verrouillée."
+            case "switch_gate":
+                return "Active l'interrupteur en te tenant dessus. La grille s'ouvre et reste ouverte."
+            case "push_crate":
+                return "Pousse la caisse : elle avance d'une case, et le robot prend sa place."
+            default:
+                return "Atteins le drapeau."
+            }
+        }
         if level.id.hasPrefix("gen-") {
             if level.allowedCommands.contains(.push) {
                 return "Pousse la caisse pour dégager le chemin jusqu'au drapeau."
@@ -233,10 +251,10 @@ enum PlayerCopy {
                 return "Ramasse la clé, puis utilise-la devant la porte."
             }
             if level.allowedCommands.contains(.ifBlock) {
-                return "Le chemin tourne. Une boucle et un test suffisent."
+                return "Atteins le drapeau. Si ne s'exécute que lorsque sa condition est vraie."
             }
             if level.allowedCommands.contains(.forever) {
-                return "Peu de blocs. Une boucle suffit."
+                return "Atteins le drapeau. Répète tourne sans fin."
             }
             return "Atteins le drapeau."
         }
@@ -263,10 +281,31 @@ enum PlayerCopy {
     }
 
     static func improvement(rating: StarRating, rules: ScoringRules) -> String {
+        if let steps = rules.efficientExecutionMaxSteps, rules.compactProgramMaxBlocks == nil {
+            if rating.efficientExecution {
+                return "Tu as atteint le minimum d'actions."
+            }
+            let word = steps > 1 ? "commandes" : "commande"
+            return "La solution optimale compte \(steps) \(word)."
+        }
         if rating.count == 3 {
             return "Tu as atteint la solution de référence."
         }
         return rules.referenceNote + " Tu peux encore simplifier ton programme."
+    }
+
+    /// Les premières commandes d'une solution optimale, sans donner toute la suite.
+    static func openingHint(commands: [CommandType]) -> String {
+        let count = commands.count <= 2 ? 1 : 3
+        let names = commands.prefix(count).map(commandShortTitle)
+        guard let first = names.first else {
+            return "Atteins le drapeau."
+        }
+        if names.count == 1 {
+            return "Commence par \(first)."
+        }
+        let lead = names.dropLast().joined(separator: ", ")
+        return "Commence par \(lead), puis \(names[names.count - 1])."
     }
 
     static func boardSummary(robot: RobotState) -> String {
@@ -329,7 +368,7 @@ enum PlayerCopy {
     }
 
     static func campaignTitle(_ address: LevelAddress) -> String {
-        let slot = levelSlotTitle(level: address.level, finale: CampaignLayout.standard.isFinale(address.level))
+        let slot = levelSlotTitle(level: address.level, finale: CatalogCampaign.layout.isFinale(address.level))
         return "\(worldTitle(address.world)) · \(slot)"
     }
 
@@ -338,21 +377,4 @@ enum PlayerCopy {
         return "Continuer · \(campaignTitle(address))"
     }
 
-    static func challengeHeading(_ recipe: ChallengeRecipe) -> String {
-        guard let family = recipe.request().family else { return "Parcours" }
-        switch family {
-        case .openWalk, .obstacleWalk: return "Déplacements"
-        case .infiniteCorridor: return "Boucles"
-        case .wallFollow: return "Conditions"
-        case .keyDoor: return "Clés"
-        case .switchDoor: return "Interrupteurs"
-        case .cratePush: return "Caisses"
-        }
-    }
-
-    static func difficultyTitle(_ value: Double) -> String {
-        if value < 0.35 { return "Accessible" }
-        if value < 0.7 { return "Intermédiaire" }
-        return "Exigeant"
-    }
 }

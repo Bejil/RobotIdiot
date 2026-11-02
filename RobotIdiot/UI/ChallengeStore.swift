@@ -4,7 +4,6 @@ import RobotIdiotCore
 struct ChallengeEntry: Codable, Hashable {
     var id: UUID
     var createdAt: Date
-    var favorite: Bool
     var recipe: ChallengeRecipe
     var level: Level
     var score: LevelScore?
@@ -35,11 +34,10 @@ final class ChallengeStore {
         }
     }
 
-    func entries(favoritesOnly: Bool) -> [ChallengeEntry] {
+    func entries() -> [ChallengeEntry] {
         lock.lock()
         defer { lock.unlock() }
-        let source = favoritesOnly ? archive.entries.filter(\.favorite) : archive.entries
-        return source.sorted { $0.createdAt > $1.createdAt }
+        return archive.entries.sorted { $0.createdAt > $1.createdAt }
     }
 
     func entry(_ id: UUID) -> ChallengeEntry? {
@@ -53,7 +51,6 @@ final class ChallengeStore {
         let entry = ChallengeEntry(
             id: UUID(),
             createdAt: Date(),
-            favorite: false,
             recipe: recipe,
             level: level,
             score: nil
@@ -63,17 +60,6 @@ final class ChallengeStore {
         persistLocked()
         lock.unlock()
         return entry
-    }
-
-    func setFavorite(_ id: UUID, _ favorite: Bool) {
-        lock.lock()
-        guard let index = archive.entries.firstIndex(where: { $0.id == id }) else {
-            lock.unlock()
-            return
-        }
-        archive.entries[index].favorite = favorite
-        persistLocked()
-        lock.unlock()
     }
 
     func record(_ score: LevelScore, id: UUID) {

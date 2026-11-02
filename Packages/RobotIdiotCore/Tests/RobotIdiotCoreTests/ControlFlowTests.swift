@@ -217,7 +217,7 @@ final class ControlFlowTests: XCTestCase {
         XCTAssertTrue(program.moveSibling(turn, offset: -1))
         XCTAssertEqual(program.instruction(id: loop)?.children.map(\.id), [turn, move])
         let check = try XCTUnwrap(program.append(.ifBlock, toParent: loop))
-        XCTAssertEqual(program.instruction(id: check)?.condition, .obstacleAhead)
+        XCTAssertEqual(program.instruction(id: check)?.condition, .cellAheadFree)
         XCTAssertTrue(program.setCondition(.cellAheadFree, on: check))
         XCTAssertEqual(program.ancestorIDs(of: check), [loop])
     }

@@ -340,10 +340,11 @@ final class HomeViewController: UIViewController {
 
     private func refreshContinueTitle() {
         let progress = CampaignStore.shared.progress()
-        let address = CampaignRules.continueAddress(in: progress)
+        let address = CampaignRules.continueAddress(in: progress, layout: CatalogCampaign.layout)
+        let finished = CatalogCampaign.level(at: address) == nil
         let starting = address.world == 1 && address.level == 1
-        let title = starting ? "Démarrer" : "Continuer"
-        let place = progress.records.isEmpty ? nil : PlayerCopy.campaignTitle(address)
+        let title = finished ? "Terminé" : (starting ? "Démarrer" : "Continuer")
+        let place = finished || progress.records.isEmpty ? nil : PlayerCopy.campaignTitle(address)
         guard var configuration = continueButton.configuration else { return }
         configuration.title = title
         configuration.subtitle = place
@@ -361,7 +362,12 @@ final class HomeViewController: UIViewController {
         generationTicket += 1
         let ticket = generationTicket
         continueButton.isEnabled = false
-        let address = CampaignRules.continueAddress(in: CampaignStore.shared.progress())
+        let address = CampaignRules.continueAddress(in: CampaignStore.shared.progress(), layout: CatalogCampaign.layout)
+        guard CatalogCampaign.level(at: address) != nil else {
+            continueButton.isEnabled = true
+            navigationController?.pushViewController(WorldMapViewController(), animated: true)
+            return
+        }
         CampaignStore.shared.materialize(address) { [weak self] level in
             guard let self, self.generationTicket == ticket else { return }
             self.continueButton.isEnabled = true

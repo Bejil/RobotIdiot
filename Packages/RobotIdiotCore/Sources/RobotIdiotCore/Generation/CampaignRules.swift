@@ -64,7 +64,7 @@ public struct CampaignProgress: Codable, Equatable, Sendable {
 public enum CampaignRules {
     public static func unlockedWorld(in progress: CampaignProgress, layout: CampaignLayout = .standard) -> Int {
         var world = 1
-        while isCompleted(LevelAddress(world: world, level: layout.levelCount), progress: progress), layout.isFinale(layout.levelCount) {
+        while isCompleted(LevelAddress(world: world, level: layout.levelCount), progress: progress) {
             world += 1
         }
         return world

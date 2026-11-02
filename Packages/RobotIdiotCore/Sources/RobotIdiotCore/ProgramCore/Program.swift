@@ -133,7 +133,7 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
     }
 
     /// Ajoute une commande à la racine, ou dans le conteneur `parentID`.
-    /// Un nouveau SI reçoit la condition obstacle devant.
+    /// Un nouveau SI reçoit la condition case devant libre.
     @discardableResult
     public mutating func append(_ command: CommandType, toParent parentID: UUID?) -> UUID? {
         let instruction = Self.make(command)
@@ -209,7 +209,7 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
     private static func make(_ command: CommandType) -> Instruction {
         Instruction(
             command: command,
-            condition: command == .ifBlock ? .obstacleAhead : nil
+            condition: command == .ifBlock ? .cellAheadFree : nil
         )
     }
 

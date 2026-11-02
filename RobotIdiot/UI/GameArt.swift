@@ -164,6 +164,25 @@ enum GameArt {
         }
     }
 
+    /// Même étoile que l'écran de réussite. Une étoile ratée est grise, pas seulement pâle.
+    static func victoryStar(earned: Bool) -> UIImage? {
+        guard let source = UIImage(named: "VictoryStar") else { return nil }
+        guard !earned else { return source }
+        if let missedVictoryStar { return missedVictoryStar }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = source.scale
+        let rendered = UIGraphicsImageRenderer(size: source.size, format: format).image { context in
+            source.draw(in: CGRect(origin: .zero, size: source.size))
+            context.cgContext.setBlendMode(.sourceAtop)
+            UIColor(hex: 0xB7B1C4).setFill()
+            context.cgContext.fill(CGRect(origin: .zero, size: source.size))
+        }
+        missedVictoryStar = rendered
+        return rendered
+    }
+
+    private static var missedVictoryStar: UIImage?
+
     static func star(filled: Bool) -> UIImage {
         canvas(filled ? "star-on" : "star-off", side: 96) { _, s in
             let path = starPath(in: CGRect(x: s * 0.08, y: s * 0.08, width: s * 0.84, height: s * 0.84))
@@ -171,10 +190,10 @@ enum GameArt {
                 AppTheme.gold.setFill()
                 path.fill()
             } else {
-                AppTheme.inkSoft.withAlphaComponent(0.35).setFill()
+                AppTheme.gold.withAlphaComponent(0.28).setFill()
                 path.fill()
             }
-            AppTheme.line.setStroke()
+            UIColor(hex: 0xC98400).setStroke()
             path.lineWidth = s * 0.06
             path.lineJoinStyle = .round
             path.stroke()

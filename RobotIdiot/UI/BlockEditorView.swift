@@ -64,6 +64,14 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         refreshChrome()
     }
 
+    func replaceProgram(_ program: Program) {
+        self.program = program
+        textDraft = nil
+        undoStack.removeAll()
+        redoStack.removeAll()
+        reload()
+    }
+
     func setErrorMessage(_ message: String?) {
         bannerLabel.text = message
         banner.isHidden = message == nil
@@ -261,7 +269,7 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
 
     private var paletteCommands: [CommandType] {
         let preferred: [CommandType] = [
-            .forever, .ifBlock, .turnLeft, .moveForward, .turnRight, .moveBackward,
+            .moveForward, .turnLeft, .turnRight, .forever, .ifBlock, .moveBackward,
             .pickUp, .use, .push, .activate
         ]
         return preferred.filter { allowed.contains($0) }

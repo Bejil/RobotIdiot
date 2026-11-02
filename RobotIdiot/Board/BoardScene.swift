@@ -90,8 +90,12 @@ final class BoardScene: SKScene {
     }
 
     /// La bordure de murs n'est pas une tuile : le bord du 7×7 est la seule limite.
+    /// Les niveaux du pack gardent chaque mur dessiné à sa place.
     private func playfield() -> (minX: Int, maxX: Int, minY: Int, maxY: Int) {
         let grid = level.grid
+        if level.id.hasPrefix("RI-") {
+            return (0, max(grid.width - 1, 0), 0, max(grid.height - 1, 0))
+        }
         var minX = 0
         var maxX = max(grid.width - 1, 0)
         var minY = 0
@@ -248,17 +252,17 @@ final class BoardScene: SKScene {
                 let logical = GridCoordinate(x: x - columnShift, y: y - rowShift)
                 let inside = logical.x >= field.minX && logical.x <= field.maxX
                     && logical.y >= field.minY && logical.y <= field.maxY
-                let floor = inside && presented.grid.cell(at: logical)?.terrain == .floor
-                let piece: GameArt.BoardPiece = floor
-                    ? .grassA
-                    : ((x + y).isMultiple(of: 2) ? .shutter : .cracked)
+                let terrain = inside ? presented.grid.cell(at: logical)?.terrain : nil
+                let piece = groundPiece(terrain)
                 let tile = textured(piece, side: tileSpan)
                 tile.position = displayCenter(x: x, y: y)
-                tile.zPosition = floor ? 0 : 0.4
+                tile.zPosition = terrain?.blocksMovement == true ? 0.4 : 0
                 addChild(tile)
             }
         }
-        paintCornerBushes()
+        if !level.id.hasPrefix("RI-") {
+            paintCornerBushes()
+        }
 
         for objective in level.objectives where objective.kind == .reachFlag {
             flagNode = makeFlag()
@@ -282,6 +286,27 @@ final class BoardScene: SKScene {
         placeRobot(presented.robot)
         if playbackCompletion == nil {
             startIdle()
+        }
+    }
+
+    private func groundPiece(_ terrain: TerrainType?) -> GameArt.BoardPiece {
+        switch terrain {
+        case .floor, .none:
+            return .grassA
+        case .bush:
+            return .bush
+        case .cracked:
+            return .cracked
+        case .lava:
+            return .lava
+        case .shutter:
+            return .shutter
+        case .spikes:
+            return .spikes
+        case .water:
+            return .water
+        case .wall, .stone:
+            return .stone
         }
     }
 
@@ -536,7 +561,7 @@ final class BoardScene: SKScene {
         node.zPosition = mechanism.kind == MechanismKind.door ? 1.2 : 1.3
         if mechanism.kind == MechanismKind.door {
             if !mechanism.isActive {
-                let closed = level.allowedCommands.contains(.pickUp) || level.allowedCommands.contains(.use) ? GameArt.BoardPiece.lock : .door
+                let closed: GameArt.BoardPiece = mechanism.link == nil ? .lock : .door
                 node.addChild(textured(closed, side: tileSpan))
             }
         } else {

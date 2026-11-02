@@ -41,7 +41,7 @@ final class SettingsViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        section == 2 ? "Effacer oublie la campagne et les défis gardés. Les leçons restent là." : nil
+        section == 2 ? "Effacer oublie la campagne et les défis. Les leçons restent là." : nil
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -77,13 +77,14 @@ final class SettingsViewController: UITableViewController {
         guard indexPath.section == 2, indexPath.row == 2 else { return }
         let alert = UIAlertController(
             title: "Effacer la progression ?",
-            message: "La campagne et les défis gardés seront oubliés.",
+            message: "La campagne et les défis seront oubliés.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Annuler", style: .cancel))
         alert.addAction(UIAlertAction(title: "Effacer", style: .destructive) { [weak self] _ in
             CampaignStore.shared.reset()
             ChallengeStore.shared.reset()
+            PlaySettings.resetIntroducedCommands()
             self?.tableView.reloadSections(IndexSet(integer: 2), with: .automatic)
         })
         present(alert, animated: true)
@@ -119,15 +120,23 @@ final class SettingsViewController: UITableViewController {
     }
 
     private func worldSummary() -> String {
-        let world = CampaignRules.unlockedWorld(in: CampaignStore.shared.progress())
+        let progress = CampaignStore.shared.progress()
+        let address = CampaignRules.continueAddress(in: progress, layout: CatalogCampaign.layout)
+        if CatalogCampaign.level(at: address) == nil {
+            return "Campagne terminée"
+        }
+        let world = min(
+            CatalogCampaign.worldCount,
+            CampaignRules.unlockedWorld(in: progress, layout: CatalogCampaign.layout)
+        )
         return "Monde \(world) débloqué"
     }
 
     private func challengeSummary() -> String {
-        let count = ChallengeStore.shared.entries(favoritesOnly: false).count
-        if count == 0 { return "Aucun défi gardé" }
-        if count == 1 { return "1 défi gardé" }
-        return "\(count) défis gardés"
+        let count = ChallengeStore.shared.entries().count
+        if count == 0 { return "Aucun défi" }
+        if count == 1 { return "1 défi" }
+        return "\(count) défis"
     }
 
     @objc private func soundChanged(_ sender: UISwitch) { PlaySettings.sound = sender.isOn }

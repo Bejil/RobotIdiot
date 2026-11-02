@@ -30,11 +30,37 @@ public struct Objective: Codable, Hashable, Sendable, Identifiable {
     public var id: String
     public var kind: ObjectiveKind
     public var position: GridCoordinate
+    /// Monde 3 : le drapeau ne compte que si le robot tient encore la clé.
+    public var requiresItemHeld: Bool
 
-    public init(id: String, kind: ObjectiveKind, position: GridCoordinate) {
+    public init(id: String, kind: ObjectiveKind, position: GridCoordinate, requiresItemHeld: Bool = false) {
         self.id = id
         self.kind = kind
         self.position = position
+        self.requiresItemHeld = requiresItemHeld
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case kind
+        case position
+        case requiresItemHeld
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        kind = try container.decode(ObjectiveKind.self, forKey: .kind)
+        position = try container.decode(GridCoordinate.self, forKey: .position)
+        requiresItemHeld = try container.decodeIfPresent(Bool.self, forKey: .requiresItemHeld) ?? false
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(kind, forKey: .kind)
+        try container.encode(position, forKey: .position)
+        try container.encode(requiresItemHeld, forKey: .requiresItemHeld)
     }
 }
 

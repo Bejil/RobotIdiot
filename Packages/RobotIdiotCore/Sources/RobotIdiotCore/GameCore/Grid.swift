@@ -3,6 +3,16 @@ import Foundation
 public enum TerrainType: String, Codable, Hashable, Sendable {
     case floor
     case wall
+    case bush
+    case cracked
+    case lava
+    case shutter
+    case spikes
+    case stone
+    case water
+
+    /// Tout ce qui n'est pas le sol arrête le robot. Les variantes ne changent que l'apparence.
+    public var blocksMovement: Bool { self != .floor }
 }
 
 /// Occupation dynamique d'une case. Le robot n'y est pas stocké :
@@ -72,12 +82,13 @@ public struct Cell: Codable, Hashable, Sendable {
     /// Une clé se traverse : la ramasser est une commande.
     /// Une caisse et une porte fermée bloquent le passage.
     public var allowsRobotEntry: Bool {
-        terrain == .floor && occupancy == .empty && !containsCrate && !containsClosedDoor
+        !terrain.blocksMovement && occupancy == .empty && !containsCrate && !containsClosedDoor
     }
 
-    /// La case d'arrivée d'une caisse est un sol vide, sans objet ni porte fermée.
+    /// La case d'arrivée d'une caisse est un sol sans autre caisse ni porte fermée.
+    /// Une clé ne bloque pas la caisse.
     public var allowsCrate: Bool {
-        terrain == .floor && occupancy == .empty && objects.isEmpty && !containsClosedDoor
+        !terrain.blocksMovement && occupancy == .empty && !containsCrate && !containsClosedDoor
     }
 
     public var containsCrate: Bool {

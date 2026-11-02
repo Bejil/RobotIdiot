@@ -101,16 +101,21 @@ final class InteractionTests: XCTestCase {
         XCTAssertEqual(once.game.grid.cell(at: GridCoordinate(x: 3, y: 1))?.mechanisms.first?.isActive, true)
 
         var again = SimulationEngine(level: level, program: program([.activate, .activate]))
-        let toggled = again.runUntilTerminal()
-        XCTAssertEqual(toggled.game.grid.cell(at: GridCoordinate(x: 3, y: 1))?.mechanisms.first?.isActive, false)
+        let repeated = again.runUntilTerminal()
+        guard case .nothingToActivate = repeated.fault else {
+            return XCTFail("\(String(describing: repeated.fault))")
+        }
+        XCTAssertEqual(repeated.game.grid.cell(at: GridCoordinate(x: 3, y: 1))?.mechanisms.first?.isActive, true)
     }
 
-    func testActivateUsesThePlateAheadWhenTheRobotIsNotStandingOnOne() {
+    func testActivateIgnoresThePlateAhead() {
         let level = corridor(commands: CommandType.movement + [.activate])
         var engine = SimulationEngine(level: level, program: program([.activate]))
         let final = engine.runUntilTerminal()
-        XCTAssertEqual(final.status, .exhausted)
-        XCTAssertEqual(final.game.grid.cell(at: GridCoordinate(x: 3, y: 1))?.mechanisms.first?.isActive, true)
+        guard case .nothingToActivate = final.fault else {
+            return XCTFail("\(String(describing: final.fault))")
+        }
+        XCTAssertEqual(final.game.grid.cell(at: GridCoordinate(x: 3, y: 1))?.mechanisms.first?.isActive, false)
         XCTAssertEqual(final.game.robot.position, GridCoordinate(x: 1, y: 1))
     }
 
@@ -125,7 +130,7 @@ final class InteractionTests: XCTestCase {
         }
     }
 
-    func testRepeatingActivateWithoutProgressIsACycle() {
+    func testRepeatingActivateAfterItIsOnFails() {
         var level = corridor(commands: [.forever, .activate])
         level.programConstraints = ProgramConstraints(maxBlocks: 2, maxNestingDepth: 2)
         level.grid.updateCell(at: GridCoordinate(x: 1, y: 1)) { cell in
@@ -136,10 +141,10 @@ final class InteractionTests: XCTestCase {
         ])
         var engine = SimulationEngine(level: level, program: loop)
         let final = engine.runUntilTerminal()
-        guard case .cycle = final.fault else {
+        guard case .nothingToActivate = final.fault else {
             return XCTFail("\(String(describing: final.fault))")
         }
-        XCTAssertLessThan(final.safetyStepCount, 12)
+        XCTAssertEqual(final.game.grid.cell(at: GridCoordinate(x: 1, y: 1))?.mechanisms.first?.isActive, true)
     }
 
     func testGeneratedInteractionsStaySolvableAndBlockedToMovement() {

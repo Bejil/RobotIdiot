@@ -6,9 +6,41 @@ struct ArchivedLevel: Codable {
     var level: Level
 }
 
+struct StoredProgram: Codable {
+    var address: LevelAddress
+    var program: Program
+}
+
 struct CampaignArchive: Codable {
     var progress: CampaignProgress
     var levels: [ArchivedLevel]
+    var programs: [StoredProgram]
+
+    init(progress: CampaignProgress, levels: [ArchivedLevel], programs: [StoredProgram]) {
+        self.progress = progress
+        self.levels = levels
+        self.programs = programs
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        progress = try container.decode(CampaignProgress.self, forKey: .progress)
+        levels = try container.decodeIfPresent([ArchivedLevel].self, forKey: .levels) ?? []
+        programs = try container.decodeIfPresent([StoredProgram].self, forKey: .programs) ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(progress, forKey: .progress)
+        try container.encode(levels, forKey: .levels)
+        try container.encode(programs, forKey: .programs)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case progress
+        case levels
+        case programs
+    }
 }
 
 final class CampaignStore {
@@ -17,7 +49,6 @@ final class CampaignStore {
     private let lock = NSLock()
     private var archive: CampaignArchive
     private let fileURL: URL
-    private let queue = DispatchQueue(label: "robotidiot.campaign", qos: .userInitiated)
 
     private init() {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -25,19 +56,21 @@ final class CampaignStore {
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         fileURL = base.appendingPathComponent("campaign.json")
         if let data = try? Data(contentsOf: fileURL),
-           let decoded = try? JSONDecoder().decode(CampaignArchive.self, from: data) {
+           let decoded = try? JSONDecoder().decode(CampaignArchive.self, from: data),
+           decoded.progress.formulaVersion == CatalogCampaign.formulaVersion {
             archive = decoded
         } else {
-            archive = CampaignArchive(
-                progress: CampaignProgress(campaignSeed: UInt64.random(in: 1...UInt64.max)),
-                levels: []
-            )
+            archive = CampaignStore.freshArchive()
             persistLocked()
         }
-        if archive.progress.formulaVersion < WorldGenerator.formulaVersion {
-            archive.progress.formulaVersion = WorldGenerator.formulaVersion
-            persistLocked()
-        }
+    }
+
+    private static func freshArchive() -> CampaignArchive {
+        CampaignArchive(
+            progress: CampaignProgress(campaignSeed: 1, formulaVersion: CatalogCampaign.formulaVersion),
+            levels: [],
+            programs: []
+        )
     }
 
     func progress() -> CampaignProgress {
@@ -54,49 +87,39 @@ final class CampaignStore {
     }
 
     func level(at address: LevelAddress) -> Level? {
+        CatalogCampaign.level(at: address)
+    }
+
+    func program(at address: LevelAddress) -> Program? {
         lock.lock()
         defer { lock.unlock() }
-        return archive.levels.first { $0.address == address }?.level
+        return archive.programs.first { $0.address == address }?.program
+    }
+
+    func save(_ program: Program, at address: LevelAddress) {
+        lock.lock()
+        if let index = archive.programs.firstIndex(where: { $0.address == address }) {
+            archive.programs[index].program = program
+        } else {
+            archive.programs.append(StoredProgram(address: address, program: program))
+        }
+        persistLocked()
+        lock.unlock()
     }
 
     func materialize(_ address: LevelAddress, completion: @escaping (Level) -> Void) {
-        queue.async {
-            let level = self.materializeSync(address)
-            DispatchQueue.main.async {
-                completion(level)
-            }
+        guard let level = CatalogCampaign.level(at: address) else { return }
+        DispatchQueue.main.async {
+            completion(level)
         }
     }
 
     func warm(_ address: LevelAddress) {
-        queue.async {
-            _ = self.materializeSync(address)
-        }
-    }
-
-    private func materializeSync(_ address: LevelAddress) -> Level {
-        if let stored = level(at: address) { return stored }
-        let seed = progress().campaignSeed
-        let blueprint = WorldGenerator.blueprint(campaignSeed: seed, world: address.world)
-        let slot = blueprint.slots.first { $0.levelNumber == address.level } ?? blueprint.slots[0]
-        let generated = LevelGenerator.generate(slot.request)
-        lock.lock()
-        if let stored = archive.levels.first(where: { $0.address == address })?.level {
-            lock.unlock()
-            return stored
-        }
-        archive.levels.append(ArchivedLevel(address: address, level: generated.level))
-        persistLocked()
-        lock.unlock()
-        return generated.level
     }
 
     func reset() {
         lock.lock()
-        archive = CampaignArchive(
-            progress: CampaignProgress(campaignSeed: UInt64.random(in: 1...UInt64.max)),
-            levels: []
-        )
+        archive = CampaignStore.freshArchive()
         persistLocked()
         lock.unlock()
     }

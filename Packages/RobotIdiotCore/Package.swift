@@ -12,7 +12,12 @@ let package = Package(
         .library(name: "RobotIdiotCore", targets: ["RobotIdiotCore"])
     ],
     targets: [
-        .target(name: "RobotIdiotCore"),
+        .target(
+            name: "RobotIdiotCore",
+            resources: [
+                .copy("Resources/robot_idiot_100_levels_v3.json")
+            ]
+        ),
         .testTarget(
             name: "RobotIdiotCoreTests",
             dependencies: ["RobotIdiotCore"]

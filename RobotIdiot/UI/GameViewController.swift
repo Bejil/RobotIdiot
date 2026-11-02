@@ -19,6 +19,8 @@ final class GameViewController: UIViewController {
     private let speedToggle = UIButton(type: .system)
     private let overlay = ResultOverlayView()
     private let errorAlert = ExecutionAlertView()
+    private let commandIntro = CommandIntroAlertView()
+    private let helpAlert = HelpAlertView()
 
     private let runButton = AppTheme.filledButton(title: "Exécuter", systemImage: "play.fill", prominent: true)
 
@@ -30,7 +32,7 @@ final class GameViewController: UIViewController {
     private var layoutConstraints: [NSLayoutConstraint] = []
 
     init(level: Level, campaign: LevelAddress? = nil, challenge: UUID? = nil) {
-        let framed = LevelFraming.playfield(level)
+        let framed = level.id.hasPrefix("RI-") ? level : LevelFraming.playfield(level)
         self.level = framed
         self.campaign = campaign
         self.challengeID = challenge
@@ -85,6 +87,7 @@ final class GameViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         Soundscape.shared.setMusic(playing: true)
+        presentCommandIntroIfNeeded()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -173,8 +176,15 @@ final class GameViewController: UIViewController {
     private func configureEditor() {
         editor.setAllowedCommands(level.allowedCommands)
         editor.setProgramLimit(level.programConstraints)
-        editor.onProgramChange = { [weak self] _ in
-            self?.restoreRobot()
+        if let campaign, let saved = CampaignStore.shared.program(at: campaign) {
+            editor.replaceProgram(saved)
+        }
+        editor.onProgramChange = { [weak self] program in
+            guard let self else { return }
+            if let campaign = self.campaign {
+                CampaignStore.shared.save(program, at: campaign)
+            }
+            self.restoreRobot()
         }
     }
 
@@ -198,10 +208,18 @@ final class GameViewController: UIViewController {
         errorAlert.onEdit = { [weak self] in
             self?.errorAlert.isHidden = true
         }
+        commandIntro.isHidden = true
+        commandIntro.onFinished = { [weak self] in
+            self?.commandIntro.isHidden = true
+        }
+        helpAlert.isHidden = true
+        helpAlert.onClose = { [weak self] in
+            self?.helpAlert.isHidden = true
+        }
     }
 
     private func installSubviews() {
-        [boardFrame, sheet, limitsLabel, helpButton, editor, runButton, speedToggle, overlay, errorAlert].forEach {
+        [boardFrame, sheet, limitsLabel, helpButton, editor, runButton, speedToggle, overlay, errorAlert, commandIntro, helpAlert].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
         view.addSubview(boardFrame)
@@ -213,6 +231,8 @@ final class GameViewController: UIViewController {
         view.addSubview(speedToggle)
         view.addSubview(overlay)
         view.addSubview(errorAlert)
+        view.addSubview(commandIntro)
+        view.addSubview(helpAlert)
         NSLayoutConstraint.activate([
             overlay.topAnchor.constraint(equalTo: view.topAnchor),
             overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -221,7 +241,15 @@ final class GameViewController: UIViewController {
             errorAlert.topAnchor.constraint(equalTo: view.topAnchor),
             errorAlert.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             errorAlert.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            errorAlert.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            errorAlert.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            commandIntro.topAnchor.constraint(equalTo: view.topAnchor),
+            commandIntro.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            commandIntro.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            commandIntro.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            helpAlert.topAnchor.constraint(equalTo: view.topAnchor),
+            helpAlert.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            helpAlert.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            helpAlert.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
 
@@ -276,8 +304,9 @@ final class GameViewController: UIViewController {
     }
 
     @objc private func showHelp() {
-        let help = LevelHelpController(level: level)
-        present(help, animated: true)
+        helpAlert.present(level: level)
+        helpAlert.isHidden = false
+        view.bringSubviewToFront(helpAlert)
     }
 
     @objc private func toggleSpeed() {
@@ -298,10 +327,36 @@ final class GameViewController: UIViewController {
         }
     }
 
-    @objc private func toggleFavorite() {
-        guard let challengeID, let entry = ChallengeStore.shared.entry(challengeID) else { return }
-        ChallengeStore.shared.setFavorite(challengeID, !entry.favorite)
-        installBarButtons()
+    private func presentCommandIntroIfNeeded() {
+        guard presentedViewController == nil, commandIntro.isHidden else { return }
+        let taught = commandsTaughtBeforeThisLevel()
+        var seen = Set<CommandType>()
+        let fresh = level.allowedCommands.filter { command in
+            guard !taught.contains(command), !PlaySettings.hasIntroduced(command), seen.insert(command).inserted else { return false }
+            return true
+        }
+        guard !fresh.isEmpty else { return }
+        commandIntro.present(commands: fresh)
+        commandIntro.isHidden = false
+        view.bringSubviewToFront(commandIntro)
+    }
+
+    /// Commandes déjà présentes dans un niveau de campagne plus ancien.
+    /// Un défi libre n'a pas d'antécédent : chaque commande encore inconnue y est présentée.
+    private func commandsTaughtBeforeThisLevel() -> Set<CommandType> {
+        guard let campaign else { return [] }
+        var known = Set<CommandType>()
+        for source in CatalogCampaign.pack.levels {
+            let earlier = source.world < campaign.world
+                || (source.world == campaign.world && source.worldLevel < campaign.level)
+            guard earlier else { continue }
+            for name in source.unlockedCommands {
+                if let command = CommandType(rawValue: name) {
+                    known.insert(command)
+                }
+            }
+        }
+        return known
     }
 
     private func installBarButtons() {
@@ -313,20 +368,7 @@ final class GameViewController: UIViewController {
         )
         settings.accessibilityLabel = "Réglages"
         settings.tintColor = .white
-        var items = [settings]
-        if let challengeID {
-            let favorite = ChallengeStore.shared.entry(challengeID)?.favorite == true
-            let star = UIBarButtonItem(
-                image: UIImage(systemName: favorite ? "star.fill" : "star"),
-                style: .plain,
-                target: self,
-                action: #selector(toggleFavorite)
-            )
-            star.tintColor = favorite ? AppTheme.gold : .white
-            star.accessibilityLabel = favorite ? "Retirer des favoris" : "Ajouter aux favoris"
-            items.append(star)
-        }
-        navigationItem.rightBarButtonItems = items
+        navigationItem.rightBarButtonItems = [settings]
     }
 
     @objc private func showSensorySettings() {
@@ -364,6 +406,7 @@ final class GameViewController: UIViewController {
         wantsContinuous = continuous
         editor.isLocked = true
         editor.setErrorMessage(nil)
+        helpAlert.isHidden = true
         overlay.isHidden = true
         playbackToken += 1
         advance(token: playbackToken)
@@ -428,7 +471,9 @@ final class GameViewController: UIViewController {
 
     private func showExecutionAlert(fault: ExecutionFault?, game: GameState) {
         let copy = PlayerCopy.executionAlert(for: fault, game: game)
+        commandIntro.isHidden = true
         errorAlert.present(headline: copy.headline, detail: copy.detail)
+        helpAlert.isHidden = true
         errorAlert.isHidden = false
         view.bringSubviewToFront(errorAlert)
         returnRobotToStart()
@@ -463,11 +508,20 @@ final class GameViewController: UIViewController {
 
     private func showResult() {
         let metrics = engine.state.game.metrics
+        var rules = level.scoringRules
+        if rules.compactProgramMaxBlocks == nil, let optimum = ActionSearch.shortest(level: level)?.actionCount {
+            let word = optimum > 1 ? "commandes" : "commande"
+            rules = ScoringRules(
+                compactProgramMaxBlocks: nil,
+                efficientExecutionMaxSteps: optimum,
+                referenceNote: "La solution optimale compte \(optimum) \(word)."
+            )
+        }
         let rating = ScoreEvaluator.rating(
             succeeded: true,
             blockCount: editor.program.blockCount,
             executedInstructions: metrics.executedInstructions,
-            rules: level.scoringRules
+            rules: rules
         )
         let score = LevelScore(
             stars: rating.count,
@@ -493,11 +547,13 @@ final class GameViewController: UIViewController {
             blockCount: editor.program.blockCount,
             executed: metrics.executedInstructions,
             moves: metrics.moves,
-            note: PlayerCopy.improvement(rating: rating, rules: level.scoringRules),
+            note: PlayerCopy.improvement(rating: rating, rules: rules),
             nextTitle: nextLevelTitle,
             exitTitle: exitTitle
         )
         errorAlert.isHidden = true
+        commandIntro.isHidden = true
+        helpAlert.isHidden = true
         navigationController?.setNavigationBarHidden(true, animated: true)
         overlay.isHidden = false
         view.bringSubviewToFront(overlay)
@@ -548,7 +604,7 @@ final class GameViewController: UIViewController {
 
     private func updateStatusIdle() {
         var text = PlayerCopy.briefing(for: level)
-        if let campaign, CampaignLayout.standard.isFinale(campaign.level) {
+        if let campaign, CatalogCampaign.layout.isFinale(campaign.level) {
             text = "Niveau final. \(text)"
         }
         statusLabel.text = "\(text) \(PlayerCopy.ready(direction: engine.state.game.robot.orientation))"
@@ -592,9 +648,9 @@ final class GameViewController: UIViewController {
 
     private var nextLevelTitle: String? {
         if let campaign {
-            let next = CampaignRules.nextAddress(after: campaign)
+            let next = CampaignRules.nextAddress(after: campaign, layout: CatalogCampaign.layout)
+            guard CatalogCampaign.level(at: next) != nil else { return nil }
             if next.world != campaign.world { return "Monde suivant" }
-            if CampaignLayout.standard.isFinale(next.level) { return "Niveau final" }
             return "Niveau suivant"
         }
         if challengeID != nil {
@@ -630,7 +686,8 @@ final class GameViewController: UIViewController {
     private func openNextCampaignLevel() {
         guard let campaign, !isOpeningNext else { return }
         isOpeningNext = true
-        let address = CampaignRules.nextAddress(after: campaign)
+        let address = CampaignRules.nextAddress(after: campaign, layout: CatalogCampaign.layout)
+        guard CatalogCampaign.level(at: address) != nil else { return }
         CampaignStore.shared.materialize(address) { [weak self] level in
             guard let self, let navigation = self.navigationController else { return }
             var stack = navigation.viewControllers
@@ -689,76 +746,152 @@ final class GameViewController: UIViewController {
     }
 }
 
-private final class LevelHelpController: UIViewController {
-    private let level: Level
+/// Alerte d'aide, sur le même modèle que l'erreur et la nouvelle commande.
+private final class HelpAlertView: UIView {
+    var onClose: (() -> Void)?
 
-    init(level: Level) {
-        self.level = level
-        super.init(nibName: nil, bundle: nil)
+    private let robot = UIImageView()
+    private let card = UIView()
+    private let ribbon = UIView()
+    private let ribbonTitle = UILabel()
+    private let badge = UIView()
+    private let badgeIcon = UIImageView()
+    private let headlineLabel = UILabel()
+    private let detailLabel = UILabel()
+    private let closeButton = UIButton(type: .system)
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = UIColor(hex: 0x2A1458).withAlphaComponent(0.78)
+
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 28
+        card.layer.cornerCurve = .continuous
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.18
+        card.layer.shadowRadius = 18
+        card.layer.shadowOffset = CGSize(width: 0, height: 8)
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        robot.image = UIImage(named: "HomeHero")
+        robot.contentMode = .scaleAspectFit
+        robot.isUserInteractionEnabled = false
+        robot.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(robot)
+        addSubview(card)
+
+        ribbon.backgroundColor = UIColor(hex: 0x7B3FF2)
+        ribbon.layer.cornerRadius = 22
+        ribbon.layer.cornerCurve = .continuous
+        ribbon.layer.masksToBounds = true
+        ribbon.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(ribbon)
+        ribbonTitle.text = "Aide"
+        ribbonTitle.font = AppTheme.font(22, .heavy, textStyle: .title2)
+        ribbonTitle.textColor = .white
+        ribbonTitle.textAlignment = .center
+        ribbonTitle.translatesAutoresizingMaskIntoConstraints = false
+        ribbon.addSubview(ribbonTitle)
+
+        badge.backgroundColor = UIColor(hex: 0x7B3FF2)
+        badge.layer.cornerRadius = 24
+        badge.layer.borderWidth = 4
+        badge.layer.borderColor = UIColor.white.cgColor
+        badge.translatesAutoresizingMaskIntoConstraints = false
+        badgeIcon.image = UIImage(systemName: "questionmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 22, weight: .bold))
+        badgeIcon.tintColor = .white
+        badgeIcon.contentMode = .scaleAspectFit
+        badgeIcon.translatesAutoresizingMaskIntoConstraints = false
+        badge.addSubview(badgeIcon)
+        addSubview(badge)
+
+        headlineLabel.font = AppTheme.font(18, .heavy, textStyle: .headline)
+        headlineLabel.textColor = AppTheme.line
+        headlineLabel.textAlignment = .center
+        headlineLabel.numberOfLines = 0
+
+        detailLabel.font = AppTheme.font(16, .medium, textStyle: .body)
+        detailLabel.textColor = AppTheme.line
+        detailLabel.textAlignment = .center
+        detailLabel.numberOfLines = 0
+
+        var configuration = UIButton.Configuration.filled()
+        configuration.title = "J'ai compris"
+        configuration.image = UIImage(systemName: "checkmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 15, weight: .bold))
+        configuration.imagePadding = 6
+        configuration.imagePlacement = .trailing
+        configuration.baseBackgroundColor = UIColor(hex: 0x7B3FF2)
+        configuration.baseForegroundColor = .white
+        configuration.cornerStyle = .capsule
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 8, bottom: 12, trailing: 8)
+        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var updated = incoming
+            updated.font = AppTheme.font(16, .bold, textStyle: .headline)
+            return updated
+        }
+        closeButton.configuration = configuration
+        closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
+
+        let message = UIStackView(arrangedSubviews: [headlineLabel, detailLabel, closeButton])
+        message.axis = .vertical
+        message.spacing = 12
+        message.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(message)
+
+        NSLayoutConstraint.activate([
+            card.centerYAnchor.constraint(equalTo: centerYAnchor, constant: 36),
+            card.centerXAnchor.constraint(equalTo: centerXAnchor),
+            card.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 18),
+            card.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -18),
+            card.widthAnchor.constraint(equalTo: widthAnchor, constant: -36).prioritized(.init(750)),
+            card.widthAnchor.constraint(lessThanOrEqualToConstant: 440),
+
+            robot.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+            robot.widthAnchor.constraint(equalTo: card.widthAnchor, multiplier: 0.78),
+            robot.heightAnchor.constraint(equalTo: robot.widthAnchor, multiplier: 1.25),
+            robot.bottomAnchor.constraint(equalTo: card.topAnchor, constant: 108),
+
+            ribbon.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+            ribbon.topAnchor.constraint(equalTo: card.topAnchor, constant: -22),
+            ribbon.widthAnchor.constraint(equalTo: card.widthAnchor, constant: -48),
+            ribbon.heightAnchor.constraint(equalToConstant: 58),
+            ribbonTitle.leadingAnchor.constraint(equalTo: ribbon.leadingAnchor, constant: 16),
+            ribbonTitle.trailingAnchor.constraint(equalTo: ribbon.trailingAnchor, constant: -16),
+            ribbonTitle.bottomAnchor.constraint(equalTo: ribbon.bottomAnchor, constant: -10),
+
+            badge.centerXAnchor.constraint(equalTo: ribbon.centerXAnchor),
+            badge.centerYAnchor.constraint(equalTo: ribbon.topAnchor, constant: 2),
+            badge.widthAnchor.constraint(equalToConstant: 48),
+            badge.heightAnchor.constraint(equalToConstant: 48),
+            badgeIcon.centerXAnchor.constraint(equalTo: badge.centerXAnchor),
+            badgeIcon.centerYAnchor.constraint(equalTo: badge.centerYAnchor),
+            badgeIcon.widthAnchor.constraint(equalToConstant: 24),
+            badgeIcon.heightAnchor.constraint(equalToConstant: 24),
+
+            message.topAnchor.constraint(equalTo: card.topAnchor, constant: 46),
+            message.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            message.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+            message.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
+            closeButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 48)
+        ])
     }
 
     required init?(coder: NSCoder) {
         nil
     }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = AppTheme.cream
-        modalPresentationStyle = .pageSheet
-        if let sheet = sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
+    func present(level: Level) {
+        headlineLabel.text = PlayerCopy.briefing(for: level)
+        if let commands = ActionSearch.shortest(level: level)?.commands, !commands.isEmpty {
+            detailLabel.text = PlayerCopy.openingHint(commands: commands)
+        } else {
+            detailLabel.text = "Le robot fait exactement ce que tu écris. La visière montre où il regarde."
         }
-
-        let robot = UIImageView(image: UIImage(named: "HomeHero"))
-        robot.contentMode = .scaleAspectFit
-        robot.translatesAutoresizingMaskIntoConstraints = false
-        robot.heightAnchor.constraint(equalToConstant: 150).isActive = true
-
-        let titleLabel = UILabel()
-        titleLabel.text = "Aide"
-        titleLabel.font = AppTheme.font(28, .heavy, textStyle: .title1)
-        titleLabel.textColor = AppTheme.ink
-        titleLabel.numberOfLines = 0
-
-        let limits = UILabel()
-        limits.text = PlayerCopy.limits(for: level)
-        limits.font = AppTheme.font(16, .heavy, textStyle: .headline)
-        limits.textColor = AppTheme.gold
-        limits.numberOfLines = 0
-
-        let body = UILabel()
-        body.text = """
-        \(PlayerCopy.briefing(for: level))
-
-        Le robot fait exactement ce que tu écris. La visière montre où il regarde.
-
-        Le plateau fait 7 cases sur 7. Le bord arrête le robot. Un mur dessiné l'arrête aussi.
-
-        Répète tourne sans fin. Si ne s'exécute que lorsque la condition est vraie.
-        """
-        body.font = AppTheme.font(17, .medium, textStyle: .body)
-        body.textColor = AppTheme.inkSoft
-        body.numberOfLines = 0
-
-        let button = AppTheme.filledButton(title: "J'ai compris", systemImage: "checkmark", prominent: true)
-        button.addTarget(self, action: #selector(close), for: .touchUpInside)
-        button.heightAnchor.constraint(greaterThanOrEqualToConstant: 52).isActive = true
-
-        let stack = UIStackView(arrangedSubviews: [robot, titleLabel, limits, body, button])
-        stack.axis = .vertical
-        stack.spacing = 16
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(stack)
-        let guide = view.safeAreaLayoutGuide
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: guide.topAnchor, constant: 28),
-            stack.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -24)
-        ])
+        accessibilityViewIsModal = true
+        accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
     }
 
     @objc private func close() {
-        dismiss(animated: true)
+        onClose?()
     }
 }

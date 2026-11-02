@@ -83,9 +83,15 @@ public enum ScoreEvaluator {
         rules: ScoringRules
     ) -> StarRating {
         guard succeeded else { return .none }
-        let compact = rules.compactProgramMaxBlocks.map { blockCount <= $0 } ?? false
         let efficient = rules.efficientExecutionMaxSteps.map { executedInstructions <= $0 } ?? false
-        return StarRating(completion: true, compactProgram: compact, efficientExecution: efficient)
+        guard let compactLimit = rules.compactProgramMaxBlocks else {
+            return StarRating(completion: true, compactProgram: efficient, efficientExecution: efficient)
+        }
+        return StarRating(
+            completion: true,
+            compactProgram: blockCount <= compactLimit,
+            efficientExecution: efficient
+        )
     }
 }
 

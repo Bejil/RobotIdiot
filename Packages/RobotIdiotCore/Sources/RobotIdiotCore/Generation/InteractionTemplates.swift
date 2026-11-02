@@ -94,7 +94,7 @@ enum InteractionTemplates {
             grid: grid,
             flagX: flagX,
             allowed: CommandType.movement + [.activate],
-            commands: [.moveForward, .turnLeft, .activate, .turnRight, .moveForward, .moveForward]
+            commands: [.moveForward, .turnLeft, .moveForward, .activate, .moveBackward, .turnRight, .moveForward, .moveForward]
         )
     }
 

@@ -190,7 +190,7 @@ final class ResultOverlayView: UIView {
         noteLabel.text = note
         noteLabel.isHidden = note.isEmpty
         nextButton.isHidden = nextTitle == nil
-        exitButton.isHidden = exitTitle == "Carte du monde"
+        exitButton.isHidden = exitTitle == "Carte du monde" && nextTitle != nil
         if var configuration = nextButton.configuration, let nextTitle {
             configuration.title = nextTitle
             nextButton.configuration = configuration

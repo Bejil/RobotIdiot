@@ -165,24 +165,22 @@ public enum WorldRules {
         ))
     }
 
-    /// Priorité explicite : l'interrupteur sous le robot, sinon celui juste devant.
-    /// Une porte ne s'active pas ainsi : elle s'ouvre avec une clé, ou suit son interrupteur.
+    /// ACTIVE ne vaut que sur la case de l'interrupteur, et une seule fois.
+    /// La grille liée s'ouvre et reste ouverte. L'interrupteur devant le robot ne compte pas.
     private static func activate(_ game: GameState, level: Level) -> Result<RuleApplication, RuleViolation> {
-        let ahead = game.robot.position.translated(by: game.robot.orientation)
-        guard let located = plate(at: game.robot.position, in: game) ?? plate(at: ahead, in: game) else {
+        guard let located = plate(at: game.robot.position, in: game), !located.mechanism.isActive else {
             return .failure(.nothingToActivate)
         }
-        let turnedOn = !located.mechanism.isActive
         var updated = game
         updated.grid.updateCell(at: located.coordinate) { cell in
             guard let index = cell.mechanisms.firstIndex(where: { $0.id == located.mechanism.id }) else { return }
-            cell.mechanisms[index].isActive = turnedOn
+            cell.mechanisms[index].isActive = true
         }
         if let doorID = located.mechanism.link {
             for cell in updated.grid.cells where cell.mechanisms.contains(where: { $0.id == doorID }) {
                 updated.grid.updateCell(at: cell.coordinate) { doorCell in
                     guard let index = doorCell.mechanisms.firstIndex(where: { $0.id == doorID && $0.kind == MechanismKind.door }) else { return }
-                    doorCell.mechanisms[index].isActive = turnedOn
+                    doorCell.mechanisms[index].isActive = true
                 }
             }
         }
@@ -190,7 +188,7 @@ public enum WorldRules {
         refreshObjectives(&updated, level: level)
         return .success(RuleApplication(
             game: updated,
-            event: .activated(mechanismID: located.mechanism.id, at: located.coordinate, isActive: turnedOn)
+            event: .activated(mechanismID: located.mechanism.id, at: located.coordinate, isActive: true)
         ))
     }
 
@@ -224,7 +222,11 @@ public enum WorldRules {
     private static func isMet(_ objective: Objective, by game: GameState) -> Bool {
         switch objective.kind {
         case .reachFlag:
-            return game.robot.position == objective.position
+            guard game.robot.position == objective.position else { return false }
+            if objective.requiresItemHeld {
+                return !game.robot.inventory.isEmpty
+            }
+            return true
         }
     }
 }

@@ -1,4 +1,5 @@
 import UIKit
+import RobotIdiotCore
 
 enum InterfaceScale: String {
     case system
@@ -58,6 +59,26 @@ enum PlaySettings {
     static var tutorialSeen: Bool {
         get { stored("robotidiot.tutorialSeen", default: false) }
         set { write(newValue, key: "robotidiot.tutorialSeen") }
+    }
+
+    static func hasIntroduced(_ command: CommandType) -> Bool {
+        introducedCommands.contains(command.rawValue)
+    }
+
+    static func introduce(_ command: CommandType) {
+        var known = introducedCommands
+        known.insert(command.rawValue)
+        UserDefaults.standard.set(known.sorted(), forKey: introducedCommandsKey)
+    }
+
+    static func resetIntroducedCommands() {
+        UserDefaults.standard.removeObject(forKey: introducedCommandsKey)
+    }
+
+    private static let introducedCommandsKey = "robotidiot.introducedCommands"
+
+    private static var introducedCommands: Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: introducedCommandsKey) ?? [])
     }
 
     static var prefersReducedMotion: Bool {

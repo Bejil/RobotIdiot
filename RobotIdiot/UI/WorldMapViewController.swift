@@ -3,22 +3,20 @@ import RobotIdiotCore
 
 final class WorldMapViewController: UIViewController {
     private let scrollView = UIScrollView()
-    private let stack = UIStackView()
+    private let path = WorldPathView()
     private var unlockedWorld = 1
     private var progress = CampaignProgress(campaignSeed: 1)
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = AppTheme.cream
-        navigationItem.title = "Campagne"
+        navigationItem.title = "Progression"
         navigationItem.backButtonDisplayMode = .minimal
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.alwaysBounceVertical = true
-        stack.axis = .vertical
-        stack.spacing = 14
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.addSubview(stack)
+        path.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(path)
         view.addSubview(scrollView)
         let guide = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
@@ -26,10 +24,10 @@ final class WorldMapViewController: UIViewController {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            stack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 16),
-            stack.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: 16),
-            stack.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -16),
-            stack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24)
+            path.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 16),
+            path.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: 12),
+            path.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -16),
+            path.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24)
         ])
     }
 
@@ -37,32 +35,50 @@ final class WorldMapViewController: UIViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
         progress = CampaignStore.shared.progress()
-        unlockedWorld = CampaignRules.unlockedWorld(in: progress)
+        unlockedWorld = min(
+            CatalogCampaign.worldCount,
+            CampaignRules.unlockedWorld(in: progress, layout: CatalogCampaign.layout)
+        )
         reloadCards()
     }
 
     private func reloadCards() {
-        stack.arrangedSubviews.forEach {
-            stack.removeArrangedSubview($0)
+        path.stack.arrangedSubviews.forEach {
+            path.stack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        for world in 1...(unlockedWorld + 1) {
-            let blueprint = WorldGenerator.blueprint(campaignSeed: progress.campaignSeed, world: world)
+        let address = CampaignRules.continueAddress(in: progress, layout: CatalogCampaign.layout)
+        let currentLevel = CatalogCampaign.level(at: address) == nil ? nil : address
+        let maximum = CatalogCampaign.levelsPerWorld * 3
+        for world in 1...CatalogCampaign.worldCount {
             let locked = world > unlockedWorld
             let stars = CampaignRules.stars(inWorld: world, progress: progress)
-            let maximum = CampaignLayout.standard.levelCount * 3
-            let detail = locked
-                ? "Termine le monde précédent."
-                : "\(PlayerCopy.themeName(blueprint.theme)) · \(PlayerCopy.mechanicTitle(blueprint.families))\n\(stars) / \(maximum) étoiles"
+            let finished = (1...CatalogCampaign.levelsPerWorld).allSatisfy {
+                progress.score(at: LevelAddress(world: world, level: $0)) != nil
+            }
+            let state: WorldCardControl.State
+            if locked {
+                state = .locked
+            } else if finished {
+                state = .complete
+            } else if currentLevel?.world == world {
+                state = .current
+            } else {
+                state = .open
+            }
+            let levelNumber = currentLevel?.world == world ? currentLevel?.level : nil
             let card = WorldCardControl(
                 world: world,
-                badge: GameArt.worldBadge(blueprint.theme),
+                image: UIImage(named: "World\(world)") ?? GameArt.worldBadge(CatalogCampaign.theme(for: world)),
                 title: PlayerCopy.worldTitle(world),
-                detail: detail,
-                locked: locked
+                subtitle: locked ? "Termine d'abord le niveau précédent." : CatalogCampaign.mechanicTitle(for: world),
+                stars: stars,
+                maximum: maximum,
+                levelNumber: levelNumber,
+                state: state
             )
             card.addTarget(self, action: #selector(openWorld(_:)), for: .touchUpInside)
-            stack.addArrangedSubview(card)
+            path.stack.addArrangedSubview(card)
         }
     }
 
@@ -72,59 +88,222 @@ final class WorldMapViewController: UIViewController {
     }
 }
 
+private final class WorldPathView: UIView {
+    let stack = UIStackView()
+    private let line = CAShapeLayer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        line.strokeColor = UIColor.white.withAlphaComponent(0.55).cgColor
+        line.fillColor = nil
+        line.lineWidth = 2
+        line.lineDashPattern = [1, 7]
+        line.lineCap = .round
+        layer.addSublayer(line)
+        stack.axis = .vertical
+        stack.spacing = 14
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: topAnchor),
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let dots = stack.arrangedSubviews.compactMap { $0.viewWithTag(90) }
+        guard let first = dots.first, let last = dots.last, let host = first.superview else {
+            line.path = nil
+            return
+        }
+        let start = convert(first.center, from: host)
+        let end = convert(last.center, from: last.superview)
+        let path = UIBezierPath()
+        path.move(to: start)
+        path.addLine(to: end)
+        line.path = path.cgPath
+    }
+}
+
 private final class WorldCardControl: UIControl {
+    enum State {
+        case current
+        case complete
+        case open
+        case locked
+    }
+
     let world: Int
 
-    init(world: Int, badge: UIImage, title: String, detail: String, locked: Bool) {
+    init(
+        world: Int,
+        image: UIImage,
+        title: String,
+        subtitle: String,
+        stars: Int,
+        maximum: Int,
+        levelNumber: Int?,
+        state: State
+    ) {
         self.world = world
         super.init(frame: .zero)
-        backgroundColor = AppTheme.card
-        layer.cornerRadius = 26
-        layer.borderWidth = 3
-        layer.borderColor = (locked ? AppTheme.border : AppTheme.line).cgColor
-        isEnabled = !locked
-        alpha = locked ? 0.55 : 1
 
-        let imageView = UIImageView(image: badge)
+        let dot = UIView()
+        dot.tag = 90
+        dot.backgroundColor = .white
+        dot.layer.cornerRadius = 7
+        dot.layer.borderWidth = state == .current ? 3 : 0
+        dot.layer.borderColor = AppTheme.gold.cgColor
+        dot.isUserInteractionEnabled = false
+        dot.translatesAutoresizingMaskIntoConstraints = false
+
+        let card = UIView()
+        card.isUserInteractionEnabled = false
+        card.backgroundColor = state == .current ? UIColor(hex: 0xFFF4C8) : UIColor(hex: 0xF4F0FF)
+        card.layer.cornerRadius = 22
+        card.layer.cornerCurve = .continuous
+        card.layer.borderWidth = state == .current ? 3 : 0
+        card.layer.borderColor = AppTheme.gold.cgColor
+        card.alpha = state == .locked ? 0.55 : 1
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        let imageView = UIImageView(image: image)
         imageView.contentMode = .scaleAspectFit
-        imageView.isUserInteractionEnabled = false
+        imageView.translatesAutoresizingMaskIntoConstraints = false
 
         let titleLabel = UILabel()
         titleLabel.text = title
-        titleLabel.font = AppTheme.font(22, .heavy, textStyle: .title3)
-        titleLabel.textColor = locked ? AppTheme.inkSoft : AppTheme.ink
+        titleLabel.font = AppTheme.font(20, .heavy, textStyle: .title3)
+        titleLabel.textColor = UIColor(hex: 0x1A1440)
         titleLabel.adjustsFontForContentSizeCategory = true
 
         let detailLabel = UILabel()
-        detailLabel.text = detail
+        detailLabel.text = subtitle
         detailLabel.font = AppTheme.font(14, .semibold, textStyle: .subheadline)
-        detailLabel.textColor = AppTheme.inkSoft
+        detailLabel.textColor = UIColor(hex: 0x5C5678)
         detailLabel.numberOfLines = 2
         detailLabel.adjustsFontForContentSizeCategory = true
 
-        let text = UIStackView(arrangedSubviews: [titleLabel, detailLabel])
-        text.axis = .vertical
-        text.spacing = 2
-        text.isUserInteractionEnabled = false
+        var lines: [UIView] = [titleLabel, detailLabel]
+        if let levelNumber {
+            let levelLabel = UILabel()
+            levelLabel.text = "Niveau \(levelNumber)"
+            levelLabel.font = AppTheme.font(13, .heavy, textStyle: .footnote)
+            levelLabel.textColor = UIColor(hex: 0x7B3FF2)
+            levelLabel.adjustsFontForContentSizeCategory = true
+            lines.append(levelLabel)
+        }
 
-        let row = UIStackView(arrangedSubviews: [imageView, text])
-        row.axis = .horizontal
-        row.spacing = 14
-        row.alignment = .center
-        row.isUserInteractionEnabled = false
-        row.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(row)
+        let star = UIImageView(image: GameArt.star(filled: true))
+        star.contentMode = .scaleAspectFit
+        star.translatesAutoresizingMaskIntoConstraints = false
+        let count = UILabel()
+        count.text = "\(stars)/\(maximum)"
+        count.font = AppTheme.font(13, .heavy, textStyle: .caption1)
+        count.textColor = .white
+        let pill = UIStackView(arrangedSubviews: [star, count])
+        pill.axis = .horizontal
+        pill.spacing = 4
+        pill.alignment = .center
+        pill.isLayoutMarginsRelativeArrangement = true
+        pill.layoutMargins = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 10)
+        pill.backgroundColor = UIColor(hex: 0x241B52)
+        pill.layer.cornerRadius = 12
+        pill.layer.masksToBounds = true
+        lines.append(pill)
+
+        let text = UIStackView(arrangedSubviews: lines)
+        text.axis = .vertical
+        text.alignment = .leading
+        text.spacing = 3
+        text.translatesAutoresizingMaskIntoConstraints = false
+
+        let action = UIView()
+        action.backgroundColor = UIColor(hex: 0x3DDC84)
+        action.layer.cornerRadius = 22
+        action.layer.borderWidth = 3
+        action.layer.borderColor = UIColor.white.cgColor
+        action.layer.shadowColor = UIColor(hex: 0x14924A).cgColor
+        action.layer.shadowOpacity = 0.45
+        action.layer.shadowRadius = 0
+        action.layer.shadowOffset = CGSize(width: 0, height: 4)
+        action.translatesAutoresizingMaskIntoConstraints = false
+        let glyph = UIImageView()
+        glyph.tintColor = .white
+        glyph.contentMode = .scaleAspectFit
+        glyph.translatesAutoresizingMaskIntoConstraints = false
+        action.addSubview(glyph)
+        switch state {
+        case .complete:
+            glyph.image = UIImage(systemName: "checkmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .black))
+        case .locked:
+            action.isHidden = true
+        case .current, .open:
+            glyph.image = UIImage(systemName: "play.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .black))
+        }
+
+        card.addSubview(imageView)
+        card.addSubview(text)
+        card.addSubview(action)
+        addSubview(dot)
+        addSubview(card)
+
         NSLayoutConstraint.activate([
-            imageView.widthAnchor.constraint(equalToConstant: 72),
-            imageView.heightAnchor.constraint(equalToConstant: 72),
-            row.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            row.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            row.topAnchor.constraint(equalTo: topAnchor, constant: 12),
-            row.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12),
-            heightAnchor.constraint(greaterThanOrEqualToConstant: 96)
+            dot.leadingAnchor.constraint(equalTo: leadingAnchor),
+            dot.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+            dot.widthAnchor.constraint(equalToConstant: 14),
+            dot.heightAnchor.constraint(equalToConstant: 14),
+
+            card.leadingAnchor.constraint(equalTo: dot.trailingAnchor, constant: 12),
+            card.trailingAnchor.constraint(equalTo: trailingAnchor),
+            card.topAnchor.constraint(equalTo: topAnchor),
+            card.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            imageView.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 10),
+            imageView.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: 78),
+            imageView.heightAnchor.constraint(equalToConstant: 78),
+            imageView.topAnchor.constraint(greaterThanOrEqualTo: card.topAnchor, constant: 8),
+            imageView.bottomAnchor.constraint(lessThanOrEqualTo: card.bottomAnchor, constant: -8),
+
+            action.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12),
+            action.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+            action.widthAnchor.constraint(equalToConstant: 44),
+            action.heightAnchor.constraint(equalToConstant: 44),
+            glyph.centerXAnchor.constraint(equalTo: action.centerXAnchor, constant: state == .complete ? 0 : 1),
+            glyph.centerYAnchor.constraint(equalTo: action.centerYAnchor),
+            glyph.widthAnchor.constraint(equalToConstant: 22),
+            glyph.heightAnchor.constraint(equalToConstant: 22),
+
+            text.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 12),
+            text.trailingAnchor.constraint(
+                equalTo: state == .locked ? card.trailingAnchor : action.leadingAnchor,
+                constant: state == .locked ? -12 : -8
+            ),
+            text.topAnchor.constraint(equalTo: card.topAnchor, constant: 12),
+            text.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -12),
+
+            star.widthAnchor.constraint(equalToConstant: 16),
+            star.heightAnchor.constraint(equalToConstant: 16)
         ])
-        accessibilityLabel = locked ? "\(title), verrouillé" : "\(title). \(detail)"
+
+        var spoken = "\(title). \(subtitle). \(stars) étoiles sur \(maximum)."
+        if let levelNumber {
+            spoken += " Niveau \(levelNumber) en cours."
+        }
+        if state == .locked {
+            spoken += " Monde verrouillé."
+        }
+        accessibilityLabel = spoken
         isAccessibilityElement = true
+        isEnabled = state != .locked
     }
 
     required init?(coder: NSCoder) {
@@ -133,17 +312,22 @@ private final class WorldCardControl: UIControl {
 
     override var isHighlighted: Bool {
         didSet {
+            guard isEnabled else { return }
             transform = isHighlighted ? CGAffineTransform(scaleX: 0.98, y: 0.98) : .identity
         }
     }
 }
 
-final class WorldLevelsViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
+final class WorldLevelsViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     let worldNumber: Int
     private let collectionView: UICollectionView
-    private var progress = CampaignProgress(campaignSeed: 1)
-    private var blueprint: WorldBlueprint?
+    private let titleLabel = UILabel()
+    private let subtitleLabel = UILabel()
+    private var progress = CampaignProgress(campaignSeed: 1, formulaVersion: CatalogCampaign.formulaVersion)
     private var preparing: LevelAddress?
+    private var gridSide: CGFloat = 100
+    private var gridSpan: CGFloat = 320
+    private var rowHeight: CGFloat = 100
 
     init(world: Int) {
         let layout = UICollectionViewFlowLayout()
@@ -164,62 +348,163 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
         view.backgroundColor = AppTheme.cream
         navigationItem.backButtonDisplayMode = .minimal
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
-        collectionView.backgroundColor = AppTheme.cream
+
+        let backdrop = UIImageView(image: UIImage(named: "WorldBackdrop\(worldNumber)"))
+        backdrop.contentMode = .scaleAspectFill
+        backdrop.clipsToBounds = true
+        backdrop.translatesAutoresizingMaskIntoConstraints = false
+        let dim = UIView()
+        dim.backgroundColor = UIColor(hex: 0x1A4AD4).withAlphaComponent(0.42)
+        dim.isUserInteractionEnabled = false
+        dim.translatesAutoresizingMaskIntoConstraints = false
+
+        var backConfiguration = UIButton.Configuration.filled()
+        backConfiguration.image = UIImage(systemName: "arrow.left", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold))
+        backConfiguration.baseBackgroundColor = UIColor(hex: 0x7B3FF2)
+        backConfiguration.baseForegroundColor = .white
+        backConfiguration.cornerStyle = .capsule
+        let backButton = UIButton(configuration: backConfiguration)
+        backButton.accessibilityLabel = "Retour"
+        backButton.addTarget(self, action: #selector(close), for: .touchUpInside)
+        backButton.translatesAutoresizingMaskIntoConstraints = false
+
+        titleLabel.font = AppTheme.font(34, .heavy, textStyle: .largeTitle)
+        titleLabel.textColor = .white
+        titleLabel.textAlignment = .center
+        titleLabel.layer.shadowColor = UIColor.black.cgColor
+        titleLabel.layer.shadowOpacity = 0.45
+        titleLabel.layer.shadowRadius = 3
+        titleLabel.layer.shadowOffset = CGSize(width: 0, height: 1)
+        subtitleLabel.font = AppTheme.font(18, .semibold, textStyle: .headline)
+        subtitleLabel.textColor = .white
+        subtitleLabel.textAlignment = .center
+        subtitleLabel.numberOfLines = 2
+        subtitleLabel.layer.shadowColor = UIColor.black.cgColor
+        subtitleLabel.layer.shadowOpacity = 0.45
+        subtitleLabel.layer.shadowRadius = 3
+        subtitleLabel.layer.shadowOffset = CGSize(width: 0, height: 1)
+        let heading = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        heading.axis = .vertical
+        heading.spacing = 2
+        heading.translatesAutoresizingMaskIntoConstraints = false
+
+        collectionView.backgroundColor = .clear
+        collectionView.contentInsetAdjustmentBehavior = .never
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.register(LevelTileCell.self, forCellWithReuseIdentifier: "level")
         collectionView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(backdrop)
+        view.addSubview(dim)
+        view.addSubview(backButton)
+        view.addSubview(heading)
         view.addSubview(collectionView)
         let guide = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: guide.topAnchor),
+            backdrop.topAnchor.constraint(equalTo: view.topAnchor),
+            backdrop.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backdrop.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            backButton.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 16),
+            backButton.topAnchor.constraint(equalTo: guide.topAnchor, constant: 8),
+            backButton.widthAnchor.constraint(equalToConstant: 48),
+            backButton.heightAnchor.constraint(equalToConstant: 48),
+
+            heading.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            heading.centerYAnchor.constraint(equalTo: backButton.centerYAnchor),
+            heading.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
+            heading.trailingAnchor.constraint(lessThanOrEqualTo: guide.trailingAnchor, constant: -16),
+
+            collectionView.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 8),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            dim.topAnchor.constraint(equalTo: view.topAnchor),
+            dim.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            dim.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            dim.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
         reload()
         warmAhead()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        if isMovingFromParent {
+            navigationController?.navigationBar.tintColor = AppTheme.gold
+        }
+    }
+
+    @objc private func close() {
+        navigationController?.popViewController(animated: true)
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         guard let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout else { return }
-        let columns: CGFloat = collectionView.bounds.width > 700 ? 5 : 3
-        let inset = layout.sectionInset.left + layout.sectionInset.right
-        let spacing = layout.minimumInteritemSpacing * (columns - 1)
-        let width = floor((collectionView.bounds.width - inset - spacing) / columns)
-        let size = CGSize(width: width, height: width * 1.18)
-        if layout.itemSize != size {
-            layout.itemSize = size
+        let spacing: CGFloat = 10
+        let pad: CGFloat = 16
+        let width = collectionView.bounds.width
+        let height = collectionView.bounds.height
+        guard width > 1, height > 1 else { return }
+        let side = floor((width - pad * 2 - spacing * 2) / 3)
+        let span = side * 3 + spacing * 2
+        let bottomPad = pad + view.safeAreaInsets.bottom
+        let available = height - pad - bottomPad - spacing * 3
+        let row = max(78, floor(available / 4))
+        let metricsChanged = abs(gridSide - side) > 0.5 || abs(rowHeight - row) > 0.5
+        gridSide = side
+        gridSpan = span
+        rowHeight = row
+        layout.minimumInteritemSpacing = spacing
+        layout.minimumLineSpacing = spacing
+        layout.sectionInset = UIEdgeInsets(top: pad, left: pad, bottom: bottomPad, right: pad)
+        if metricsChanged {
             layout.invalidateLayout()
         }
     }
 
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
+        if indexPath.item == CatalogCampaign.layout.levelCount - 1 {
+            return CGSize(width: gridSpan, height: rowHeight)
+        }
+        return CGSize(width: gridSide, height: rowHeight)
+    }
+
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        CampaignLayout.standard.levelCount
+        CatalogCampaign.layout.levelCount
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "level", for: indexPath) as! LevelTileCell
         let level = indexPath.row + 1
         let address = LevelAddress(world: worldNumber, level: level)
-        let unlocked = CampaignRules.isLevelUnlocked(address, progress: progress)
-        let finale = CampaignLayout.standard.isFinale(level)
+        let unlocked = CampaignRules.isLevelUnlocked(address, progress: progress, layout: CatalogCampaign.layout)
         let stars = progress.score(at: address)?.stars ?? 0
-        let caption: String
+        let wide = level == CatalogCampaign.layout.levelCount
+        let optimum = CatalogCampaign.level(at: address)?.scoringRules.efficientExecutionMaxSteps
+        let detail: String
         if preparing == address {
-            caption = "Préparation…"
-        } else if unlocked {
-            caption = PlayerCopy.paceTitle(blueprint?.slots[indexPath.row].pace ?? .accessible)
+            detail = "Préparation…"
+        } else if !unlocked {
+            detail = "Verrouillé"
+        } else if let optimum {
+            detail = optimum <= 1 ? "1 commande" : "\(optimum) commandes"
         } else {
-            caption = "Verrouillé"
+            detail = "Niveau \(level)"
         }
-        cell.apply(number: level, finale: finale, unlocked: unlocked, stars: stars, caption: caption)
+        cell.apply(number: level, wide: wide, unlocked: unlocked, stars: stars, detail: detail, preparing: preparing == address)
         return cell
     }
 
@@ -227,7 +512,7 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
         collectionView.deselectItem(at: indexPath, animated: true)
         Soundscape.shared.play("select")
         let address = LevelAddress(world: worldNumber, level: indexPath.row + 1)
-        guard CampaignRules.isLevelUnlocked(address, progress: progress), preparing == nil else { return }
+        guard CampaignRules.isLevelUnlocked(address, progress: progress, layout: CatalogCampaign.layout), preparing == nil else { return }
         if let level = CampaignStore.shared.level(at: address) {
             open(level, address: address)
             return
@@ -245,23 +530,23 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
 
     private func reload() {
         progress = CampaignStore.shared.progress()
-        blueprint = WorldGenerator.blueprint(campaignSeed: progress.campaignSeed, world: worldNumber)
-        navigationItem.title = PlayerCopy.worldTitle(worldNumber)
+        titleLabel.text = PlayerCopy.worldTitle(worldNumber)
+        subtitleLabel.text = CatalogCampaign.mechanicTitle(for: worldNumber)
         collectionView.reloadData()
     }
 
     private func warmAhead() {
-        let address = CampaignRules.continueAddress(in: progress)
+        let address = CampaignRules.continueAddress(in: progress, layout: CatalogCampaign.layout)
         guard address.world == worldNumber else { return }
         CampaignStore.shared.warm(address)
-        let following = CampaignRules.nextAddress(after: address)
+        let following = CampaignRules.nextAddress(after: address, layout: CatalogCampaign.layout)
         if following.world == worldNumber {
             CampaignStore.shared.warm(following)
         }
     }
 
     private func open(_ level: Level, address: LevelAddress) {
-        let following = CampaignRules.nextAddress(after: address)
+        let following = CampaignRules.nextAddress(after: address, layout: CatalogCampaign.layout)
         if following.world == worldNumber {
             CampaignStore.shared.warm(following)
         }
@@ -273,45 +558,86 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
 }
 
 private final class LevelTileCell: UICollectionViewCell {
+    private let eyebrow = UILabel()
     private let numberLabel = UILabel()
-    private let captionLabel = UILabel()
-    private let stars = UIStackView()
+    private let compactDetail = UILabel()
+    private let compactStars = UIStackView()
+    private let compactColumn = UIStackView()
+
+    private let finaleMark = UIImageView()
+    private let finaleTitle = UILabel()
+    private let wideDetail = UILabel()
+    private let wideStars = UIStackView()
+    private let wideRow = UIStackView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.backgroundColor = AppTheme.card
+        backgroundColor = .clear
+        contentView.backgroundColor = UIColor(hex: 0xF7F4FF)
         contentView.layer.cornerRadius = 22
-        contentView.layer.borderWidth = 3
-        contentView.layer.borderColor = AppTheme.border.cgColor
+        contentView.layer.cornerCurve = .continuous
+        layer.shadowColor = UIColor(hex: 0x1A1440).cgColor
+        layer.shadowOpacity = 0.18
+        layer.shadowRadius = 8
+        layer.shadowOffset = CGSize(width: 0, height: 4)
 
-        numberLabel.font = AppTheme.font(32, .heavy, textStyle: .title1)
+        styleCaption(eyebrow, text: "Niveau", size: 13, color: UIColor(hex: 0x7B3FF2))
+        numberLabel.font = AppTheme.font(40, .black, textStyle: .largeTitle)
+        numberLabel.textColor = UIColor(hex: 0x1A1440)
         numberLabel.textAlignment = .center
         numberLabel.adjustsFontForContentSizeCategory = true
+        styleCaption(compactDetail, text: "", size: 13, color: UIColor(hex: 0x5C5678))
+        fill(compactStars, side: 26)
+        compactColumn.addArrangedSubview(eyebrow)
+        compactColumn.addArrangedSubview(numberLabel)
+        compactColumn.addArrangedSubview(compactStars)
+        compactColumn.addArrangedSubview(compactDetail)
+        compactColumn.axis = .vertical
+        compactColumn.alignment = .center
+        compactColumn.spacing = 6
+        compactColumn.setCustomSpacing(2, after: eyebrow)
+        compactColumn.translatesAutoresizingMaskIntoConstraints = false
 
-        captionLabel.font = AppTheme.font(12, .bold, textStyle: .caption2)
-        captionLabel.textAlignment = .center
-        captionLabel.numberOfLines = 2
-        captionLabel.adjustsFontForContentSizeCategory = true
+        finaleMark.image = GameArt.victoryStar(earned: true)
+        finaleMark.contentMode = .scaleAspectFit
+        finaleMark.translatesAutoresizingMaskIntoConstraints = false
+        finaleTitle.text = "Final"
+        finaleTitle.font = AppTheme.font(32, .black, textStyle: .title1)
+        finaleTitle.textColor = UIColor(hex: 0x1A1440)
+        finaleTitle.adjustsFontForContentSizeCategory = true
+        styleCaption(wideDetail, text: "", size: 15, color: UIColor(hex: 0x5C5678))
+        wideDetail.textAlignment = .left
+        let wideEyebrow = UILabel()
+        styleCaption(wideEyebrow, text: "Niveau", size: 13, color: UIColor(hex: 0x7B3FF2))
+        wideEyebrow.textAlignment = .left
+        let text = UIStackView(arrangedSubviews: [wideEyebrow, finaleTitle, wideDetail])
+        text.axis = .vertical
+        text.alignment = .leading
+        text.spacing = 2
+        fill(wideStars, side: 28)
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        wideRow.addArrangedSubview(finaleMark)
+        wideRow.addArrangedSubview(text)
+        wideRow.addArrangedSubview(spacer)
+        wideRow.addArrangedSubview(wideStars)
+        wideRow.axis = .horizontal
+        wideRow.alignment = .center
+        wideRow.spacing = 14
+        wideRow.isHidden = true
+        wideRow.translatesAutoresizingMaskIntoConstraints = false
 
-        stars.axis = .horizontal
-        stars.distribution = .fillEqually
-        stars.spacing = 2
-        for _ in 0..<3 {
-            let image = UIImageView(image: GameArt.star(filled: false))
-            image.contentMode = .scaleAspectFit
-            stars.addArrangedSubview(image)
-        }
-
-        let column = UIStackView(arrangedSubviews: [numberLabel, stars, captionLabel])
-        column.axis = .vertical
-        column.spacing = 4
-        column.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(column)
+        contentView.addSubview(compactColumn)
+        contentView.addSubview(wideRow)
         NSLayoutConstraint.activate([
-            column.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
-            column.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
-            column.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            stars.heightAnchor.constraint(equalToConstant: 22)
+            finaleMark.widthAnchor.constraint(equalToConstant: 48),
+            finaleMark.heightAnchor.constraint(equalToConstant: 46),
+            compactColumn.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            compactColumn.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+            compactColumn.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            wideRow.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            wideRow.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            wideRow.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
         ])
     }
 
@@ -319,19 +645,53 @@ private final class LevelTileCell: UICollectionViewCell {
         nil
     }
 
-    func apply(number: Int, finale: Bool, unlocked: Bool, stars earned: Int, caption: String) {
-        numberLabel.text = finale ? "★" : "\(number)"
-        numberLabel.textColor = unlocked ? (finale ? AppTheme.line : AppTheme.ink) : AppTheme.inkSoft
-        captionLabel.text = caption
-        captionLabel.textColor = unlocked ? AppTheme.inkSoft : AppTheme.inkSoft
-        contentView.backgroundColor = finale && unlocked ? AppTheme.gold : AppTheme.card
-        contentView.layer.borderColor = (finale && unlocked ? AppTheme.line : AppTheme.border).cgColor
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: contentView.layer.cornerRadius).cgPath
+    }
+
+    func apply(number: Int, wide: Bool, unlocked: Bool, stars earned: Int, detail: String, preparing: Bool) {
+        compactColumn.isHidden = wide
+        wideRow.isHidden = !wide
+        eyebrow.text = "Niveau"
+        numberLabel.text = preparing ? "…" : "\(number)"
+        compactDetail.text = detail
+        wideDetail.text = detail
+        contentView.backgroundColor = wide ? UIColor(hex: 0xF3E8FF) : UIColor(hex: 0xF7F4FF)
+        contentView.layer.cornerRadius = wide ? 24 : 22
         contentView.alpha = unlocked ? 1 : 0.55
-        for (index, view) in stars.arrangedSubviews.enumerated() {
-            (view as? UIImageView)?.image = GameArt.star(filled: index < earned)
-        }
-        let title = finale ? "Niveau final" : "Niveau \(number)"
-        accessibilityLabel = unlocked ? "\(title), \(PlayerCopy.starCount(earned))" : "\(title), verrouillé"
+        paint(compactStars, earned: earned)
+        paint(wideStars, earned: earned)
+        let title = wide ? "Niveau final" : "Niveau \(number)"
+        accessibilityLabel = "\(title). \(detail). \(PlayerCopy.starCount(earned))"
         isAccessibilityElement = true
+    }
+
+    private func styleCaption(_ label: UILabel, text: String, size: CGFloat, color: UIColor) {
+        label.text = text
+        label.font = AppTheme.font(size, .bold, textStyle: .caption1)
+        label.textColor = color
+        label.textAlignment = .center
+        label.adjustsFontForContentSizeCategory = true
+    }
+
+    private func fill(_ stack: UIStackView, side: CGFloat) {
+        stack.axis = .horizontal
+        stack.spacing = 4
+        stack.alignment = .center
+        for _ in 0..<3 {
+            let image = UIImageView(image: GameArt.victoryStar(earned: false))
+            image.contentMode = .scaleAspectFit
+            image.translatesAutoresizingMaskIntoConstraints = false
+            image.widthAnchor.constraint(equalToConstant: side).isActive = true
+            image.heightAnchor.constraint(equalToConstant: side * 0.92).isActive = true
+            stack.addArrangedSubview(image)
+        }
+    }
+
+    private func paint(_ stack: UIStackView, earned: Int) {
+        for (index, view) in stack.arrangedSubviews.enumerated() {
+            (view as? UIImageView)?.image = GameArt.victoryStar(earned: index < earned)
+        }
     }
 }
