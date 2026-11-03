@@ -18,6 +18,7 @@ public struct CatalogRun: Equatable, Sendable {
 /// Interpréteur du pack. Même ordre que le validateur : la victoire est testée
 /// avant l'instruction suivante, donc un `REPETE` s'arrête dès l'entrée sur F.
 /// `SI` et `REPETE` ne comptent pas ; chaque primitive réussie compte pour un.
+/// Plusieurs clés, cadenas, caisses et portes liées (`linkId`) sont supportés.
 public enum CatalogInterpreter {
     private static let headings = [(0, -1), (1, 0), (0, 1), (-1, 0)]
     private static let primitives: Set<String> = [
@@ -39,27 +40,43 @@ public enum CatalogInterpreter {
             return CatalogRun(actions: 0, result: .invalidCommand(level.start.orientation))
         }
 
-        var crateX = -1
-        var crateY = -1
-        for y in 0..<7 {
-            for x in 0..<7 where grid[y][x] == "C" {
-                crateX = x
-                crateY = y
+        var keys = Set<CellPoint>()
+        var locks = Set<CellPoint>()
+        var crates = Set<CellPoint>()
+        var plates: [CellPoint: String] = [:]
+        var doors: [CellPoint: String] = [:]
+        for mechanic in level.mechanics {
+            let point = CellPoint(x: mechanic.x, y: mechanic.y)
+            switch mechanic.type {
+            case "BoardKey":
+                keys.insert(point)
+            case "BoardLock":
+                locks.insert(point)
+            case "BoardCrate":
+                crates.insert(point)
+            case "BoardPlate":
+                if let link = mechanic.linkId {
+                    plates[point] = link
+                }
+            case "BoardDoor":
+                if let link = mechanic.linkId {
+                    doors[point] = link
+                }
+            default:
                 break
             }
-            if crateX >= 0 { break }
         }
 
         var machine = Machine(
             x: level.start.x,
             y: level.start.y,
             direction: direction,
-            holding: false,
-            taken: false,
-            doorOpen: false,
-            switchOn: false,
-            crateX: crateX,
-            crateY: crateY
+            keyCount: 0,
+            remainingKeys: keys,
+            openLocks: [],
+            openLinks: [],
+            activePlates: [],
+            crates: crates
         )
         var frames = [Frame(instructions: source, position: 0, loop: false)]
         var seen = Set<Signature>()
@@ -72,21 +89,24 @@ public enum CatalogInterpreter {
         }
         func free(_ x: Int, _ y: Int) -> Bool {
             let symbol = tile(x, y)
+            let point = CellPoint(x: x, y: y)
             if LevelPackChecker.blockingSymbols.contains(symbol) || symbol == "#" || symbol.isNumber { return false }
-            if symbol == "U", !machine.doorOpen { return false }
-            if symbol == "D", !machine.switchOn { return false }
-            if x == machine.crateX, y == machine.crateY { return false }
+            if locks.contains(point), !machine.openLocks.contains(point) { return false }
+            if let link = doors[point], !machine.openLinks.contains(link) { return false }
+            if machine.crates.contains(point) { return false }
             return true
         }
         func reachedFlag() -> Bool {
             guard machine.x == level.finish.x, machine.y == level.finish.y else { return false }
-            if level.objective.requiresItemHeld { return machine.holding }
+            if level.objective.requiresItemHeld { return machine.keyCount > 0 }
             return true
         }
         func step(_ command: String) -> Machine? {
             let (dx, dy) = headings[machine.direction]
             let frontX = machine.x + dx
             let frontY = machine.y + dy
+            let here = CellPoint(x: machine.x, y: machine.y)
+            let front = CellPoint(x: frontX, y: frontY)
             switch command {
             case "TOURNE_GAUCHE":
                 var next = machine
@@ -106,32 +126,34 @@ public enum CatalogInterpreter {
                 next.y = destination.1
                 return next
             case "RAMASSE":
-                guard tile(machine.x, machine.y) == "K", !machine.holding, !machine.taken else { return nil }
+                guard machine.remainingKeys.contains(here) else { return nil }
                 var next = machine
-                next.holding = true
-                next.taken = true
+                next.remainingKeys.remove(here)
+                next.keyCount += 1
                 return next
             case "UTILISE":
-                guard tile(frontX, frontY) == "U", machine.holding, !machine.doorOpen else { return nil }
+                guard locks.contains(front),
+                      !machine.openLocks.contains(front),
+                      machine.keyCount > 0 else { return nil }
                 var next = machine
-                next.holding = false
-                next.doorOpen = true
+                next.keyCount -= 1
+                next.openLocks.insert(front)
                 return next
             case "ACTIVE":
-                guard tile(machine.x, machine.y) == "A", !machine.switchOn else { return nil }
+                guard let link = plates[here], !machine.activePlates.contains(link) else { return nil }
                 var next = machine
-                next.switchOn = true
+                next.activePlates.insert(link)
+                next.openLinks.insert(link)
                 return next
             case "POUSSE":
-                guard frontX == machine.crateX, frontY == machine.crateY else { return nil }
-                let beyondX = frontX + dx
-                let beyondY = frontY + dy
-                guard free(beyondX, beyondY) else { return nil }
+                guard machine.crates.contains(front) else { return nil }
+                let beyond = CellPoint(x: frontX + dx, y: frontY + dy)
+                guard free(beyond.x, beyond.y) else { return nil }
                 var next = machine
-                next.x = frontX
-                next.y = frontY
-                next.crateX = beyondX
-                next.crateY = beyondY
+                next.crates.remove(front)
+                next.crates.insert(beyond)
+                next.x = front.x
+                next.y = front.y
                 return next
             default:
                 return nil
@@ -160,10 +182,17 @@ public enum CatalogInterpreter {
                 }
                 frames.append(Frame(instructions: body, position: 0, loop: true))
             case .si(let condition, let body):
-                guard condition == "CASE_DEVANT_LIBRE" else {
+                let aheadFree = step("AVANCE") != nil
+                let passes: Bool
+                switch condition {
+                case "CASE_DEVANT_LIBRE":
+                    passes = aheadFree
+                case "OBSTACLE_DEVANT":
+                    passes = !aheadFree
+                default:
                     return CatalogRun(actions: actions, result: .unsupportedCondition(condition))
                 }
-                if step("AVANCE") != nil {
+                if passes {
                     frames.append(Frame(instructions: body, position: 0, loop: false))
                 }
             default:
@@ -196,16 +225,21 @@ public enum CatalogInterpreter {
     }
 }
 
+private struct CellPoint: Hashable {
+    var x: Int
+    var y: Int
+}
+
 private struct Machine: Hashable {
     var x: Int
     var y: Int
     var direction: Int
-    var holding: Bool
-    var taken: Bool
-    var doorOpen: Bool
-    var switchOn: Bool
-    var crateX: Int
-    var crateY: Int
+    var keyCount: Int
+    var remainingKeys: Set<CellPoint>
+    var openLocks: Set<CellPoint>
+    var openLinks: Set<String>
+    var activePlates: Set<String>
+    var crates: Set<CellPoint>
 }
 
 private struct Frame {

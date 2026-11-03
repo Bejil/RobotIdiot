@@ -28,7 +28,7 @@ final class SettingsViewController: UITableViewController {
         switch section {
         case 0: return 3
         case 1: return 1
-        default: return 3
+        default: return 2
         }
     }
 
@@ -41,7 +41,7 @@ final class SettingsViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        section == 2 ? "Effacer oublie la campagne et les défis. Les leçons restent là." : nil
+        section == 2 ? "Effacer oublie la progression de la campagne." : nil
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -56,15 +56,13 @@ final class SettingsViewController: UITableViewController {
             return textCell(title: "Revoir le tutoriel", color: AppTheme.tealDark, accessory: .disclosureIndicator)
         case (2, 0):
             return textCell(title: worldSummary(), color: AppTheme.ink, accessory: .none)
-        case (2, 1):
-            return textCell(title: challengeSummary(), color: AppTheme.ink, accessory: .none)
         default:
             return textCell(title: "Effacer la progression", color: AppTheme.coral, accessory: .none)
         }
     }
 
     override func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
-        indexPath.section == 1 || (indexPath.section == 2 && indexPath.row == 2)
+        indexPath.section == 1 || (indexPath.section == 2 && indexPath.row == 1)
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -74,10 +72,10 @@ final class SettingsViewController: UITableViewController {
             present(TutorialViewController(), animated: true)
             return
         }
-        guard indexPath.section == 2, indexPath.row == 2 else { return }
+        guard indexPath.section == 2, indexPath.row == 1 else { return }
         let alert = UIAlertController(
             title: "Effacer la progression ?",
-            message: "La campagne et les défis seront oubliés.",
+            message: "La progression de la campagne sera oubliée.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Annuler", style: .cancel))
@@ -130,13 +128,6 @@ final class SettingsViewController: UITableViewController {
             CampaignRules.unlockedWorld(in: progress, layout: CatalogCampaign.layout)
         )
         return "Monde \(world) débloqué"
-    }
-
-    private func challengeSummary() -> String {
-        let count = ChallengeStore.shared.entries().count
-        if count == 0 { return "Aucun défi" }
-        if count == 1 { return "1 défi" }
-        return "\(count) défis"
     }
 
     @objc private func soundChanged(_ sender: UISwitch) { PlaySettings.sound = sender.isOn }

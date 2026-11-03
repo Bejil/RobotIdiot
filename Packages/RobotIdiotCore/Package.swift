@@ -15,7 +15,7 @@ let package = Package(
         .target(
             name: "RobotIdiotCore",
             resources: [
-                .copy("Resources/robot_idiot_100_levels_v3.json")
+                .copy("Resources/robot_idiot_100_levels_v6.json")
             ]
         ),
         .testTarget(

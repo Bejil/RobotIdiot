@@ -232,10 +232,22 @@ enum PlayerCopy {
             switch level.validation.notes.first {
             case "key_door":
                 return "Ramasse la clé sur sa case, puis utilise-la face à la porte verrouillée."
-            case "switch_gate":
+            case "crate_and_key_door":
+                return "Pousse la caisse si besoin, ramasse la clé, puis ouvre la porte."
+            case "switch_gate", "switch_plus_existing":
                 return "Active l'interrupteur en te tenant dessus. La grille s'ouvre et reste ouverte."
             case "push_crate":
                 return "Pousse la caisse : elle avance d'une case, et le robot prend sa place."
+            case "loop_plus_existing", "infinite_loop_navigation":
+                return "Atteins le drapeau. Tu peux utiliser une boucle infinie."
+            case "condition_loop_plus_existing", "infinite_loop_with_condition":
+                return "Atteins le drapeau. Combine boucle et condition si tu en as besoin."
+            case "integrated_advanced", "integrated_mastery":
+                return "Combine tout ce que tu as appris pour atteindre le drapeau."
+            case "navigation_backwards":
+                return "Atteins le drapeau. Tu peux aussi reculer sans changer de direction."
+            case "collect_key":
+                return "Ramasse la clé, puis atteins le drapeau en la gardant."
             default:
                 return "Atteins le drapeau."
             }

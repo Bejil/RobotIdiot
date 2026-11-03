@@ -407,12 +407,18 @@ enum GameArt {
     }
 
     enum BoardPiece: String {
-        case grassA, grassB, stone, goal, bush, shutter, cracked
+        case grassA, grassB, stone, slab, goal, bush, shutter, cracked
         case hero, flag, crate, key, door, doorOpen, lock, plate, plateOn
         case water, lava, spikes, portal
     }
 
-    static func piece(_ piece: BoardPiece) -> UIImage {
+    static func piece(_ piece: BoardPiece, world: Int = 0) -> UIImage {
+        if (1...10).contains(world) {
+            let themed = "W\(world)" + assetName(piece).dropFirst(5)
+            if let image = UIImage(named: themed) {
+                return image
+            }
+        }
         if let image = UIImage(named: assetName(piece)) {
             return image
         }
@@ -425,6 +431,8 @@ enum GameArt {
             return "BoardGrass"
         case .stone:
             return "BoardStone"
+        case .slab:
+            return "BoardSlab"
         case .bush:
             return "BoardBush"
         case .shutter:
@@ -465,7 +473,7 @@ enum GameArt {
                 let shift: CGFloat = piece == .grassA ? 0 : 18
                 ctx.fillEllipse(in: CGRect(x: 28 + shift, y: 36, width: 10, height: 16))
                 ctx.fillEllipse(in: CGRect(x: 70 - shift, y: 72, width: 8, height: 14))
-            case .stone, .bush, .shutter, .cracked, .water, .lava, .spikes, .portal:
+            case .stone, .slab, .bush, .shutter, .cracked, .water, .lava, .spikes, .portal:
                 roundedTile(CGRect(x: 4, y: 4, width: s - 8, height: s - 8), fill: UIColor(hex: 0x8E97A8), radius: s * 0.16)
                 UIColor.white.withAlphaComponent(0.45).setFill()
                 ctx.fillEllipse(in: CGRect(x: s * 0.22, y: s * 0.28, width: s * 0.16, height: s * 0.12))

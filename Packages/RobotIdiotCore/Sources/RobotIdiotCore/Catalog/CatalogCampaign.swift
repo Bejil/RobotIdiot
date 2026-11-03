@@ -7,7 +7,7 @@ import Foundation
 public enum CatalogCampaign {
     public static let worldCount = 10
     public static let levelsPerWorld = 10
-    public static let formulaVersion = 4
+    public static let formulaVersion = 6
     public static let layout = CampaignLayout(standardLevelCount: 10, includesFinale: false)
 
     public static let pack: LevelPack = {
@@ -42,10 +42,10 @@ public enum CatalogCampaign {
     }
 
     public static func theme(for world: Int) -> ThemeIdentifier {
-        let families = pack.levels.filter { $0.world == world }.map(\.family)
-        if families.contains("key_door") { return .orchard }
-        if families.contains("switch_gate") { return .night }
-        if families.contains("push_crate") { return .foundry }
+        let families = Set(pack.levels.filter { $0.world == world }.map(\.family))
+        if families.contains("key_door") || families.contains("collect_key") { return .orchard }
+        if families.contains("switch_plus_existing") || families.contains("switch_gate") { return .night }
+        if families.contains("crate_and_key_door") || families.contains("push_crate") { return .foundry }
         return .laboratory
     }
 
@@ -68,31 +68,53 @@ public enum CatalogCampaign {
             }
         }
 
-        if let key = source.mechanics.first(where: { $0.type == "BoardKey" }) {
-            grid.updateCell(at: flipped(key.x, key.y)) { cell in
-                cell.objects.append(PlacedObject(id: "\(source.id)-key", kind: ObjectKind.key))
-            }
-        }
-        if let crate = source.mechanics.first(where: { $0.type == "BoardCrate" }) {
-            grid.updateCell(at: flipped(crate.x, crate.y)) { cell in
-                cell.objects.append(PlacedObject(id: "\(source.id)-crate", kind: ObjectKind.crate))
-            }
-        }
-        let gateID = "\(source.id)-gate"
-        if let gate = source.mechanics.first(where: { $0.type == "BoardDoor" }) {
-            grid.updateCell(at: flipped(gate.x, gate.y)) { cell in
-                cell.mechanisms.append(PlacedMechanism(id: gateID, kind: MechanismKind.door, isActive: false, link: "\(source.id)-switch"))
-            }
-        }
-        if let door = source.mechanics.first(where: { $0.type == "BoardLock" }) {
-            grid.updateCell(at: flipped(door.x, door.y)) { cell in
-                cell.mechanisms.append(PlacedMechanism(id: "\(source.id)-door", kind: MechanismKind.door, isActive: false))
-            }
-        }
-        if let plate = source.mechanics.first(where: { $0.type == "BoardPlate" }) {
-            let link = source.mechanics.contains(where: { $0.type == "BoardDoor" }) ? gateID : nil
-            grid.updateCell(at: flipped(plate.x, plate.y)) { cell in
-                cell.mechanisms.append(PlacedMechanism(id: "\(source.id)-switch", kind: MechanismKind.plate, isActive: false, link: link))
+        for mechanic in source.mechanics {
+            let at = flipped(mechanic.x, mechanic.y)
+            switch mechanic.type {
+            case "BoardKey":
+                grid.updateCell(at: at) { cell in
+                    cell.objects.append(PlacedObject(
+                        id: "\(source.id)-key-\(mechanic.x)-\(mechanic.y)",
+                        kind: ObjectKind.key
+                    ))
+                }
+            case "BoardCrate":
+                grid.updateCell(at: at) { cell in
+                    cell.objects.append(PlacedObject(
+                        id: "\(source.id)-crate-\(mechanic.x)-\(mechanic.y)",
+                        kind: ObjectKind.crate
+                    ))
+                }
+            case "BoardLock":
+                grid.updateCell(at: at) { cell in
+                    cell.mechanisms.append(PlacedMechanism(
+                        id: "\(source.id)-lock-\(mechanic.x)-\(mechanic.y)",
+                        kind: MechanismKind.door,
+                        isActive: false
+                    ))
+                }
+            case "BoardDoor":
+                let link = mechanic.linkId ?? "\(source.id)-gate-\(mechanic.x)-\(mechanic.y)"
+                grid.updateCell(at: at) { cell in
+                    cell.mechanisms.append(PlacedMechanism(
+                        id: link,
+                        kind: MechanismKind.door,
+                        isActive: false,
+                        link: link
+                    ))
+                }
+            case "BoardPlate":
+                let link = mechanic.linkId ?? "\(source.id)-gate-\(mechanic.x)-\(mechanic.y)"
+                grid.updateCell(at: at) { cell in
+                    cell.mechanisms.append(PlacedMechanism(
+                        id: "\(source.id)-plate-\(link)",
+                        kind: MechanismKind.plate,
+                        isActive: false,
+                        link: link
+                    ))
+                }
+            default:
+                break
             }
         }
 
@@ -149,12 +171,24 @@ public enum CatalogCampaign {
 
     private static func familyTitle(_ family: String) -> String {
         switch family {
-        case "key_door": return "Clés et portes"
-        case "switch_gate": return "Interrupteurs"
-        case "push_crate": return "Caisses"
-        case "infinite_loop_navigation": return "Boucles"
-        case "infinite_loop_with_condition": return "Conditions"
-        default: return "Déplacements"
+        case "navigation", "navigation_backwards":
+            return "Déplacements"
+        case "collect_key":
+            return "Clé à garder"
+        case "key_door":
+            return "Clés et portes"
+        case "crate_and_key_door", "push_crate":
+            return "Caisses"
+        case "switch_plus_existing", "switch_gate":
+            return "Interrupteurs"
+        case "loop_plus_existing", "infinite_loop_navigation":
+            return "Boucles"
+        case "condition_loop_plus_existing", "infinite_loop_with_condition":
+            return "Conditions"
+        case "integrated_advanced", "integrated_mastery":
+            return "Maîtrise"
+        default:
+            return "Déplacements"
         }
     }
 

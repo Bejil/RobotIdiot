@@ -133,19 +133,14 @@ final class CatalogPackTests: XCTestCase {
         return (level.start.x + delta.0, level.start.y + delta.1)
     }
 
-    func testActionSearchMatchesProvenWorldsAndCorrectsTheLoops() {
-        let first = CatalogCampaign.playableLevel(CatalogCampaign.pack.levels[0])
-        XCTAssertEqual(ActionSearch.shortest(level: first)?.actionCount, 5)
-
-        for source in CatalogCampaign.pack.levels where source.world <= 6 {
+    func testActionSearchProvidesTheDisplayedMinimum() {
+        for source in CatalogCampaign.pack.levels {
             let level = CatalogCampaign.playableLevel(source)
-            XCTAssertEqual(level.scoringRules.efficientExecutionMaxSteps, source.solution.actionCount, source.id)
+            let shortest = ActionSearch.shortest(level: level)?.actionCount
+            XCTAssertEqual(level.scoringRules.efficientExecutionMaxSteps, shortest, source.id)
+            XCTAssertNotNil(shortest, source.id)
+            XCTAssertLessThanOrEqual(shortest!, source.solution.actionCount, source.id)
         }
-
-        let loop = CatalogCampaign.pack.levels.first { $0.id == "RI-075" }!
-        let playable = CatalogCampaign.playableLevel(loop)
-        XCTAssertEqual(playable.scoringRules.efficientExecutionMaxSteps, 2)
-        XCTAssertGreaterThan(loop.solution.actionCount, 2)
     }
 
     private func replace(_ row: String, at index: Int, with symbol: Character) -> String {

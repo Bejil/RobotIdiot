@@ -76,12 +76,13 @@ final class BoardScene: SKScene {
     private var artTextures: [String: SKTexture] = [:]
 
     private func textured(_ piece: GameArt.BoardPiece, side: CGFloat) -> SKSpriteNode {
+        let key = "\(level.worldNumber)-\(piece.rawValue)"
         let texture: SKTexture
-        if let cached = artTextures[piece.rawValue] {
+        if let cached = artTextures[key] {
             texture = cached
         } else {
-            let made = SKTexture(image: GameArt.piece(piece))
-            artTextures[piece.rawValue] = made
+            let made = SKTexture(image: GameArt.piece(piece, world: level.worldNumber))
+            artTextures[key] = made
             texture = made
         }
         let sprite = SKSpriteNode(texture: texture)
@@ -305,8 +306,10 @@ final class BoardScene: SKScene {
             return .spikes
         case .water:
             return .water
-        case .wall, .stone:
+        case .wall:
             return .stone
+        case .stone:
+            return .slab
         }
     }
 

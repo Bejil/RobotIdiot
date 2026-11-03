@@ -1,6 +1,6 @@
 import Foundation
 
-/// Pack officiel `schemaVersion` 3.0.
+/// Pack officiel `schemaVersion` 6.0.
 /// L'axe Y du fichier augmente vers le bas. Cette orientation n'est pas inversée ici.
 public struct LevelPack: Codable, Equatable, Sendable {
     public var schemaVersion: String
@@ -10,7 +10,7 @@ public struct LevelPack: Codable, Equatable, Sendable {
     public var commandRules: [String: String]
     public var levels: [CatalogLevel]
 
-    public static let supportedSchemaVersion = "3.0"
+    public static let supportedSchemaVersion = "6.0"
     public static let documentedCoordinateSystem = "x increases right, y increases down, zero indexed"
 }
 
@@ -71,6 +71,37 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
         public var type: String
         public var x: Int
         public var y: Int
+        public var linkId: String?
+
+        private enum CodingKeys: String, CodingKey {
+            case type
+            case x
+            case y
+            case linkId
+        }
+
+        public init(type: String, x: Int, y: Int, linkId: String? = nil) {
+            self.type = type
+            self.x = x
+            self.y = y
+            self.linkId = linkId
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            type = try container.decode(String.self, forKey: .type)
+            x = try container.decode(Int.self, forKey: .x)
+            y = try container.decode(Int.self, forKey: .y)
+            linkId = try container.decodeIfPresent(String.self, forKey: .linkId)
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(type, forKey: .type)
+            try container.encode(x, forKey: .x)
+            try container.encode(y, forKey: .y)
+            try container.encodeIfPresent(linkId, forKey: .linkId)
+        }
     }
 
     public struct Obstacles: Codable, Equatable, Sendable {
@@ -85,8 +116,17 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
 
     public struct Difficulty: Codable, Equatable, Sendable {
         public var worldTier: Int
-        public var optimalActionCount: Int
+        public var solutionActionCount: Int
+        public var walkablePathLength: Int
+        public var turnsOnIntendedPath: Int
+        public var maximumStraightRun: Int
+        public var detourCount: Int
+        public var deadEnds: Int
         public var wallCount: Int
+        public var turns: Int
+        public var moveActions: Int
+        public var maxConsecutiveMovesSameDirection: Int
+        public var optimalActionCount: Int?
     }
 
     var cells: [[Character]] {
@@ -197,9 +237,9 @@ public enum LevelPackError: Error, Equatable, CustomStringConvertible {
     public var description: String {
         switch self {
         case .missingResource:
-            return "robot_idiot_100_levels_v3.json est absent du bundle."
+            return "robot_idiot_100_levels_v6.json est absent du bundle."
         case .unreadable:
-            return "robot_idiot_100_levels_v3.json est illisible."
+            return "robot_idiot_100_levels_v6.json est illisible."
         case .invalid(let issues):
             return issues.map(\.description).joined(separator: "\n")
         }
@@ -208,7 +248,7 @@ public enum LevelPackError: Error, Equatable, CustomStringConvertible {
 
 public enum LevelPackLoader {
     public static func loadBundled() throws -> LevelPack {
-        guard let url = Bundle.module.url(forResource: "robot_idiot_100_levels_v3", withExtension: "json") else {
+        guard let url = Bundle.module.url(forResource: "robot_idiot_100_levels_v6", withExtension: "json") else {
             throw LevelPackError.missingResource
         }
         let pack = try load(from: url)
@@ -362,12 +402,6 @@ public enum LevelPackChecker {
         if !portals.isEmpty {
             report("portail", "le pack validé n'en place aucun, trouvé \(portals)")
         }
-        let singular: [(Character, String)] = [("K", "clé"), ("U", "cadenas"), ("C", "caisse"), ("A", "plaque"), ("D", "porte")]
-        for (symbol, name) in singular {
-            if counts[symbol, default: 0] > 1 {
-                report(name, "\(counts[symbol, default: 0]) occurrences")
-            }
-        }
         for mechanic in level.mechanics {
             guard let symbol = mechanicSymbols[mechanic.type] else {
                 report("mécanisme", "type \(mechanic.type)")
@@ -381,6 +415,16 @@ public enum LevelPackChecker {
             if String(placed) != symbol {
                 report("mécanisme", "\(mechanic.type) en \(mechanic.x),\(mechanic.y) vaut \(placed) au lieu de \(symbol)")
             }
+            if mechanic.type == "BoardPlate" || mechanic.type == "BoardDoor" {
+                if mechanic.linkId?.isEmpty != false {
+                    report("mécanisme", "\(mechanic.type) sans linkId en \(mechanic.x),\(mechanic.y)")
+                }
+            }
+        }
+        let plateLinks = Set(level.mechanics.compactMap { $0.type == "BoardPlate" ? $0.linkId : nil })
+        let doorLinks = Set(level.mechanics.compactMap { $0.type == "BoardDoor" ? $0.linkId : nil })
+        if plateLinks != doorLinks {
+            report("liaison", "plaques \(plateLinks.sorted()) / portes \(doorLinks.sorted())")
         }
         let unknown = level.unlockedCommands.filter { !knownCommands.contains($0) }
         if !unknown.isEmpty {
@@ -401,7 +445,7 @@ public enum LevelPackChecker {
         for instruction in program {
             switch instruction {
             case .si(let condition, let body):
-                if condition != "CASE_DEVANT_LIBRE" {
+                if condition != "CASE_DEVANT_LIBRE", condition != "OBSTACLE_DEVANT" {
                     issues.append(LevelPackIssue(
                         levelID: levelID,
                         rule: "condition SI",
