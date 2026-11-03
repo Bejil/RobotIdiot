@@ -304,7 +304,7 @@ public enum LevelPackError: Error, Equatable, CustomStringConvertible {
 
 public enum LevelPackLoader {
     public static func loadBundled() throws -> LevelPack {
-        guard let url = Bundle.module.url(forResource: "robot_idiot_100_levels_v7", withExtension: "json") else {
+        guard let url = bundledPackURL() else {
             throw LevelPackError.missingResource
         }
         let pack = try load(from: url)
@@ -313,6 +313,38 @@ public enum LevelPackLoader {
             throw LevelPackError.invalid(issues)
         }
         return pack
+    }
+
+    /// Cherche le pack dans le bundle SPM, puis dans l'app et les bundles embarqués (device).
+    private static func bundledPackURL() -> URL? {
+        let name = "robot_idiot_100_levels_v7"
+        if let url = Bundle.module.url(forResource: name, withExtension: "json") {
+            return url
+        }
+        if let url = Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Resources") {
+            return url
+        }
+        let bundles = [Bundle.main] + Bundle.allBundles + Bundle.allFrameworks
+        for bundle in bundles {
+            if let url = bundle.url(forResource: name, withExtension: "json") {
+                return url
+            }
+            if let url = bundle.url(forResource: name, withExtension: "json", subdirectory: "Resources") {
+                return url
+            }
+            if let root = bundle.resourceURL {
+                let candidates = [
+                    root.appendingPathComponent("\(name).json"),
+                    root.appendingPathComponent("Resources/\(name).json"),
+                    root.appendingPathComponent("RobotIdiotCore_RobotIdiotCore.bundle/\(name).json"),
+                    root.appendingPathComponent("RobotIdiotCore_RobotIdiotCore.bundle/Resources/\(name).json")
+                ]
+                for candidate in candidates where FileManager.default.fileExists(atPath: candidate.path) {
+                    return candidate
+                }
+            }
+        }
+        return nil
     }
 
     public static func load(from url: URL) throws -> LevelPack {

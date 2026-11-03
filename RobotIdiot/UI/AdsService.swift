@@ -2,31 +2,22 @@ import GoogleMobileAds
 import UIKit
 
 /// Identifiants AdMob.
-/// Simulateur : unités de test Google. Device : unités de production.
+/// DEBUG : unités de test Google (simulateur et device).
+/// Release : unités de production.
 enum AdUnit {
-    private static var useTestAds: Bool {
-        #if targetEnvironment(simulator)
-        true
-        #else
-        false
-        #endif
-    }
-
-    static let launchInterstitial = useTestAds
-        ? "ca-app-pub-3940256099942544/4411468910"
-        : "ca-app-pub-9540216894729209/7972568678"
-    static let homeBanner = useTestAds
-        ? "ca-app-pub-3940256099942544/2934735716"
-        : "ca-app-pub-9540216894729209/5430165810"
-    static let helpRewardedInterstitial = useTestAds
-        ? "ca-app-pub-3940256099942544/6978759866"
-        : "ca-app-pub-9540216894729209/3985047191"
-    static let levelSuccessInterstitial = useTestAds
-        ? "ca-app-pub-3940256099942544/4411468910"
-        : "ca-app-pub-9540216894729209/3594164951"
-    static let errorInterstitial = useTestAds
-        ? "ca-app-pub-3940256099942544/4411468910"
-        : "ca-app-pub-9540216894729209/9521666092"
+#if DEBUG
+    static let launchInterstitial = "ca-app-pub-3940256099942544/4411468910"
+    static let homeBanner = "ca-app-pub-3940256099942544/2934735716"
+    static let helpRewardedInterstitial = "ca-app-pub-3940256099942544/6978759866"
+    static let levelSuccessInterstitial = "ca-app-pub-3940256099942544/4411468910"
+    static let errorInterstitial = "ca-app-pub-3940256099942544/4411468910"
+#else
+    static let launchInterstitial = "ca-app-pub-9540216894729209/7972568678"
+    static let homeBanner = "ca-app-pub-9540216894729209/5430165810"
+    static let helpRewardedInterstitial = "ca-app-pub-9540216894729209/3985047191"
+    static let levelSuccessInterstitial = "ca-app-pub-9540216894729209/3594164951"
+    static let errorInterstitial = "ca-app-pub-9540216894729209/9521666092"
+#endif
 }
 
 /// Chargement et présentation des pubs AdMob.
@@ -54,8 +45,10 @@ final class AdsService: NSObject {
             return
         }
         isStarted = true
-#if targetEnvironment(simulator)
-        MobileAds.shared.requestConfiguration.testDeviceIdentifiers = ["GADSimulatorID"]
+#if DEBUG
+        MobileAds.shared.requestConfiguration.testDeviceIdentifiers = [
+            "GADSimulatorID"
+        ]
 #endif
         MobileAds.shared.start { [weak self] _ in
             Task { @MainActor in
