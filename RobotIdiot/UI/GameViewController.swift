@@ -1117,31 +1117,31 @@ private final class HelpAlertView: UIView {
 
     func present(level: Level) {
         self.level = level
-        unlockedHint = false
-        unlockedSolution = false
+        let storedSolution = HelpUnlockStore.shared.solution(for: level.id)
+        let storedHint = HelpUnlockStore.shared.hint(for: level.id)
+        unlockedSolution = storedSolution != nil
+        unlockedHint = unlockedSolution || storedHint != nil
         headlineLabel.text = "Tu as besoin d'un coup de main ?"
-        detailLabel.text = "Indice et solution contre des écrous, ou regarde une pub pour la solution gratuite."
+        if let storedSolution {
+            detailLabel.text = storedSolution
+        } else if let storedHint {
+            detailLabel.text = storedHint
+        } else {
+            detailLabel.text = "Indice et solution contre des écrous, ou regarde une pub pour la solution gratuite."
+        }
         refreshEconomyChrome()
         accessibilityViewIsModal = true
         accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
     }
 
     private func refreshEconomyChrome() {
-        hintButton.isEnabled = !unlockedHint
-        adHintButton.isEnabled = !unlockedSolution
-        solutionButton.isEnabled = !unlockedSolution
-        if unlockedHint {
-            hintButton.configuration?.title = "Indice débloqué"
-        } else {
-            hintButton.configuration?.title = "Indice · \(RewardEconomy.hintCost) écrous"
-        }
-        if unlockedSolution {
-            solutionButton.configuration?.title = "Solution débloquée"
-            adHintButton.configuration?.title = "Solution déjà obtenue"
-        } else {
-            solutionButton.configuration?.title = "Solution · \(RewardEconomy.fullSolutionCost) écrous"
-            adHintButton.configuration?.title = "Solution gratuite · pub"
-        }
+        // Indice débloqué → masquer le bouton payant. Solution → masquer indice, solution et pub.
+        hintButton.isHidden = unlockedHint
+        solutionButton.isHidden = unlockedSolution
+        adHintButton.isHidden = unlockedSolution
+        hintButton.configuration?.title = "Indice · \(RewardEconomy.hintCost) écrous"
+        solutionButton.configuration?.title = "Solution · \(RewardEconomy.fullSolutionCost) écrous"
+        adHintButton.configuration?.title = "Solution gratuite · pub"
     }
 
     private func styleSpendButton(_ button: UIButton, title: String, fill: UIColor, ink: UIColor) {
@@ -1187,33 +1187,53 @@ private final class HelpAlertView: UIView {
     }
 
     private func grantHint() {
-        guard let level, !unlockedHint else { return }
+        guard let level else { return }
+        if unlockedHint {
+            if let stored = HelpUnlockStore.shared.hint(for: level.id) {
+                detailLabel.text = stored
+            }
+            refreshEconomyChrome()
+            return
+        }
         unlockedHint = true
+        let text: String
         if let commands = ActionSearch.shortest(level: level)?.commands, !commands.isEmpty {
-            detailLabel.text = PlayerCopy.openingHint(commands: commands)
+            text = PlayerCopy.openingHint(commands: commands)
         } else if let catalog = CatalogCampaign.pack.levels.first(where: { $0.id == level.id }) {
             let program = CatalogCampaign.referenceProgram(for: catalog)
             let commands = program.instructions.map(\.command)
-            detailLabel.text = PlayerCopy.openingHint(commands: commands)
+            text = PlayerCopy.openingHint(commands: commands)
         } else {
-            detailLabel.text = "Regarde le drapeau et avance case par case."
+            text = "Regarde le drapeau et avance case par case."
         }
+        detailLabel.text = text
+        HelpUnlockStore.shared.saveHint(text, for: level.id)
         refreshEconomyChrome()
         accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
     }
 
     private func grantSolution() {
-        guard let level, !unlockedSolution else { return }
+        guard let level else { return }
+        if unlockedSolution {
+            if let stored = HelpUnlockStore.shared.solution(for: level.id) {
+                detailLabel.text = stored
+            }
+            refreshEconomyChrome()
+            return
+        }
         unlockedSolution = true
         unlockedHint = true
+        let text: String
         if let catalog = CatalogCampaign.pack.levels.first(where: { $0.id == level.id }) {
-            detailLabel.text = ProgramText.render(CatalogCampaign.referenceProgram(for: catalog)).source
+            text = ProgramText.render(CatalogCampaign.referenceProgram(for: catalog)).source
         } else if let commands = ActionSearch.shortest(level: level)?.commands {
             let program = Program(instructions: commands.map { Instruction(command: $0) })
-            detailLabel.text = ProgramText.render(program).source
+            text = ProgramText.render(program).source
         } else {
-            detailLabel.text = "Aucune solution de référence disponible."
+            text = "Aucune solution de référence disponible."
         }
+        detailLabel.text = text
+        HelpUnlockStore.shared.saveSolution(text, for: level.id)
         refreshEconomyChrome()
         accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
     }

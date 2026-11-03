@@ -346,6 +346,8 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = AppTheme.cream
+        navigationItem.title = PlayerCopy.worldTitle(worldNumber)
+        navigationItem.largeTitleDisplayMode = .never
         navigationItem.backButtonDisplayMode = .minimal
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
@@ -358,23 +360,7 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
         dim.isUserInteractionEnabled = false
         dim.translatesAutoresizingMaskIntoConstraints = false
 
-        var backConfiguration = UIButton.Configuration.filled()
-        backConfiguration.image = UIImage(systemName: "arrow.left", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold))
-        backConfiguration.baseBackgroundColor = UIColor(hex: 0x7B3FF2)
-        backConfiguration.baseForegroundColor = .white
-        backConfiguration.cornerStyle = .capsule
-        let backButton = UIButton(configuration: backConfiguration)
-        backButton.accessibilityLabel = "Retour"
-        backButton.addTarget(self, action: #selector(close), for: .touchUpInside)
-        backButton.translatesAutoresizingMaskIntoConstraints = false
-
-        titleLabel.font = AppTheme.font(34, .heavy, textStyle: .largeTitle)
-        titleLabel.textColor = .white
-        titleLabel.textAlignment = .center
-        titleLabel.layer.shadowColor = UIColor.black.cgColor
-        titleLabel.layer.shadowOpacity = 0.45
-        titleLabel.layer.shadowRadius = 3
-        titleLabel.layer.shadowOffset = CGSize(width: 0, height: 1)
+        titleLabel.isHidden = true
         subtitleLabel.font = AppTheme.font(18, .semibold, textStyle: .headline)
         subtitleLabel.textColor = .white
         subtitleLabel.textAlignment = .center
@@ -383,10 +369,7 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
         subtitleLabel.layer.shadowOpacity = 0.45
         subtitleLabel.layer.shadowRadius = 3
         subtitleLabel.layer.shadowOffset = CGSize(width: 0, height: 1)
-        let heading = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
-        heading.axis = .vertical
-        heading.spacing = 2
-        heading.translatesAutoresizingMaskIntoConstraints = false
+        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         collectionView.backgroundColor = .clear
         collectionView.contentInsetAdjustmentBehavior = .never
@@ -396,8 +379,7 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(backdrop)
         view.addSubview(dim)
-        view.addSubview(backButton)
-        view.addSubview(heading)
+        view.addSubview(subtitleLabel)
         view.addSubview(collectionView)
         let guide = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
@@ -406,17 +388,12 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
             backdrop.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             backdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            backButton.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 16),
-            backButton.topAnchor.constraint(equalTo: guide.topAnchor, constant: 8),
-            backButton.widthAnchor.constraint(equalToConstant: 48),
-            backButton.heightAnchor.constraint(equalToConstant: 48),
+            subtitleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            subtitleLabel.topAnchor.constraint(equalTo: guide.topAnchor, constant: 4),
+            subtitleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: guide.leadingAnchor, constant: 16),
+            subtitleLabel.trailingAnchor.constraint(lessThanOrEqualTo: guide.trailingAnchor, constant: -16),
 
-            heading.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            heading.centerYAnchor.constraint(equalTo: backButton.centerYAnchor),
-            heading.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
-            heading.trailingAnchor.constraint(lessThanOrEqualTo: guide.trailingAnchor, constant: -16),
-
-            collectionView.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 8),
+            collectionView.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 8),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -429,21 +406,34 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(true, animated: animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        applyTransparentNavigationBar()
         reload()
         warmAhead()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: animated)
-        if isMovingFromParent {
-            navigationController?.navigationBar.tintColor = AppTheme.gold
+        if isMovingFromParent, let navigation = navigationController {
+            AppTheme.apply(to: navigation)
         }
     }
 
-    @objc private func close() {
-        navigationController?.popViewController(animated: true)
+    private func applyTransparentNavigationBar() {
+        guard let navigation = navigationController else { return }
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = .clear
+        appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [
+            .foregroundColor: UIColor.white,
+            .font: AppTheme.font(18, .heavy, textStyle: .headline)
+        ]
+        navigation.navigationBar.standardAppearance = appearance
+        navigation.navigationBar.scrollEdgeAppearance = appearance
+        navigation.navigationBar.compactAppearance = appearance
+        navigation.navigationBar.tintColor = .white
+        navigation.navigationBar.isTranslucent = true
     }
 
     override func viewDidLayoutSubviews() {
@@ -530,7 +520,7 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
 
     private func reload() {
         progress = CampaignStore.shared.progress()
-        titleLabel.text = PlayerCopy.worldTitle(worldNumber)
+        navigationItem.title = PlayerCopy.worldTitle(worldNumber)
         subtitleLabel.text = CatalogCampaign.mechanicTitle(for: worldNumber)
         collectionView.reloadData()
     }
