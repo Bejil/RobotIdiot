@@ -1,3 +1,4 @@
+import GoogleMobileAds
 import UIKit
 import RobotIdiotCore
 
@@ -16,8 +17,10 @@ final class HomeViewController: UIViewController {
     private let campaignButton = UIButton(type: .custom)
     private let settingsButton = UIButton(type: .custom)
     private let continueGlow = UIView()
+    private var bannerView: BannerView?
     private var generationTicket = 0
     private var didPlayIntro = false
+    private var didOfferLaunchAd = false
     private var waveToken = 0
     private var waveHigh = true
     private let curtain = UIControl()
@@ -77,7 +80,9 @@ final class HomeViewController: UIViewController {
         continueRow.alignment = .fill
         continueRow.translatesAutoresizingMaskIntoConstraints = false
 
-        let actions = UIStackView(arrangedSubviews: [continueRow, settingsButton])
+        let banner = AdsService.shared.makeHomeBanner(rootViewController: self)
+        bannerView = banner
+        let actions = UIStackView(arrangedSubviews: [continueRow, settingsButton, banner])
         actions.axis = .vertical
         actions.spacing = 12
         actions.alignment = .fill
@@ -172,11 +177,28 @@ final class HomeViewController: UIViewController {
         } else {
             playIntro()
         }
-        guard !PlaySettings.tutorialSeen,
-              presentedViewController == nil,
-              navigationController?.viewControllers.count == 1,
-              curtain.alpha < 0.1 else { return }
-        present(TutorialViewController(), animated: true)
+        if !PlaySettings.tutorialSeen,
+           presentedViewController == nil,
+           navigationController?.viewControllers.count == 1,
+           curtain.alpha < 0.1 {
+            present(TutorialViewController(), animated: true)
+        } else {
+            offerLaunchAdIfNeeded()
+        }
+    }
+
+    private func offerLaunchAdIfNeeded() {
+        guard !didOfferLaunchAd else { return }
+        guard presentedViewController == nil else { return }
+        didOfferLaunchAd = true
+        // Attend le démarrage SDK + le chargement de l'interstitiel.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self, self.presentedViewController == nil else {
+                self?.didOfferLaunchAd = false
+                return
+            }
+            AdsService.shared.showLaunchInterstitialIfNeeded(from: self)
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {

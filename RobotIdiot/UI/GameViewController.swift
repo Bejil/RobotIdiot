@@ -214,14 +214,20 @@ final class GameViewController: UIViewController {
             self?.navigationController?.popViewController(animated: true)
         }
         overlay.onNext = { [weak self] in
-            self?.openNextLevel()
+            guard let self else { return }
+            AdsService.shared.showLevelSuccessInterstitial(from: self) {
+                self.openNextLevel()
+            }
         }
     }
 
     private func configureErrorAlert() {
         errorAlert.isHidden = true
         errorAlert.onEdit = { [weak self] in
-            self?.errorAlert.isHidden = true
+            guard let self else { return }
+            AdsService.shared.showErrorInterstitial(from: self) {
+                self.errorAlert.isHidden = true
+            }
         }
         commandIntro.isHidden = true
         commandIntro.onFinished = { [weak self] in
@@ -430,6 +436,7 @@ final class GameViewController: UIViewController {
     }
 
     @objc private func showHelp() {
+        helpAlert.host = self
         helpAlert.onBalanceChanged = { [weak self] in
             self?.refreshBoltBarButton()
         }
@@ -941,6 +948,7 @@ final class GameViewController: UIViewController {
 private final class HelpAlertView: UIView {
     var onClose: (() -> Void)?
     var onBalanceChanged: (() -> Void)?
+    weak var host: UIViewController?
 
     private let robot = UIImageView()
     private let card = UIView()
@@ -951,6 +959,7 @@ private final class HelpAlertView: UIView {
     private let headlineLabel = UILabel()
     private let detailLabel = UILabel()
     private let hintButton = UIButton(type: .system)
+    private let adHintButton = UIButton(type: .system)
     private let solutionButton = UIButton(type: .system)
     private let closeButton = UIButton(type: .system)
     private var level: Level?
@@ -1021,6 +1030,14 @@ private final class HelpAlertView: UIView {
         hintButton.addTarget(self, action: #selector(buyHint), for: .touchUpInside)
 
         styleSpendButton(
+            adHintButton,
+            title: "Solution gratuite · pub",
+            fill: UIColor(hex: 0x2E8B57),
+            ink: .white
+        )
+        adHintButton.addTarget(self, action: #selector(watchAdForSolution), for: .touchUpInside)
+
+        styleSpendButton(
             solutionButton,
             title: "Solution · \(RewardEconomy.fullSolutionCost) écrous",
             fill: UIColor(hex: 0x3A4C96),
@@ -1046,7 +1063,7 @@ private final class HelpAlertView: UIView {
         closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
 
         let message = UIStackView(arrangedSubviews: [
-            headlineLabel, detailLabel, hintButton, solutionButton, closeButton
+            headlineLabel, detailLabel, hintButton, adHintButton, solutionButton, closeButton
         ])
         message.axis = .vertical
         message.spacing = 12
@@ -1088,6 +1105,7 @@ private final class HelpAlertView: UIView {
             message.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
             message.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
             hintButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+            adHintButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
             solutionButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
             closeButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 48)
         ])
@@ -1102,7 +1120,7 @@ private final class HelpAlertView: UIView {
         unlockedHint = false
         unlockedSolution = false
         headlineLabel.text = "Tu as besoin d'un coup de main ?"
-        detailLabel.text = "Débloque un indice ou la solution complète avec tes écrous."
+        detailLabel.text = "Indice et solution contre des écrous, ou regarde une pub pour la solution gratuite."
         refreshEconomyChrome()
         accessibilityViewIsModal = true
         accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
@@ -1110,6 +1128,7 @@ private final class HelpAlertView: UIView {
 
     private func refreshEconomyChrome() {
         hintButton.isEnabled = !unlockedHint
+        adHintButton.isEnabled = !unlockedSolution
         solutionButton.isEnabled = !unlockedSolution
         if unlockedHint {
             hintButton.configuration?.title = "Indice débloqué"
@@ -1118,8 +1137,10 @@ private final class HelpAlertView: UIView {
         }
         if unlockedSolution {
             solutionButton.configuration?.title = "Solution débloquée"
+            adHintButton.configuration?.title = "Solution déjà obtenue"
         } else {
             solutionButton.configuration?.title = "Solution · \(RewardEconomy.fullSolutionCost) écrous"
+            adHintButton.configuration?.title = "Solution gratuite · pub"
         }
     }
 
@@ -1139,45 +1160,74 @@ private final class HelpAlertView: UIView {
     }
 
     @objc private func buyHint() {
-        guard let level, !unlockedHint else { return }
+        guard !unlockedHint else { return }
         if BoltWallet.shared.spendForHint() {
-            unlockedHint = true
-            if let commands = ActionSearch.shortest(level: level)?.commands, !commands.isEmpty {
-                detailLabel.text = PlayerCopy.openingHint(commands: commands)
-            } else if let catalog = CatalogCampaign.pack.levels.first(where: { $0.id == level.id }) {
-                let program = CatalogCampaign.referenceProgram(for: catalog)
-                let commands = program.instructions.map(\.command)
-                detailLabel.text = PlayerCopy.openingHint(commands: commands)
-            } else {
-                detailLabel.text = "Regarde le drapeau et avance case par case."
-            }
+            grantHint()
             onBalanceChanged?()
         } else {
             detailLabel.text = "Il te faut \(RewardEconomy.hintCost) écrous pour un indice."
+            refreshEconomyChrome()
+            accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
+        }
+    }
+
+    @objc private func watchAdForSolution() {
+        guard !unlockedSolution, let host else { return }
+        // Masquer l'alerte : AdMob refuse souvent de présenter au-dessus d'un overlay custom.
+        isHidden = true
+        AdsService.shared.showHelpRewarded(from: host, onReward: { [weak self] in
+            guard let self else { return }
+            self.isHidden = false
+            self.grantSolution()
+        }, onUnavailable: { [weak self] in
+            guard let self else { return }
+            self.isHidden = false
+            self.detailLabel.text = "La publicité n'est pas disponible pour le moment. Réessaie."
+        })
+    }
+
+    private func grantHint() {
+        guard let level, !unlockedHint else { return }
+        unlockedHint = true
+        if let commands = ActionSearch.shortest(level: level)?.commands, !commands.isEmpty {
+            detailLabel.text = PlayerCopy.openingHint(commands: commands)
+        } else if let catalog = CatalogCampaign.pack.levels.first(where: { $0.id == level.id }) {
+            let program = CatalogCampaign.referenceProgram(for: catalog)
+            let commands = program.instructions.map(\.command)
+            detailLabel.text = PlayerCopy.openingHint(commands: commands)
+        } else {
+            detailLabel.text = "Regarde le drapeau et avance case par case."
+        }
+        refreshEconomyChrome()
+        accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
+    }
+
+    private func grantSolution() {
+        guard let level, !unlockedSolution else { return }
+        unlockedSolution = true
+        unlockedHint = true
+        if let catalog = CatalogCampaign.pack.levels.first(where: { $0.id == level.id }) {
+            detailLabel.text = ProgramText.render(CatalogCampaign.referenceProgram(for: catalog)).source
+        } else if let commands = ActionSearch.shortest(level: level)?.commands {
+            let program = Program(instructions: commands.map { Instruction(command: $0) })
+            detailLabel.text = ProgramText.render(program).source
+        } else {
+            detailLabel.text = "Aucune solution de référence disponible."
         }
         refreshEconomyChrome()
         accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
     }
 
     @objc private func buySolution() {
-        guard let level, !unlockedSolution else { return }
+        guard !unlockedSolution else { return }
         if BoltWallet.shared.spendForFullSolution() {
-            unlockedSolution = true
-            unlockedHint = true
-            if let catalog = CatalogCampaign.pack.levels.first(where: { $0.id == level.id }) {
-                detailLabel.text = ProgramText.render(CatalogCampaign.referenceProgram(for: catalog)).source
-            } else if let commands = ActionSearch.shortest(level: level)?.commands {
-                let program = Program(instructions: commands.map { Instruction(command: $0) })
-                detailLabel.text = ProgramText.render(program).source
-            } else {
-                detailLabel.text = "Aucune solution de référence disponible."
-            }
+            grantSolution()
             onBalanceChanged?()
         } else {
             detailLabel.text = "Il te faut \(RewardEconomy.fullSolutionCost) écrous pour la solution."
+            refreshEconomyChrome()
+            accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
         }
-        refreshEconomyChrome()
-        accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
     }
 
     @objc private func close() {
