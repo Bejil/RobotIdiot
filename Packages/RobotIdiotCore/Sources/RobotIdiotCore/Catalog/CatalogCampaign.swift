@@ -7,7 +7,7 @@ import Foundation
 public enum CatalogCampaign {
     public static let worldCount = 10
     public static let levelsPerWorld = 10
-    public static let formulaVersion = 6
+    public static let formulaVersion = 7
     public static let layout = CampaignLayout(standardLevelCount: 10, includesFinale: false)
 
     public static let pack: LevelPack = {
@@ -124,6 +124,14 @@ public enum CatalogCampaign {
         if source.objective.requiresItemHeld {
             notes.append("hold_key")
         }
+        let collectibles = (source.rewards?.collectibles ?? []).map { item in
+            LevelCollectible(
+                id: item.id,
+                kind: item.type,
+                position: flipped(item.x, item.y),
+                amount: item.amount
+            )
+        }
         var level = Level(
             id: source.id,
             version: 1,
@@ -153,15 +161,30 @@ public enum CatalogCampaign {
                 efficientExecutionMaxSteps: nil,
                 referenceNote: ""
             ),
-            validation: ValidationMetadata(status: .handcrafted, notes: notes)
+            validation: ValidationMetadata(status: .handcrafted, notes: notes),
+            collectibles: collectibles
         )
-        let minimum = ActionSearch.shortest(level: level)?.actionCount ?? source.solution.actionCount
-        let word = minimum > 1 ? "commandes" : "commande"
-        level.scoringRules = ScoringRules(
-            compactProgramMaxBlocks: nil,
-            efficientExecutionMaxSteps: minimum,
-            referenceNote: "La solution optimale compte \(minimum) \(word)."
-        )
+        if let stars = source.starTargets {
+            let without = stars.withoutBonus.threeStarsMax
+            let withBonus = stars.withBonus?.threeStarsMax
+            let word = without > 1 ? "actions" : "action"
+            level.scoringRules = ScoringRules(
+                compactProgramMaxBlocks: nil,
+                efficientExecutionMaxSteps: without,
+                efficientExecutionMaxStepsWithBonus: withBonus,
+                referenceNote: withBonus == nil
+                    ? "Trois étoiles : au plus \(without) \(word)."
+                    : "Trois étoiles : au plus \(without) actions (ou \(withBonus!) avec l'écrou)."
+            )
+        } else {
+            let minimum = ActionSearch.shortest(level: level)?.actionCount ?? source.solution.actionCount
+            let word = minimum > 1 ? "commandes" : "commande"
+            level.scoringRules = ScoringRules(
+                compactProgramMaxBlocks: nil,
+                efficientExecutionMaxSteps: minimum,
+                referenceNote: "La solution optimale compte \(minimum) \(word)."
+            )
+        }
         return level
     }
 

@@ -125,6 +125,8 @@ final class CampaignStore {
         persistLocked()
         lock.unlock()
         PlaySettings.resetIntroducedCommands()
+        // Les écrous déjà gagnés restent : seule la progression de campagne est effacée.
+        // (Une mise à jour de formule recrée le store ; le portefeuille est indépendant.)
     }
 
     private func persistLocked() {

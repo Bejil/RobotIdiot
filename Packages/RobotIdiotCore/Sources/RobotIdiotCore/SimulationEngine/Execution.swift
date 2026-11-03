@@ -65,6 +65,7 @@ public enum SimulationEvent: Hashable, Sendable, Codable {
     case moved(from: GridCoordinate, to: GridCoordinate, forward: Bool, command: CommandType)
     case turned(from: Direction, to: Direction, command: CommandType)
     case pickedUp(CarriedItem, at: GridCoordinate)
+    case collectedBonus(LevelCollectible, at: GridCoordinate)
     case used(CarriedItem, on: GridCoordinate)
     case pushed(objectID: String, from: GridCoordinate, to: GridCoordinate)
     case activated(mechanismID: String, at: GridCoordinate, isActive: Bool)

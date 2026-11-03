@@ -1,6 +1,6 @@
 import Foundation
 
-/// Pack officiel `schemaVersion` 6.0.
+/// Pack officiel `schemaVersion` 7.0.
 /// L'axe Y du fichier augmente vers le bas. Cette orientation n'est pas inversée ici.
 public struct LevelPack: Codable, Equatable, Sendable {
     public var schemaVersion: String
@@ -10,7 +10,7 @@ public struct LevelPack: Codable, Equatable, Sendable {
     public var commandRules: [String: String]
     public var levels: [CatalogLevel]
 
-    public static let supportedSchemaVersion = "6.0"
+    public static let supportedSchemaVersion = "7.0"
     public static let documentedCoordinateSystem = "x increases right, y increases down, zero indexed"
 }
 
@@ -33,6 +33,62 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
     public var solution: CatalogSolution
     public var generation: Generation
     public var difficulty: Difficulty
+    public var rewards: CatalogRewards?
+    public var starTargets: CatalogStarTargets?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, world, worldLevel, globalLevel, name, width, height, grid
+        case start, finish, objective, family, unlockedCommands, mechanics
+        case obstacles, solution, generation, difficulty, rewards, starTargets
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        world = try container.decode(Int.self, forKey: .world)
+        worldLevel = try container.decode(Int.self, forKey: .worldLevel)
+        globalLevel = try container.decode(Int.self, forKey: .globalLevel)
+        name = try container.decode(String.self, forKey: .name)
+        width = try container.decode(Int.self, forKey: .width)
+        height = try container.decode(Int.self, forKey: .height)
+        grid = try container.decode([String].self, forKey: .grid)
+        start = try container.decode(Start.self, forKey: .start)
+        finish = try container.decode(Finish.self, forKey: .finish)
+        objective = try container.decode(Objective.self, forKey: .objective)
+        family = try container.decode(String.self, forKey: .family)
+        unlockedCommands = try container.decode([String].self, forKey: .unlockedCommands)
+        mechanics = try container.decode([Mechanic].self, forKey: .mechanics)
+        obstacles = try container.decode(Obstacles.self, forKey: .obstacles)
+        solution = try container.decode(CatalogSolution.self, forKey: .solution)
+        generation = try container.decode(Generation.self, forKey: .generation)
+        difficulty = try container.decode(Difficulty.self, forKey: .difficulty)
+        rewards = try container.decodeIfPresent(CatalogRewards.self, forKey: .rewards)
+        starTargets = try container.decodeIfPresent(CatalogStarTargets.self, forKey: .starTargets)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(world, forKey: .world)
+        try container.encode(worldLevel, forKey: .worldLevel)
+        try container.encode(globalLevel, forKey: .globalLevel)
+        try container.encode(name, forKey: .name)
+        try container.encode(width, forKey: .width)
+        try container.encode(height, forKey: .height)
+        try container.encode(grid, forKey: .grid)
+        try container.encode(start, forKey: .start)
+        try container.encode(finish, forKey: .finish)
+        try container.encode(objective, forKey: .objective)
+        try container.encode(family, forKey: .family)
+        try container.encode(unlockedCommands, forKey: .unlockedCommands)
+        try container.encode(mechanics, forKey: .mechanics)
+        try container.encode(obstacles, forKey: .obstacles)
+        try container.encode(solution, forKey: .solution)
+        try container.encode(generation, forKey: .generation)
+        try container.encode(difficulty, forKey: .difficulty)
+        try container.encodeIfPresent(rewards, forKey: .rewards)
+        try container.encodeIfPresent(starTargets, forKey: .starTargets)
+    }
 
     public struct Start: Codable, Equatable, Sendable {
         public var x: Int
@@ -237,9 +293,9 @@ public enum LevelPackError: Error, Equatable, CustomStringConvertible {
     public var description: String {
         switch self {
         case .missingResource:
-            return "robot_idiot_100_levels_v6.json est absent du bundle."
+            return "robot_idiot_100_levels_v7.json est absent du bundle."
         case .unreadable:
-            return "robot_idiot_100_levels_v6.json est illisible."
+            return "robot_idiot_100_levels_v7.json est illisible."
         case .invalid(let issues):
             return issues.map(\.description).joined(separator: "\n")
         }
@@ -248,7 +304,7 @@ public enum LevelPackError: Error, Equatable, CustomStringConvertible {
 
 public enum LevelPackLoader {
     public static func loadBundled() throws -> LevelPack {
-        guard let url = Bundle.module.url(forResource: "robot_idiot_100_levels_v6", withExtension: "json") else {
+        guard let url = Bundle.module.url(forResource: "robot_idiot_100_levels_v7", withExtension: "json") else {
             throw LevelPackError.missingResource
         }
         let pack = try load(from: url)
@@ -433,6 +489,40 @@ public enum LevelPackChecker {
         reportProgram(level.solution.program, into: &issues, levelID: level.id)
         if level.objective.type != "reach_flag" {
             report("objectif", level.objective.type)
+        }
+        let collectibles = level.rewards?.collectibles ?? []
+        if collectibles.count > 1 {
+            report("récompense", "\(collectibles.count) collectibles au lieu d'au plus 1")
+        }
+        for item in collectibles {
+            if item.type != "BoardBolt" {
+                report("récompense", "type \(item.type)")
+            }
+            if !inBounds(item.x, item.y) {
+                report("récompense", "\(item.id) hors grille")
+            } else if level.grid.count == 7, level.grid[item.y].count == 7 {
+                let tile = level.grid[item.y][level.grid[item.y].index(level.grid[item.y].startIndex, offsetBy: item.x)]
+                if tile != "g" && !"KUCAD".contains(tile) {
+                    // Overlay sur herbe : g, ou mécanique posée sur herbe.
+                    if !"^>v<F".contains(tile) && LevelPackChecker.blockingSymbols.contains(tile) {
+                        report("récompense", "\(item.id) sur case bloquante \(tile)")
+                    }
+                }
+            }
+            if item.amount < 1 {
+                report("récompense", "\(item.id) amount \(item.amount)")
+            }
+        }
+        if let stars = level.starTargets {
+            if stars.withoutBonus.threeStarsMax < 1 {
+                report("étoiles", "withoutBonus.threeStarsMax invalide")
+            }
+            if collectibles.isEmpty, stars.withBonus != nil {
+                report("étoiles", "withBonus présent sans collectible")
+            }
+            if !collectibles.isEmpty, stars.withBonus == nil {
+                report("étoiles", "withBonus absent malgré un collectible")
+            }
         }
         return issues
     }

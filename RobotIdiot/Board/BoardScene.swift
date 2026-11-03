@@ -181,7 +181,9 @@ final class BoardScene: SKScene {
         let victory = resulting.isVictory
         switch event {
         case .moved(_, let destination, _, _):
+            let collected = collectBonusNodes(missingFrom: resulting)
             slideRobot(to: destination, tempo: tempo, reduceMotion: reduceMotion, victory: victory)
+            animateBonusCollection(collected, tempo: tempo, reduceMotion: reduceMotion)
         case .enteredHazard(_, let destination, let terrain, _, _):
             fallIntoHazard(at: destination, terrain: terrain, tempo: tempo, reduceMotion: reduceMotion)
         case .turned:
@@ -201,6 +203,10 @@ final class BoardScene: SKScene {
             }
         case .pickedUp(let item, _):
             fadeProp(named: "prop-\(item.id)", tempo: tempo, reduceMotion: reduceMotion, victory: victory)
+        case .collectedBonus:
+            let collected = collectBonusNodes(missingFrom: resulting)
+            animateBonusCollection(collected, tempo: tempo, reduceMotion: reduceMotion)
+            dwell(reduceMotion: reduceMotion, tempo: tempo, victory: victory)
         case .used(_, let coordinate):
             syncProps(to: presented)
             pulseMechanisms(at: coordinate)
@@ -303,6 +309,9 @@ final class BoardScene: SKScene {
                 addChild(makeMechanism(mechanism, at: cell.coordinate))
             }
         }
+        for bonus in presented.remainingCollectibles {
+            addChild(makeBonus(bonus))
+        }
 
         robotNode = makeRobot()
         robotNode.zPosition = 3
@@ -394,7 +403,12 @@ final class BoardScene: SKScene {
 
     private func makeFlag() -> SKNode {
         let node = SKNode()
-        let sprite = textured(.flag, side: tileSpan)
+        // Drapeau en objet posé sur l'herbe : le pied reste au centre de la tuile.
+        let side = cellSize * 1.12
+        let sprite = textured(.flag, side: side)
+        sprite.name = "flag-sprite"
+        sprite.anchorPoint = CGPoint(x: 0.5, y: 0.02)
+        sprite.position = CGPoint(x: cellSize * 0.16, y: -cellSize * 0.16)
         node.addChild(sprite)
         return node
     }
@@ -661,14 +675,124 @@ final class BoardScene: SKScene {
                 addChild(makeMechanism(mechanism, at: cell.coordinate))
             }
         }
+        for bonus in game.remainingCollectibles {
+            let name = "bonus-\(bonus.id)"
+            seen.insert(name)
+            if childNode(withName: name) == nil {
+                addChild(makeBonus(bonus))
+            }
+        }
         var stale: [SKNode] = []
         enumerateChildNodes(withName: "*") { node, _ in
             guard let name = node.name else { return }
-            if (name.hasPrefix("prop-") || name.hasPrefix("mech-")), !seen.contains(name) {
+            if (name.hasPrefix("prop-") || name.hasPrefix("mech-") || name.hasPrefix("bonus-")),
+               !seen.contains(name) {
                 stale.append(node)
             }
         }
         stale.forEach { $0.removeFromParent() }
+    }
+
+    private func makeBonus(_ bonus: LevelCollectible) -> SKNode {
+        let node = SKNode()
+        node.name = "bonus-\(bonus.id)"
+        node.position = center(of: bonus.position)
+        node.zPosition = 1.55
+        let sprite = textured(.bolt, side: tileSpan * 0.78)
+        sprite.name = "bolt-sprite"
+        sprite.zPosition = 1
+        if !PlaySettings.prefersReducedMotion {
+            let sparkles = makeBonusShineEmitter()
+            sparkles.name = "bonus-shine"
+            sparkles.zPosition = -0.1
+            node.addChild(sparkles)
+            let bob = SKAction.sequence([
+                .moveBy(x: 0, y: cellSize * 0.06, duration: 0.55),
+                .moveBy(x: 0, y: -cellSize * 0.06, duration: 0.55)
+            ])
+            sprite.run(.repeatForever(bob), withKey: "bob")
+            let glow = SKAction.sequence([
+                .fadeAlpha(to: 0.88, duration: 0.7),
+                .fadeAlpha(to: 1, duration: 0.7)
+            ])
+            sprite.run(.repeatForever(glow), withKey: "shine")
+        }
+        node.addChild(sprite)
+        return node
+    }
+
+    private func makeBonusShineEmitter() -> SKEmitterNode {
+        let factor = particleSizeFactor
+        let emitter = SKEmitterNode()
+        emitter.particleTexture = Self.haloTexture
+        emitter.particleBlendMode = .add
+        emitter.particleBirthRate = 4.5
+        emitter.particleLifetime = 1.15
+        emitter.particleLifetimeRange = 0.2
+        emitter.particleSpeed = cellSize * 0.015
+        emitter.particleSpeedRange = cellSize * 0.01
+        emitter.emissionAngle = 0
+        emitter.emissionAngleRange = .pi * 2
+        emitter.particlePositionRange = CGVector(dx: tileSpan * 0.06, dy: tileSpan * 0.06)
+        emitter.yAcceleration = 0
+        emitter.particleScale = 1.15 * factor
+        emitter.particleScaleRange = emitter.particleScale * 0.2
+        emitter.particleScaleSequence = particleScaleSequence([0.55, 1.15, 1.55], times: [0, 0.45, 1])
+        emitter.particleColorBlendFactor = 1
+        let gold = UIColor(red: 1, green: 0.88, blue: 0.4, alpha: 1)
+        let soft = UIColor(red: 1, green: 0.72, blue: 0.22, alpha: 1)
+        emitter.particleColorSequence = SKKeyframeSequence(
+            keyframeValues: [gold, soft],
+            times: [0, 1]
+        )
+        emitter.particleAlphaSequence = SKKeyframeSequence(
+            keyframeValues: [0, 0.55, 0.28, 0],
+            times: [0, 0.2, 0.65, 1]
+        )
+        emitter.userData = NSMutableDictionary(dictionary: ["birthRate": emitter.particleBirthRate])
+        return emitter
+    }
+
+    private func collectBonusNodes(missingFrom game: GameState) -> [SKNode] {
+        let remaining = Set(game.remainingCollectibles.map(\.id))
+        var collected: [SKNode] = []
+        enumerateChildNodes(withName: "bonus-*") { node, _ in
+            guard let name = node.name, name.hasPrefix("bonus-") else { return }
+            let id = String(name.dropFirst("bonus-".count))
+            if !remaining.contains(id) {
+                collected.append(node)
+            }
+        }
+        return collected
+    }
+
+    private func animateBonusCollection(_ nodes: [SKNode], tempo: PlaybackTempo, reduceMotion: Bool) {
+        guard !nodes.isEmpty else { return }
+        let duration = reduceMotion ? 0.05 : max(0.28, tempo.moveDuration(reduceMotion: false) * 0.85)
+        for node in nodes {
+            node.zPosition = 4
+            node.removeAllActions()
+            node.enumerateChildNodes(withName: "bonus-shine") { child, _ in
+                if let emitter = child as? SKEmitterNode {
+                    emitter.particleBirthRate = 28
+                    emitter.particleLifetime = 0.45
+                }
+            }
+            if reduceMotion {
+                node.removeFromParent()
+                continue
+            }
+            let pop = SKAction.group([
+                .sequence([
+                    .scale(to: 1.35, duration: duration * 0.35),
+                    .scale(to: 0.1, duration: duration * 0.65)
+                ]),
+                .moveBy(x: 0, y: cellSize * 0.55, duration: duration),
+                .fadeOut(withDuration: duration)
+            ])
+            node.run(.sequence([pop, .removeFromParent()]))
+        }
+        Soundscape.shared.play("success")
     }
 
     private func makeObject(_ object: PlacedObject, at coordinate: GridCoordinate) -> SKNode {
@@ -731,6 +855,36 @@ final class BoardScene: SKScene {
         let image = renderer.image { context in
             UIColor.white.setFill()
             context.cgContext.fillEllipse(in: CGRect(x: 0, y: 0, width: side, height: side))
+        }
+        return SKTexture(image: image)
+    }()
+
+    /// Halo doux (dégradé radial), pas un disque opaque de poussière.
+    private static let haloTexture: SKTexture = {
+        let side: CGFloat = 64
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: side, height: side))
+        let image = renderer.image { context in
+            let cg = context.cgContext
+            let colors = [
+                UIColor.white.withAlphaComponent(0.85).cgColor,
+                UIColor.white.withAlphaComponent(0.28).cgColor,
+                UIColor.white.withAlphaComponent(0).cgColor
+            ] as CFArray
+            let locations: [CGFloat] = [0, 0.4, 1]
+            guard let gradient = CGGradient(
+                colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                colors: colors,
+                locations: locations
+            ) else { return }
+            let center = CGPoint(x: side / 2, y: side / 2)
+            cg.drawRadialGradient(
+                gradient,
+                startCenter: center,
+                startRadius: 0,
+                endCenter: center,
+                endRadius: side / 2,
+                options: []
+            )
         }
         return SKTexture(image: image)
     }()

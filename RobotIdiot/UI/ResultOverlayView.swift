@@ -17,7 +17,9 @@ final class ResultOverlayView: UIView {
     private let sizeValue = UILabel()
     private let actionValue = UILabel()
     private let moveValue = UILabel()
+    private let boltValue = UILabel()
     private let noteLabel = UILabel()
+    private let boltRow = UIStackView()
     private let nextButton = AppTheme.filledButton(title: "Niveau suivant", systemImage: "play.fill", prominent: true)
     private let retryButton = AppTheme.filledButton(title: "Réessayer", systemImage: "arrow.clockwise", prominent: false, tone: .primary)
     private let exitButton = AppTheme.filledButton(title: "Retour", systemImage: "house.fill", prominent: false, tone: .primary)
@@ -84,11 +86,25 @@ final class ResultOverlayView: UIView {
         heading.font = AppTheme.font(18, .heavy, textStyle: .headline)
         heading.textColor = AppTheme.line
         heading.setContentCompressionResistancePriority(.required, for: .vertical)
+        boltRow.axis = .horizontal
+        boltRow.spacing = 8
+        boltRow.isHidden = true
+        let boltIcon = UIImageView(image: GameArt.piece(.bolt))
+        boltIcon.contentMode = .scaleAspectFit
+        boltIcon.translatesAutoresizingMaskIntoConstraints = false
+        boltIcon.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        boltIcon.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        boltValue.font = AppTheme.font(16, .heavy, textStyle: .body)
+        boltValue.textColor = AppTheme.line
+        boltRow.addArrangedSubview(boltIcon)
+        boltRow.addArrangedSubview(boltValue)
+
         let rows = UIStackView(arrangedSubviews: [
             heading,
             detailRow(title: "Taille", value: sizeValue),
             detailRow(title: "Actions", value: actionValue),
             detailRow(title: "Déplacements", value: moveValue),
+            boltRow,
             noteLabel
         ])
         rows.axis = .vertical
@@ -183,10 +199,30 @@ final class ResultOverlayView: UIView {
         clouds.start(duration: 34, reversed: false)
     }
 
-    func present(rating: StarRating, blockCount: Int, executed: Int, moves: Int, note: String, nextTitle: String? = nil, exitTitle: String = "Retour") {
+    func present(
+        rating: StarRating,
+        blockCount: Int,
+        executed: Int,
+        moves: Int,
+        note: String,
+        boltsGained: Int = 0,
+        boltBalance: Int = 0,
+        showBoltRecap: Bool = false,
+        nextTitle: String? = nil,
+        exitTitle: String = "Retour"
+    ) {
         sizeValue.text = PlayerCopy.blockCount(blockCount)
         actionValue.text = executed == 1 ? "1 action" : "\(executed) actions"
         moveValue.text = moves == 1 ? "1 déplacement" : "\(moves) déplacements"
+        if boltsGained > 0 {
+            boltRow.isHidden = false
+            boltValue.text = "+\(boltsGained) · total \(boltBalance)"
+        } else if showBoltRecap {
+            boltRow.isHidden = false
+            boltValue.text = "Déjà obtenu · total \(boltBalance)"
+        } else {
+            boltRow.isHidden = true
+        }
         noteLabel.text = note
         noteLabel.isHidden = note.isEmpty
         nextButton.isHidden = nextTitle == nil
@@ -207,7 +243,11 @@ final class ResultOverlayView: UIView {
         }
         accessibilityViewIsModal = true
         let earned = rating.count
-        accessibilityLabel = "Niveau réussi. \(earned) étoile\(earned > 1 ? "s" : "")."
+        var label = "Niveau réussi. \(earned) étoile\(earned > 1 ? "s" : "")."
+        if boltsGained > 0 {
+            label += " +\(boltsGained) écrou\(boltsGained > 1 ? "s" : "")."
+        }
+        accessibilityLabel = label
         UIAccessibility.post(notification: .screenChanged, argument: ribbon)
         playing = true
         animateArrival()

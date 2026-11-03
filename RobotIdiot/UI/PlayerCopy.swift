@@ -325,13 +325,15 @@ enum PlayerCopy {
         count <= 1 ? "\(count) action exécutée" : "\(count) actions exécutées"
     }
 
-    static func improvement(rating: StarRating, rules: ScoringRules) -> String {
-        if let steps = rules.efficientExecutionMaxSteps, rules.compactProgramMaxBlocks == nil {
+    static func improvement(rating: StarRating, rules: ScoringRules, bonusCollected: Bool = false) -> String {
+        if let steps = rules.efficientLimit(bonusCollected: bonusCollected), rules.compactProgramMaxBlocks == nil {
             if rating.efficientExecution {
-                return "Tu as atteint le minimum d'actions."
+                return bonusCollected
+                    ? "Minimum d'actions avec l'écrou."
+                    : "Tu as atteint le minimum d'actions."
             }
-            let word = steps > 1 ? "commandes" : "commande"
-            return "La solution optimale compte \(steps) \(word)."
+            let word = steps > 1 ? "actions" : "action"
+            return "Trois étoiles : au plus \(steps) \(word)."
         }
         if rating.count == 3 {
             return "Tu as atteint la solution de référence."

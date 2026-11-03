@@ -1,0 +1,63 @@
+
+---
+description: "Compilation et lancement obligatoires des projets iOS après modification"
+alwaysApply: true
+---
+
+# Validation iOS obligatoire
+
+Pour tout projet iOS développé avec Xcode, chaque intervention
+modifiant le code de l'application doit impérativement se terminer
+par une compilation et un lancement dans le simulateur iOS.
+
+## Procédure obligatoire
+
+1. Identifier automatiquement le projet `.xcodeproj` ou
+   `.xcworkspace`, le scheme de l'application et son Bundle ID.
+
+2. Identifier un simulateur iPhone disponible avec :
+   `xcrun simctl list devices available`
+
+3. Compiler l'application avec `xcodebuild` en utilisant le scheme,
+   la configuration Debug et la destination du simulateur choisi.
+
+4. Vérifier le code de sortie de la compilation.
+   En cas d'erreur :
+   - Analyser les erreurs du compilateur.
+   - Corriger le code responsable.
+   - Relancer la compilation.
+   - Répéter jusqu'à réussite ou blocage explicite.
+
+5. Après compilation réussie :
+   - Démarrer le simulateur iPhone si nécessaire.
+   - Ouvrir Simulator avec `open -a Simulator`.
+   - Installer le fichier `.app` compilé via `xcrun simctl install`.
+   - Lancer l'application via `xcrun simctl launch`.
+   - Vérifier que le lancement ne retourne pas d'erreur.
+
+## Contraintes impératives
+
+- Ne jamais considérer une modification comme terminée sans
+  avoir tenté la compilation et le lancement.
+- Ne pas se contenter d'une analyse statique du code.
+- Ne pas supposer que l'application compile.
+- Ne pas remplacer la compilation par `swiftc` ou `swift build`
+  lorsqu'il s'agit d'une application Xcode.
+- Ne jamais annoncer un succès sans résultat réel des commandes.
+- Utiliser le terminal pour effectuer ces opérations.
+- Ne pas demander de confirmation pour ces validations ordinaires,
+  sauf si une autorisation système est nécessaire.
+- Si le simulateur ou Xcode est indisponible, expliquer précisément
+  pourquoi la validation ne peut pas être effectuée.
+
+## Compte rendu obligatoire
+
+Terminer chaque intervention modifiant le code avec :
+
+Compilation : OK / ÉCHEC / NON EFFECTUÉE
+Lancement simulateur : OK / ÉCHEC / NON EFFECTUÉ
+Simulateur utilisé : nom du simulateur
+Erreurs rencontrées : description si applicable
+
+Ces étapes font partie intégrante du travail demandé.
+Ne jamais les omettre pour gagner du temps.

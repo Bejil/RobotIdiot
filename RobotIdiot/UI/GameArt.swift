@@ -408,7 +408,7 @@ enum GameArt {
 
     enum BoardPiece: String {
         case grassA, grassB, stone, slab, goal, bush, shutter, cracked
-        case hero, flag, crate, key, door, doorOpen, lock, plate, plateOn
+        case hero, flag, crate, key, bolt, door, doorOpen, lock, plate, plateOn
         case water, lava, spikes, portal
     }
 
@@ -451,6 +451,8 @@ enum GameArt {
             return "BoardCrate"
         case .key:
             return "BoardKey"
+        case .bolt:
+            return "BoardBolt"
         case .door:
             return "BoardDoor"
         case .lock:
@@ -479,6 +481,14 @@ enum GameArt {
                 ctx.fillEllipse(in: CGRect(x: s * 0.22, y: s * 0.28, width: s * 0.16, height: s * 0.12))
                 UIColor(hex: 0x5C6578).setFill()
                 ctx.fillEllipse(in: CGRect(x: s * 0.58, y: s * 0.58, width: s * 0.18, height: s * 0.14))
+            case .bolt:
+                UIColor.clear.setFill()
+                ctx.fill(CGRect(x: 0, y: 0, width: s, height: s))
+                AppTheme.gold.setFill()
+                ctx.fillEllipse(in: CGRect(x: s * 0.22, y: s * 0.12, width: s * 0.56, height: s * 0.32))
+                UIBezierPath(roundedRect: CGRect(x: s * 0.38, y: s * 0.28, width: s * 0.24, height: s * 0.58), cornerRadius: s * 0.08).fill()
+                UIColor(hex: 0xB8860B).setFill()
+                ctx.fillEllipse(in: CGRect(x: s * 0.38, y: s * 0.2, width: s * 0.24, height: s * 0.16))
             case .goal:
                 roundedTile(CGRect(x: 4, y: 4, width: s - 8, height: s - 8), fill: AppTheme.gold, radius: s * 0.18)
             case .hero:

@@ -103,23 +103,42 @@ public struct GameState: Codable, Hashable, Sendable {
     public var grid: Grid
     public var objectives: [ObjectiveState]
     public var metrics: ExecutionMetrics
+    /// Bonus encore présents sur le plateau pour la tentative en cours.
+    public var remainingCollectibles: [LevelCollectible]
+    /// Bonus ramassés durant la tentative en cours (pas encore crédités au portefeuille).
+    public var collectedThisAttempt: [LevelCollectible]
 
-    public init(robot: RobotState, grid: Grid, objectives: [ObjectiveState], metrics: ExecutionMetrics = ExecutionMetrics()) {
+    public init(
+        robot: RobotState,
+        grid: Grid,
+        objectives: [ObjectiveState],
+        metrics: ExecutionMetrics = ExecutionMetrics(),
+        remainingCollectibles: [LevelCollectible] = [],
+        collectedThisAttempt: [LevelCollectible] = []
+    ) {
         self.robot = robot
         self.grid = grid
         self.objectives = objectives
         self.metrics = metrics
+        self.remainingCollectibles = remainingCollectibles
+        self.collectedThisAttempt = collectedThisAttempt
     }
 
     public var isVictory: Bool {
         !objectives.isEmpty && objectives.allSatisfy(\.isCompleted)
     }
 
+    public var collectedBonusThisAttempt: Bool {
+        !collectedThisAttempt.isEmpty
+    }
+
     public static func initial(from level: Level) -> GameState {
         GameState(
             robot: level.initialRobot,
             grid: level.grid,
-            objectives: level.objectives.map { ObjectiveState(id: $0.id, isCompleted: false) }
+            objectives: level.objectives.map { ObjectiveState(id: $0.id, isCompleted: false) },
+            remainingCollectibles: level.collectibles,
+            collectedThisAttempt: []
         )
     }
 }

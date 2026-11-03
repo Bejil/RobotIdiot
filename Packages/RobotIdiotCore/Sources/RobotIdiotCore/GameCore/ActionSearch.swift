@@ -60,6 +60,9 @@ public struct ActionSearch: Equatable, Sendable {
         var copy = game
         copy.metrics = ExecutionMetrics()
         copy.objectives = copy.objectives.map { ObjectiveState(id: $0.id, isCompleted: false) }
+        // Les écrous sont facultatifs : ils ne doivent pas élargir l'espace de recherche.
+        copy.remainingCollectibles = []
+        copy.collectedThisAttempt = []
         return copy
     }
 }

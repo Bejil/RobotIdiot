@@ -36,6 +36,7 @@ final class GameViewController: UIViewController {
     private var sheetHeight: CGFloat = 0
     private var sheetDragStartHeight: CGFloat = 0
     private var hasLaidOutSheet = false
+    private var bonusRemainingCount = 0
 
     init(level: Level, campaign: LevelAddress? = nil) {
         let framed = level.id.hasPrefix("RI-") ? level : LevelFraming.playfield(level)
@@ -77,8 +78,10 @@ final class GameViewController: UIViewController {
 
         boardScene.show(engine.state.game)
         skView.presentScene(boardScene)
+        bonusRemainingCount = level.collectibles.count
         updateStatusIdle()
         updateControls()
+        refreshBoltBarButton()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -427,6 +430,9 @@ final class GameViewController: UIViewController {
     }
 
     @objc private func showHelp() {
+        helpAlert.onBalanceChanged = { [weak self] in
+            self?.refreshBoltBarButton()
+        }
         helpAlert.present(level: level)
         helpAlert.isHidden = false
         view.bringSubviewToFront(helpAlert)
@@ -489,6 +495,34 @@ final class GameViewController: UIViewController {
         settings.accessibilityLabel = "Réglages"
         settings.tintColor = .white
         navigationItem.rightBarButtonItems = [settings]
+        refreshBoltBarButton()
+    }
+
+    private func refreshBoltBarButton() {
+        let count = BoltWallet.shared.balance
+        let label = UILabel()
+        label.text = "\(count)"
+        label.font = AppTheme.font(16, .heavy, textStyle: .headline)
+        label.textColor = AppTheme.gold
+        let icon = UIImageView(image: GameArt.piece(.bolt))
+        icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        let trailingPad = UIView()
+        trailingPad.translatesAutoresizingMaskIntoConstraints = false
+        trailingPad.widthAnchor.constraint(equalToConstant: 8).isActive = true
+        let row = UIStackView(arrangedSubviews: [icon, label, trailingPad])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 4
+        row.isUserInteractionEnabled = false
+        let item = UIBarButtonItem(customView: row)
+        item.accessibilityLabel = "\(count) écrou\(count > 1 ? "s" : "")"
+        var buttons = navigationItem.rightBarButtonItems ?? []
+        buttons.removeAll { $0.accessibilityLabel?.contains("écrou") == true }
+        buttons.insert(item, at: 0)
+        navigationItem.rightBarButtonItems = buttons
     }
 
     @objc private func showSensorySettings() {
@@ -608,6 +642,7 @@ final class GameViewController: UIViewController {
         engine.reset(program: editor.program)
         editor.isLocked = false
         boardScene.show(engine.state.game)
+        bonusRemainingCount = level.collectibles.count
         updateControls()
     }
 
@@ -623,14 +658,21 @@ final class GameViewController: UIViewController {
         overlay.isHidden = true
         errorAlert.isHidden = true
         boardScene.show(engine.state.game)
+        bonusRemainingCount = level.collectibles.count
         updateStatusIdle()
         updateControls()
+        refreshBoltBarButton()
     }
 
     private func showResult() {
         let metrics = engine.state.game.metrics
+        let bonusCollected = engine.state.game.collectedBonusThisAttempt
         var rules = level.scoringRules
-        if rules.compactProgramMaxBlocks == nil, let optimum = ActionSearch.shortest(level: level)?.actionCount {
+        // Les niveaux V7 fournissent déjà starTargets ; ne pas écraser avec ActionSearch.
+        if rules.compactProgramMaxBlocks == nil,
+           rules.efficientExecutionMaxStepsWithBonus == nil,
+           rules.efficientExecutionMaxSteps == nil,
+           let optimum = ActionSearch.shortest(level: level)?.actionCount {
             let word = optimum > 1 ? "commandes" : "commande"
             rules = ScoringRules(
                 compactProgramMaxBlocks: nil,
@@ -642,7 +684,8 @@ final class GameViewController: UIViewController {
             succeeded: true,
             blockCount: editor.program.blockCount,
             executedInstructions: metrics.executedInstructions,
-            rules: rules
+            rules: rules,
+            bonusCollected: bonusCollected
         )
         let score = LevelScore(
             stars: rating.count,
@@ -652,16 +695,33 @@ final class GameViewController: UIViewController {
         if let campaign {
             CampaignStore.shared.record(score, at: campaign)
         }
+        let boltsGained = BoltWallet.shared.creditVictory(
+            levelID: level.id,
+            collected: engine.state.game.collectedThisAttempt
+        )
         let exitTitle = campaign != nil ? "Carte du monde" : "Retour"
+        var note = PlayerCopy.improvement(rating: rating, rules: rules, bonusCollected: bonusCollected)
+        if boltsGained > 0 {
+            let boltNote = boltsGained == 1 ? "+1 écrou !" : "+\(boltsGained) écrous !"
+            note = note.isEmpty ? boltNote : "\(boltNote) \(note)"
+        } else if bonusCollected {
+            note = note.isEmpty
+                ? "Écrou déjà obtenu sur ce niveau."
+                : "\(note) (écrou déjà obtenu)"
+        }
         overlay.present(
             rating: rating,
             blockCount: editor.program.blockCount,
             executed: metrics.executedInstructions,
             moves: metrics.moves,
-            note: PlayerCopy.improvement(rating: rating, rules: rules),
+            note: note,
+            boltsGained: boltsGained,
+            boltBalance: BoltWallet.shared.balance,
+            showBoltRecap: boltsGained > 0 || bonusCollected,
             nextTitle: nextLevelTitle,
             exitTitle: exitTitle
         )
+        refreshBoltBarButton()
         errorAlert.isHidden = true
         commandIntro.isHidden = true
         helpAlert.isHidden = true
@@ -669,17 +729,29 @@ final class GameViewController: UIViewController {
         overlay.isHidden = false
         view.bringSubviewToFront(overlay)
         updateControls()
-        statusLabel.text = "Le drapeau est atteint."
+        statusLabel.text = boltsGained > 0
+            ? "Drapeau atteint. +\(boltsGained) écrou\(boltsGained > 1 ? "s" : "") !"
+            : "Le drapeau est atteint."
     }
 
     private func describe(_ outcome: StepOutcome) {
         switch outcome.event {
         case .moved(_, _, let forward, _):
-            statusLabel.text = forward ? "Le robot avance." : "Le robot recule."
-            if !wantsContinuous { Soundscape.shared.play("move") }
+            let remaining = outcome.state.game.remainingCollectibles.count
+            let justCollected = remaining < bonusRemainingCount
+            bonusRemainingCount = remaining
+            if justCollected {
+                statusLabel.text = "Écrou récupéré !"
+            } else {
+                statusLabel.text = forward ? "Le robot avance." : "Le robot recule."
+            }
+            if !wantsContinuous && !justCollected { Soundscape.shared.play("move") }
         case .turned(_, let direction, _):
             statusLabel.text = "Le robot regarde vers \(PlayerCopy.directionPhrase(direction))."
             if !wantsContinuous { Soundscape.shared.play("turn") }
+        case .collectedBonus:
+            statusLabel.text = "Écrou récupéré !"
+            Soundscape.shared.play("success")
         case .pickedUp:
             statusLabel.text = "Le robot ramasse la clé."
             Soundscape.shared.play("tap")
@@ -865,9 +937,10 @@ final class GameViewController: UIViewController {
     }
 }
 
-/// Alerte d'aide, sur le même modèle que l'erreur et la nouvelle commande.
+/// Alerte d'aide : indice et solution contre des écrous.
 private final class HelpAlertView: UIView {
     var onClose: (() -> Void)?
+    var onBalanceChanged: (() -> Void)?
 
     private let robot = UIImageView()
     private let card = UIView()
@@ -877,7 +950,12 @@ private final class HelpAlertView: UIView {
     private let badgeIcon = UIImageView()
     private let headlineLabel = UILabel()
     private let detailLabel = UILabel()
+    private let hintButton = UIButton(type: .system)
+    private let solutionButton = UIButton(type: .system)
     private let closeButton = UIButton(type: .system)
+    private var level: Level?
+    private var unlockedHint = false
+    private var unlockedSolution = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -934,9 +1012,25 @@ private final class HelpAlertView: UIView {
         detailLabel.textAlignment = .center
         detailLabel.numberOfLines = 0
 
+        styleSpendButton(
+            hintButton,
+            title: "Indice · \(RewardEconomy.hintCost) écrous",
+            fill: AppTheme.gold,
+            ink: .black
+        )
+        hintButton.addTarget(self, action: #selector(buyHint), for: .touchUpInside)
+
+        styleSpendButton(
+            solutionButton,
+            title: "Solution · \(RewardEconomy.fullSolutionCost) écrous",
+            fill: UIColor(hex: 0x3A4C96),
+            ink: .white
+        )
+        solutionButton.addTarget(self, action: #selector(buySolution), for: .touchUpInside)
+
         var configuration = UIButton.Configuration.filled()
-        configuration.title = "J'ai compris"
-        configuration.image = UIImage(systemName: "checkmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 15, weight: .bold))
+        configuration.title = "Annuler"
+        configuration.image = UIImage(systemName: "xmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 15, weight: .bold))
         configuration.imagePadding = 6
         configuration.imagePlacement = .trailing
         configuration.baseBackgroundColor = UIColor(hex: 0x7B3FF2)
@@ -951,7 +1045,9 @@ private final class HelpAlertView: UIView {
         closeButton.configuration = configuration
         closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
 
-        let message = UIStackView(arrangedSubviews: [headlineLabel, detailLabel, closeButton])
+        let message = UIStackView(arrangedSubviews: [
+            headlineLabel, detailLabel, hintButton, solutionButton, closeButton
+        ])
         message.axis = .vertical
         message.spacing = 12
         message.translatesAutoresizingMaskIntoConstraints = false
@@ -991,6 +1087,8 @@ private final class HelpAlertView: UIView {
             message.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
             message.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
             message.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
+            hintButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+            solutionButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
             closeButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 48)
         ])
     }
@@ -1000,13 +1098,85 @@ private final class HelpAlertView: UIView {
     }
 
     func present(level: Level) {
-        headlineLabel.text = PlayerCopy.briefing(for: level)
-        if let commands = ActionSearch.shortest(level: level)?.commands, !commands.isEmpty {
-            detailLabel.text = PlayerCopy.openingHint(commands: commands)
-        } else {
-            detailLabel.text = "Le robot fait exactement ce que tu écris. La visière montre où il regarde."
-        }
+        self.level = level
+        unlockedHint = false
+        unlockedSolution = false
+        headlineLabel.text = "Tu as besoin d'un coup de main ?"
+        detailLabel.text = "Débloque un indice ou la solution complète avec tes écrous."
+        refreshEconomyChrome()
         accessibilityViewIsModal = true
+        accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
+    }
+
+    private func refreshEconomyChrome() {
+        hintButton.isEnabled = !unlockedHint
+        solutionButton.isEnabled = !unlockedSolution
+        if unlockedHint {
+            hintButton.configuration?.title = "Indice débloqué"
+        } else {
+            hintButton.configuration?.title = "Indice · \(RewardEconomy.hintCost) écrous"
+        }
+        if unlockedSolution {
+            solutionButton.configuration?.title = "Solution débloquée"
+        } else {
+            solutionButton.configuration?.title = "Solution · \(RewardEconomy.fullSolutionCost) écrous"
+        }
+    }
+
+    private func styleSpendButton(_ button: UIButton, title: String, fill: UIColor, ink: UIColor) {
+        var configuration = UIButton.Configuration.filled()
+        configuration.title = title
+        configuration.baseBackgroundColor = fill
+        configuration.baseForegroundColor = ink
+        configuration.cornerStyle = .capsule
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
+        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var updated = incoming
+            updated.font = AppTheme.font(15, .bold, textStyle: .headline)
+            return updated
+        }
+        button.configuration = configuration
+    }
+
+    @objc private func buyHint() {
+        guard let level, !unlockedHint else { return }
+        if BoltWallet.shared.spendForHint() {
+            unlockedHint = true
+            if let commands = ActionSearch.shortest(level: level)?.commands, !commands.isEmpty {
+                detailLabel.text = PlayerCopy.openingHint(commands: commands)
+            } else if let catalog = CatalogCampaign.pack.levels.first(where: { $0.id == level.id }) {
+                let program = CatalogCampaign.referenceProgram(for: catalog)
+                let commands = program.instructions.map(\.command)
+                detailLabel.text = PlayerCopy.openingHint(commands: commands)
+            } else {
+                detailLabel.text = "Regarde le drapeau et avance case par case."
+            }
+            onBalanceChanged?()
+        } else {
+            detailLabel.text = "Il te faut \(RewardEconomy.hintCost) écrous pour un indice."
+        }
+        refreshEconomyChrome()
+        accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
+    }
+
+    @objc private func buySolution() {
+        guard let level, !unlockedSolution else { return }
+        if BoltWallet.shared.spendForFullSolution() {
+            unlockedSolution = true
+            unlockedHint = true
+            if let catalog = CatalogCampaign.pack.levels.first(where: { $0.id == level.id }) {
+                detailLabel.text = ProgramText.render(CatalogCampaign.referenceProgram(for: catalog)).source
+            } else if let commands = ActionSearch.shortest(level: level)?.commands {
+                let program = Program(instructions: commands.map { Instruction(command: $0) })
+                detailLabel.text = ProgramText.render(program).source
+            } else {
+                detailLabel.text = "Aucune solution de référence disponible."
+            }
+            onBalanceChanged?()
+        } else {
+            detailLabel.text = "Il te faut \(RewardEconomy.fullSolutionCost) écrous pour la solution."
+        }
+        refreshEconomyChrome()
         accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
     }
 

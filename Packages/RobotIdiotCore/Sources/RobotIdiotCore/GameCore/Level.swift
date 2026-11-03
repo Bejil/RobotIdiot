@@ -48,12 +48,27 @@ public struct ProgramConstraints: Codable, Hashable, Sendable {
 public struct ScoringRules: Codable, Hashable, Sendable {
     public var compactProgramMaxBlocks: Int?
     public var efficientExecutionMaxSteps: Int?
+    /// Seuil 3★ si le bonus a été ramassé durant la tentative gagnante.
+    public var efficientExecutionMaxStepsWithBonus: Int?
     public var referenceNote: String
 
-    public init(compactProgramMaxBlocks: Int?, efficientExecutionMaxSteps: Int?, referenceNote: String) {
+    public init(
+        compactProgramMaxBlocks: Int?,
+        efficientExecutionMaxSteps: Int?,
+        efficientExecutionMaxStepsWithBonus: Int? = nil,
+        referenceNote: String
+    ) {
         self.compactProgramMaxBlocks = compactProgramMaxBlocks
         self.efficientExecutionMaxSteps = efficientExecutionMaxSteps
+        self.efficientExecutionMaxStepsWithBonus = efficientExecutionMaxStepsWithBonus
         self.referenceNote = referenceNote
+    }
+
+    public func efficientLimit(bonusCollected: Bool) -> Int? {
+        if bonusCollected, let withBonus = efficientExecutionMaxStepsWithBonus {
+            return withBonus
+        }
+        return efficientExecutionMaxSteps
     }
 }
 
@@ -80,10 +95,11 @@ public enum ScoreEvaluator {
         succeeded: Bool,
         blockCount: Int,
         executedInstructions: Int,
-        rules: ScoringRules
+        rules: ScoringRules,
+        bonusCollected: Bool = false
     ) -> StarRating {
         guard succeeded else { return .none }
-        let efficient = rules.efficientExecutionMaxSteps.map { executedInstructions <= $0 } ?? false
+        let efficient = rules.efficientLimit(bonusCollected: bonusCollected).map { executedInstructions <= $0 } ?? false
         guard let compactLimit = rules.compactProgramMaxBlocks else {
             return StarRating(completion: true, compactProgram: efficient, efficientExecution: efficient)
         }
@@ -127,6 +143,8 @@ public struct Level: Codable, Hashable, Sendable {
     public var programConstraints: ProgramConstraints
     public var scoringRules: ScoringRules
     public var validation: ValidationMetadata
+    /// Bonus facultatifs (ex. BoardBolt), affichés en overlay sans remplacer la tuile.
+    public var collectibles: [LevelCollectible]
 
     public init(
         id: String,
@@ -143,7 +161,8 @@ public struct Level: Codable, Hashable, Sendable {
         allowedCommands: [CommandType],
         programConstraints: ProgramConstraints,
         scoringRules: ScoringRules,
-        validation: ValidationMetadata
+        validation: ValidationMetadata,
+        collectibles: [LevelCollectible] = []
     ) {
         self.id = id
         self.version = version
@@ -160,6 +179,7 @@ public struct Level: Codable, Hashable, Sendable {
         self.programConstraints = programConstraints
         self.scoringRules = scoringRules
         self.validation = validation
+        self.collectibles = collectibles
     }
 
     public var placedObjects: [PlacedObject] {

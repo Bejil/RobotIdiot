@@ -74,11 +74,23 @@ public enum WorldRules {
         updated.robot.position = destination
         updated.metrics.moves += 1
         updated.metrics.executedInstructions += 1
+        _ = collectBonusIfNeeded(at: destination, game: &updated)
         refreshObjectives(&updated, level: level)
         return .success(RuleApplication(
             game: updated,
             event: .moved(from: origin, to: destination, forward: forward, command: command)
         ))
+    }
+
+    /// Ramasse automatiquement un BoardBolt sur la case, sans commande RAMASSE ni coût d'action.
+    @discardableResult
+    private static func collectBonusIfNeeded(at position: GridCoordinate, game: inout GameState) -> LevelCollectible? {
+        guard let index = game.remainingCollectibles.firstIndex(where: { $0.position == position }) else {
+            return nil
+        }
+        let bonus = game.remainingCollectibles.remove(at: index)
+        game.collectedThisAttempt.append(bonus)
+        return bonus
     }
 
     private static func turn(

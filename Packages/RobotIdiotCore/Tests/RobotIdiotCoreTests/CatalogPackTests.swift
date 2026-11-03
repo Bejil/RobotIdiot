@@ -133,13 +133,26 @@ final class CatalogPackTests: XCTestCase {
         return (level.start.x + delta.0, level.start.y + delta.1)
     }
 
-    func testActionSearchProvidesTheDisplayedMinimum() {
+    func testDisplayedMinimumFollowsStarTargets() {
         for source in CatalogCampaign.pack.levels {
             let level = CatalogCampaign.playableLevel(source)
-            let shortest = ActionSearch.shortest(level: level)?.actionCount
-            XCTAssertEqual(level.scoringRules.efficientExecutionMaxSteps, shortest, source.id)
-            XCTAssertNotNil(shortest, source.id)
-            XCTAssertLessThanOrEqual(shortest!, source.solution.actionCount, source.id)
+            if let stars = source.starTargets {
+                XCTAssertEqual(
+                    level.scoringRules.efficientExecutionMaxSteps,
+                    stars.withoutBonus.threeStarsMax,
+                    source.id
+                )
+                XCTAssertEqual(
+                    level.scoringRules.efficientExecutionMaxStepsWithBonus,
+                    stars.withBonus?.threeStarsMax,
+                    source.id
+                )
+            } else {
+                let shortest = ActionSearch.shortest(level: level)?.actionCount
+                XCTAssertEqual(level.scoringRules.efficientExecutionMaxSteps, shortest, source.id)
+                XCTAssertNotNil(shortest, source.id)
+                XCTAssertLessThanOrEqual(shortest!, source.solution.actionCount, source.id)
+            }
         }
     }
 

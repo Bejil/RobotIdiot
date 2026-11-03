@@ -183,6 +183,7 @@ final class HomeViewController: UIViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
         refreshContinueTitle()
+        refreshBoltBadge()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -347,6 +348,33 @@ final class HomeViewController: UIViewController {
         }
         continueButton.configuration = configuration
         continueButton.accessibilityLabel = place.map { "\(title), \($0)" } ?? title
+    }
+
+    private func refreshBoltBadge() {
+        let tag = 8801
+        view.viewWithTag(tag)?.removeFromSuperview()
+        let count = BoltWallet.shared.balance
+        let icon = UIImageView(image: GameArt.piece(.bolt))
+        icon.contentMode = .scaleAspectFit
+        let label = UILabel()
+        label.text = "\(count)"
+        label.font = AppTheme.font(16, .heavy, textStyle: .headline)
+        label.textColor = AppTheme.gold
+        let row = UIStackView(arrangedSubviews: [icon, label])
+        row.tag = tag
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 4
+        row.isAccessibilityElement = true
+        row.accessibilityLabel = "\(count) écrou\(count > 1 ? "s" : "")"
+        row.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(row)
+        NSLayoutConstraint.activate([
+            icon.widthAnchor.constraint(equalToConstant: 24),
+            icon.heightAnchor.constraint(equalToConstant: 24),
+            row.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            row.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
+        ])
     }
 
     @objc private func continueCampaign() {
