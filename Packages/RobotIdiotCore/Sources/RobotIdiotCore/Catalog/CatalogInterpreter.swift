@@ -87,14 +87,21 @@ public enum CatalogInterpreter {
             guard (0..<7).contains(x), (0..<7).contains(y) else { return "#" }
             return grid[y][x]
         }
+        func isLethal(_ x: Int, _ y: Int) -> Bool {
+            "WLP".contains(tile(x, y))
+        }
         func free(_ x: Int, _ y: Int) -> Bool {
             let symbol = tile(x, y)
             let point = CellPoint(x: x, y: y)
-            if LevelPackChecker.blockingSymbols.contains(symbol) || symbol == "#" || symbol.isNumber { return false }
+            // Obstacles solides seulement : eau, lave et pics restent accessibles puis mortels.
+            if "BRTO".contains(symbol) || symbol == "#" || symbol.isNumber { return false }
             if locks.contains(point), !machine.openLocks.contains(point) { return false }
             if let link = doors[point], !machine.openLinks.contains(link) { return false }
             if machine.crates.contains(point) { return false }
             return true
+        }
+        func safe(_ x: Int, _ y: Int) -> Bool {
+            free(x, y) && !isLethal(x, y)
         }
         func reachedFlag() -> Bool {
             guard machine.x == level.finish.x, machine.y == level.finish.y else { return false }
@@ -182,13 +189,14 @@ public enum CatalogInterpreter {
                 }
                 frames.append(Frame(instructions: body, position: 0, loop: true))
             case .si(let condition, let body):
-                let aheadFree = step("AVANCE") != nil
+                let (dx, dy) = headings[machine.direction]
+                let aheadSafe = safe(machine.x + dx, machine.y + dy)
                 let passes: Bool
                 switch condition {
                 case "CASE_DEVANT_LIBRE":
-                    passes = aheadFree
+                    passes = aheadSafe
                 case "OBSTACLE_DEVANT":
-                    passes = !aheadFree
+                    passes = !aheadSafe
                 default:
                     return CatalogRun(actions: actions, result: .unsupportedCondition(condition))
                 }
@@ -205,6 +213,9 @@ public enum CatalogInterpreter {
                 }
                 machine = next
                 actions += 1
+                if isLethal(machine.x, machine.y) {
+                    return CatalogRun(actions: actions, result: .invalidCommand(name))
+                }
                 let signature = Signature(
                     machine: machine,
                     frames: frames.map {

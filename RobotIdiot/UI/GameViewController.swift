@@ -5,15 +5,17 @@ import RobotIdiotCore
 final class GameViewController: UIViewController {
     private let level: Level
     private let campaign: LevelAddress?
-    private let challengeID: UUID?
     private var engine: SimulationEngine
     private let boardScene: BoardScene
 
     private let skView = SKView()
+    private let boardSlot = UIView()
     private let boardFrame = UIView()
     private let editor = BlockEditorView()
     private let statusLabel = UILabel()
     private let sheet = UIView()
+    private let sheetGrabber = UIView()
+    private let sheetHandle = UIView()
     private let limitsLabel = UILabel()
     private let helpButton = UIButton(type: .system)
     private let speedToggle = UIButton(type: .system)
@@ -30,12 +32,15 @@ final class GameViewController: UIViewController {
     private var wantsContinuous = false
     private var isAnimating = false
     private var layoutConstraints: [NSLayoutConstraint] = []
+    private var sheetHeightConstraint: NSLayoutConstraint?
+    private var sheetHeight: CGFloat = 0
+    private var sheetDragStartHeight: CGFloat = 0
+    private var hasLaidOutSheet = false
 
-    init(level: Level, campaign: LevelAddress? = nil, challenge: UUID? = nil) {
+    init(level: Level, campaign: LevelAddress? = nil) {
         let framed = level.id.hasPrefix("RI-") ? level : LevelFraming.playfield(level)
         self.level = framed
         self.campaign = campaign
-        self.challengeID = challenge
         self.tempo = PlaySettings.fastAnimation ? .fast : .normal
         engine = SimulationEngine(level: framed, program: Program())
         boardScene = BoardScene(level: framed, contrast: PlaySettings.contrast)
@@ -51,8 +56,6 @@ final class GameViewController: UIViewController {
         view.backgroundColor = AppTheme.cream
         if let campaign {
             navigationItem.title = PlayerCopy.campaignTitle(campaign)
-        } else if challengeID != nil {
-            navigationItem.title = "Défi · \(PlayerCopy.title(for: level))"
         } else {
             navigationItem.title = PlayerCopy.title(for: level)
         }
@@ -86,7 +89,6 @@ final class GameViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        Soundscape.shared.setMusic(playing: true)
         presentCommandIntroIfNeeded()
     }
 
@@ -96,7 +98,6 @@ final class GameViewController: UIViewController {
         playbackToken += 1
         wantsContinuous = false
         boardScene.cancelPlayback()
-        Soundscape.shared.setMusic(playing: false)
     }
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
@@ -138,6 +139,17 @@ final class GameViewController: UIViewController {
         sheet.layer.cornerRadius = 28
         sheet.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         sheet.layer.masksToBounds = true
+
+        sheetGrabber.backgroundColor = .clear
+        sheetGrabber.isUserInteractionEnabled = true
+        sheetGrabber.accessibilityLabel = "Agrandir le panneau des commandes"
+        sheetGrabber.accessibilityTraits = .adjustable
+        sheetHandle.backgroundColor = UIColor(hex: 0xC8C4D8)
+        sheetHandle.layer.cornerRadius = 2.5
+        sheetHandle.isUserInteractionEnabled = false
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(dragSheet(_:)))
+        pan.cancelsTouchesInView = false
+        sheetGrabber.addGestureRecognizer(pan)
 
         speedToggle.backgroundColor = .white
         speedToggle.setTitleColor(.black, for: .normal)
@@ -219,11 +231,15 @@ final class GameViewController: UIViewController {
     }
 
     private func installSubviews() {
-        [boardFrame, sheet, limitsLabel, helpButton, editor, runButton, speedToggle, overlay, errorAlert, commandIntro, helpAlert].forEach {
+        [boardSlot, boardFrame, sheet, sheetGrabber, sheetHandle, limitsLabel, helpButton, editor, runButton, speedToggle, overlay, errorAlert, commandIntro, helpAlert].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
+        boardSlot.isUserInteractionEnabled = false
+        view.addSubview(boardSlot)
         view.addSubview(boardFrame)
         view.addSubview(sheet)
+        view.addSubview(sheetGrabber)
+        sheetGrabber.addSubview(sheetHandle)
         view.addSubview(limitsLabel)
         view.addSubview(helpButton)
         view.addSubview(editor)
@@ -253,24 +269,57 @@ final class GameViewController: UIViewController {
         ])
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard view.bounds.height > 1 else { return }
+        if !hasLaidOutSheet {
+            hasLaidOutSheet = true
+            sheetHeight = collapsedSheetHeightBaseline()
+        }
+        let clamped = clampSheetHeight(sheetHeight)
+        sheetHeight = clamped
+        if let constraint = sheetHeightConstraint, abs(constraint.constant - clamped) > 0.5 {
+            constraint.constant = clamped
+        }
+    }
+
     private func applyLayout() {
         NSLayoutConstraint.deactivate(layoutConstraints)
         let guide = view.safeAreaLayoutGuide
+        let initialHeight = sheetHeight > 1 ? sheetHeight : max(280, view.bounds.height * 0.4)
+        sheetHeight = initialHeight
+        let height = sheet.heightAnchor.constraint(equalToConstant: initialHeight)
+        sheetHeightConstraint = height
         layoutConstraints = [
-            boardFrame.topAnchor.constraint(equalTo: guide.topAnchor, constant: 4),
-            boardFrame.centerXAnchor.constraint(equalTo: guide.centerXAnchor),
-            boardFrame.leadingAnchor.constraint(greaterThanOrEqualTo: guide.leadingAnchor, constant: 12),
-            boardFrame.trailingAnchor.constraint(lessThanOrEqualTo: guide.trailingAnchor, constant: -12),
-            boardFrame.widthAnchor.constraint(equalTo: guide.widthAnchor, constant: -24).prioritized(.defaultHigh),
-            boardFrame.heightAnchor.constraint(equalTo: boardFrame.widthAnchor),
-            boardFrame.heightAnchor.constraint(lessThanOrEqualTo: view.heightAnchor, multiplier: 0.46),
-
-            sheet.topAnchor.constraint(equalTo: boardFrame.bottomAnchor, constant: 16),
             sheet.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             sheet.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             sheet.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            height,
 
-            limitsLabel.topAnchor.constraint(equalTo: sheet.topAnchor, constant: 28),
+            boardSlot.topAnchor.constraint(equalTo: guide.topAnchor, constant: 4),
+            boardSlot.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 12),
+            boardSlot.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -12),
+            boardSlot.bottomAnchor.constraint(equalTo: sheet.topAnchor, constant: -12),
+
+            boardFrame.centerXAnchor.constraint(equalTo: boardSlot.centerXAnchor),
+            boardFrame.centerYAnchor.constraint(equalTo: boardSlot.centerYAnchor),
+            boardFrame.widthAnchor.constraint(equalTo: boardFrame.heightAnchor),
+            boardFrame.widthAnchor.constraint(lessThanOrEqualTo: boardSlot.widthAnchor),
+            boardFrame.heightAnchor.constraint(lessThanOrEqualTo: boardSlot.heightAnchor),
+            boardFrame.widthAnchor.constraint(equalTo: boardSlot.widthAnchor).prioritized(UILayoutPriority(750)),
+            boardFrame.heightAnchor.constraint(equalTo: boardSlot.heightAnchor).prioritized(UILayoutPriority(750)),
+
+            sheetGrabber.topAnchor.constraint(equalTo: sheet.topAnchor),
+            sheetGrabber.leadingAnchor.constraint(equalTo: sheet.leadingAnchor),
+            sheetGrabber.trailingAnchor.constraint(equalTo: sheet.trailingAnchor),
+            sheetGrabber.heightAnchor.constraint(equalToConstant: 28),
+
+            sheetHandle.centerXAnchor.constraint(equalTo: sheetGrabber.centerXAnchor),
+            sheetHandle.centerYAnchor.constraint(equalTo: sheetGrabber.centerYAnchor),
+            sheetHandle.widthAnchor.constraint(equalToConstant: 44),
+            sheetHandle.heightAnchor.constraint(equalToConstant: 5),
+
+            limitsLabel.topAnchor.constraint(equalTo: sheetGrabber.bottomAnchor, constant: 4),
             limitsLabel.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 20),
             limitsLabel.trailingAnchor.constraint(equalTo: helpButton.leadingAnchor, constant: -10),
 
@@ -279,7 +328,7 @@ final class GameViewController: UIViewController {
             helpButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 92),
             helpButton.heightAnchor.constraint(equalToConstant: 36),
 
-            editor.topAnchor.constraint(equalTo: limitsLabel.bottomAnchor, constant: 22),
+            editor.topAnchor.constraint(equalTo: limitsLabel.bottomAnchor, constant: 14),
             editor.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 12),
             editor.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -12),
 
@@ -295,6 +344,80 @@ final class GameViewController: UIViewController {
             speedToggle.heightAnchor.constraint(equalTo: runButton.heightAnchor)
         ]
         NSLayoutConstraint.activate(layoutConstraints)
+        view.bringSubviewToFront(sheet)
+        view.bringSubviewToFront(sheetGrabber)
+        view.bringSubviewToFront(limitsLabel)
+        view.bringSubviewToFront(helpButton)
+        view.bringSubviewToFront(editor)
+        view.bringSubviewToFront(runButton)
+        view.bringSubviewToFront(speedToggle)
+        view.bringSubviewToFront(overlay)
+        view.bringSubviewToFront(errorAlert)
+        view.bringSubviewToFront(commandIntro)
+        view.bringSubviewToFront(helpAlert)
+    }
+
+    private func maxSheetHeight() -> CGFloat {
+        view.bounds.height * (2.0 / 3.0)
+    }
+
+    private func collapsedSheetHeightBaseline() -> CGFloat {
+        let guide = view.safeAreaLayoutGuide.layoutFrame
+        let width = max(guide.width - 24, 120)
+        let preferredBoard = min(width, view.bounds.height * 0.42)
+        return view.bounds.height - guide.minY - 4 - preferredBoard - 12
+    }
+
+    private func clampSheetHeight(_ value: CGFloat) -> CGFloat {
+        let maximum = maxSheetHeight()
+        let minimum = min(max(collapsedSheetHeightBaseline(), 240), maximum)
+        return min(maximum, max(minimum, value))
+    }
+
+    private func applySheetHeight(_ height: CGFloat, animated: Bool) {
+        sheetHeight = height
+        sheetHeightConstraint?.constant = height
+        guard animated else {
+            view.layoutIfNeeded()
+            return
+        }
+        UIView.animate(
+            withDuration: PlaySettings.prefersReducedMotion ? 0.12 : 0.28,
+            delay: 0,
+            usingSpringWithDamping: 0.86,
+            initialSpringVelocity: 0.4,
+            options: [.allowUserInteraction, .beginFromCurrentState]
+        ) {
+            self.view.layoutIfNeeded()
+        }
+    }
+
+    @objc private func dragSheet(_ gesture: UIPanGestureRecognizer) {
+        switch gesture.state {
+        case .began:
+            sheetDragStartHeight = sheetHeight
+            Soundscape.shared.play("ui")
+        case .changed:
+            let translation = gesture.translation(in: view).y
+            // Tirage vers le haut → panneau plus haut → plateau plus petit.
+            applySheetHeight(clampSheetHeight(sheetDragStartHeight - translation), animated: false)
+        case .ended, .cancelled:
+            let velocity = gesture.velocity(in: view).y
+            let collapsed = clampSheetHeight(collapsedSheetHeightBaseline())
+            let expanded = maxSheetHeight()
+            let mid = (collapsed + expanded) * 0.5
+            let target: CGFloat
+            if velocity < -650 {
+                target = expanded
+            } else if velocity > 650 {
+                target = collapsed
+            } else {
+                target = sheetHeight > mid ? expanded : collapsed
+            }
+            applySheetHeight(target, animated: true)
+        default:
+            break
+        }
     }
 
     private func refreshSpeedToggle() {
@@ -322,9 +445,6 @@ final class GameViewController: UIViewController {
             refreshSpeedToggle()
         }
         boardScene.applyMotionPreference()
-        if view.window != nil {
-            Soundscape.shared.setMusic(playing: true)
-        }
     }
 
     private func presentCommandIntroIfNeeded() {
@@ -342,7 +462,7 @@ final class GameViewController: UIViewController {
     }
 
     /// Commandes déjà présentes dans un niveau de campagne plus ancien.
-    /// Un défi libre n'a pas d'antécédent : chaque commande encore inconnue y est présentée.
+    /// Hors campagne, chaque commande encore inconnue est présentée.
     private func commandsTaughtBeforeThisLevel() -> Set<CommandType> {
         guard let campaign else { return [] }
         var known = Set<CommandType>()
@@ -436,14 +556,15 @@ final class GameViewController: UIViewController {
         case .succeeded:
             wantsContinuous = false
             editor.isLocked = false
-            Soundscape.shared.play("success")
             showResult()
         case .failed, .safetyStopped:
             wantsContinuous = false
             editor.isLocked = false
-            Soundscape.shared.play("error")
-            editor.setErrorMessage(nil)
             let fault = outcome.state.fault ?? (outcome.state.status == .safetyStopped ? .safetyStop : nil)
+            if !Self.hasCollisionFeedback(fault) {
+                Soundscape.shared.play("error")
+            }
+            editor.setErrorMessage(nil)
             if let fault {
                 editor.highlight(
                     active: outcome.state.activeInstructionID,
@@ -531,17 +652,7 @@ final class GameViewController: UIViewController {
         if let campaign {
             CampaignStore.shared.record(score, at: campaign)
         }
-        if let challengeID {
-            ChallengeStore.shared.record(score, id: challengeID)
-        }
-        let exitTitle: String
-        if campaign != nil {
-            exitTitle = "Carte du monde"
-        } else if challengeID != nil {
-            exitTitle = "Défis"
-        } else {
-            exitTitle = "Retour"
-        }
+        let exitTitle = campaign != nil ? "Carte du monde" : "Retour"
         overlay.present(
             rating: rating,
             blockCount: editor.program.blockCount,
@@ -590,6 +701,17 @@ final class GameViewController: UIViewController {
                 : "Si \(name) : non, le robot saute ce bloc."
         case .blocked(let fault):
             statusLabel.text = PlayerCopy.explain(fault)
+        case .enteredHazard(_, _, let terrain, _, _):
+            switch terrain {
+            case .spikes:
+                statusLabel.text = "Le robot a marché sur des pics."
+            case .water:
+                statusLabel.text = "Le robot a coulé dans l'eau."
+            case .lava:
+                statusLabel.text = "Le robot a coulé dans la lave."
+            default:
+                statusLabel.text = "Le robot a marché sur un danger."
+            }
         case .safetyStopped:
             statusLabel.text = PlayerCopy.explain(.safetyStop)
         case .finishedWithoutGoal:
@@ -627,10 +749,30 @@ final class GameViewController: UIViewController {
         runButton.isEnabled = running || !editor.program.instructions.isEmpty
     }
 
+    private static func hasCollisionFeedback(_ fault: ExecutionFault?) -> Bool {
+        switch fault {
+        case .pathBlocked, .pushBlocked:
+            return true
+        case .hazard(_, _, let terrain, _):
+            switch terrain {
+            case .spikes, .water, .lava:
+                return true
+            default:
+                return false
+            }
+        default:
+            return false
+        }
+    }
+
     private func failedIdentifier(in event: SimulationEvent?) -> UUID? {
+        if case .enteredHazard = event, case .hazard(_, let identifier, _, _)? = engine.state.fault {
+            return identifier
+        }
         guard case .blocked(let fault) = event else { return nil }
         switch fault {
         case .pathBlocked(_, let identifier, _, _),
+             .hazard(_, let identifier, _, _),
              .commandUnavailable(_, let identifier),
              .nothingToPickUp(let identifier),
              .nothingToUse(let identifier),
@@ -653,9 +795,6 @@ final class GameViewController: UIViewController {
             if next.world != campaign.world { return "Monde suivant" }
             return "Niveau suivant"
         }
-        if challengeID != nil {
-            return "Autre défi"
-        }
         if level.id.hasPrefix("gen-") {
             return "Autre niveau"
         }
@@ -665,10 +804,6 @@ final class GameViewController: UIViewController {
     private func openNextLevel() {
         if campaign != nil {
             openNextCampaignLevel()
-            return
-        }
-        if challengeID != nil {
-            openAnotherChallenge()
             return
         }
         if level.id.hasPrefix("gen-") {
@@ -699,22 +834,6 @@ final class GameViewController: UIViewController {
                 stack.append(WorldLevelsViewController(world: address.world))
             }
             stack.append(GameViewController(level: level, campaign: address))
-            navigation.setViewControllers(stack, animated: true)
-        }
-    }
-
-    private func openAnotherChallenge() {
-        guard let challengeID, !isOpeningNext,
-              let recipe = ChallengeStore.shared.entry(challengeID)?.recipe else { return }
-        isOpeningNext = true
-        let next = recipe.advanced()
-        GeneratedLevelFlow.produce(next.request()) { [weak self] generated in
-            guard let self, let navigation = self.navigationController else { return }
-            var stack = navigation.viewControllers
-            guard stack.last === self else { return }
-            let entry = ChallengeStore.shared.append(level: generated.level, recipe: next)
-            stack.removeLast()
-            stack.append(GameViewController(level: entry.level, challenge: entry.id))
             navigation.setViewControllers(stack, animated: true)
         }
     }

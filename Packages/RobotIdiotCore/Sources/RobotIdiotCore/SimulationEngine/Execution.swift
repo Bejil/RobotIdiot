@@ -48,6 +48,7 @@ public struct ExecutionCursor: Codable, Hashable, Sendable {
 
 public enum ExecutionFault: Error, Hashable, Sendable, Codable {
     case pathBlocked(command: CommandType, instructionID: UUID, forward: Bool, attempted: GridCoordinate)
+    case hazard(command: CommandType, instructionID: UUID, terrain: TerrainType, at: GridCoordinate)
     case commandUnavailable(command: CommandType, instructionID: UUID)
     case nothingToPickUp(instructionID: UUID)
     case nothingToUse(instructionID: UUID)
@@ -69,6 +70,7 @@ public enum SimulationEvent: Hashable, Sendable, Codable {
     case activated(mechanismID: String, at: GridCoordinate, isActive: Bool)
     case enteredLoop(UUID)
     case testedCondition(instructionID: UUID, condition: ConditionType, passed: Bool)
+    case enteredHazard(from: GridCoordinate, to: GridCoordinate, terrain: TerrainType, forward: Bool, command: CommandType)
     case blocked(ExecutionFault)
     case finishedWithoutGoal
     case succeeded

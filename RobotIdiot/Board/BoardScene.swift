@@ -122,10 +122,12 @@ final class BoardScene: SKScene {
         for (x, y) in [(0, 0), (last, 0), (0, last), (last, last)] {
             let logical = GridCoordinate(x: x - columnShift, y: y - rowShift)
             guard presented.grid.cell(at: logical)?.terrain == .floor else { continue }
+            let spot = displayCenter(x: x, y: y)
             let bush = textured(.bush, side: tileSpan)
-            bush.position = displayCenter(x: x, y: y)
+            bush.position = spot
             bush.zPosition = 0.35
             addChild(bush)
+            attachLifeParticles(for: .bush, at: spot)
         }
     }
     private let palette: BoardPalette
@@ -151,6 +153,17 @@ final class BoardScene: SKScene {
     func show(_ game: GameState) {
         cancelPlayback()
         presented = game
+        // Ne pas reconstruire le plateau à chaque édition de programme :
+        // ça réinitialiserait les particules d'ambiance.
+        if children.contains(where: { $0.name?.hasPrefix("ground-") == true }) {
+            restoreFlagAppearance()
+            placeRobot(presented.robot)
+            syncProps(to: presented)
+            if playbackCompletion == nil {
+                startIdle()
+            }
+            return
+        }
         rebuild()
     }
 
@@ -165,9 +178,12 @@ final class BoardScene: SKScene {
         presented = resulting
         playbackCompletion = completion
 
+        let victory = resulting.isVictory
         switch event {
         case .moved(_, let destination, _, _):
-            slideRobot(to: destination, tempo: tempo, reduceMotion: reduceMotion, victory: resulting.isVictory)
+            slideRobot(to: destination, tempo: tempo, reduceMotion: reduceMotion, victory: victory)
+        case .enteredHazard(_, let destination, let terrain, _, _):
+            fallIntoHazard(at: destination, terrain: terrain, tempo: tempo, reduceMotion: reduceMotion)
         case .turned:
             applyFacing(presented.robot.orientation)
             let duration = tempo.turnDuration(reduceMotion: reduceMotion)
@@ -181,28 +197,30 @@ final class BoardScene: SKScene {
             ])
             let motion: SKAction = reduceMotion ? .wait(forDuration: duration) : .group([hop, nod])
             robotNode.run(motion) { [weak self] in
-                self?.finishPlayback()
+                self?.endStep(victory: victory, reduceMotion: reduceMotion)
             }
         case .pickedUp(let item, _):
-            fadeProp(named: "prop-\(item.id)", tempo: tempo, reduceMotion: reduceMotion)
+            fadeProp(named: "prop-\(item.id)", tempo: tempo, reduceMotion: reduceMotion, victory: victory)
         case .used(_, let coordinate):
             syncProps(to: presented)
             pulseMechanisms(at: coordinate)
-            dwell(reduceMotion: reduceMotion, tempo: tempo)
+            dwell(reduceMotion: reduceMotion, tempo: tempo, victory: victory)
         case .activated(let mechanismID, _, _):
             syncProps(to: presented)
             pulseNode(named: "mech-\(mechanismID)")
-            dwell(reduceMotion: reduceMotion, tempo: tempo)
+            dwell(reduceMotion: reduceMotion, tempo: tempo, victory: victory)
         case .pushed(let objectID, let from, let to):
             if let crate = childNode(withName: "prop-\(objectID)") {
                 crate.run(SKAction.move(to: center(of: to), duration: tempo.moveDuration(reduceMotion: reduceMotion)))
             }
-            slideRobot(to: from, tempo: tempo, reduceMotion: reduceMotion, victory: resulting.isVictory)
+            slideRobot(to: from, tempo: tempo, reduceMotion: reduceMotion, victory: victory)
         case .enteredLoop, .testedCondition:
-            dwell(reduceMotion: reduceMotion, tempo: tempo)
+            dwell(reduceMotion: reduceMotion, tempo: tempo, victory: victory)
         case .blocked(let fault):
             shake(fault: fault, reduceMotion: reduceMotion)
-        case .succeeded, .finishedWithoutGoal, .safetyStopped, nil:
+        case .succeeded:
+            endStep(victory: true, reduceMotion: reduceMotion)
+        case .finishedWithoutGoal, .safetyStopped, nil:
             finishPlayback()
         }
     }
@@ -256,9 +274,14 @@ final class BoardScene: SKScene {
                 let terrain = inside ? presented.grid.cell(at: logical)?.terrain : nil
                 let piece = groundPiece(terrain)
                 let tile = textured(piece, side: tileSpan)
-                tile.position = displayCenter(x: x, y: y)
+                let spot = displayCenter(x: x, y: y)
+                tile.name = "ground-\(x)-\(y)"
+                tile.position = spot
                 tile.zPosition = terrain?.blocksMovement == true ? 0.4 : 0
                 addChild(tile)
+                if let terrain {
+                    attachLifeParticles(for: terrain, at: spot)
+                }
             }
         }
         if !level.id.hasPrefix("RI-") {
@@ -381,21 +404,47 @@ final class BoardScene: SKScene {
         applyFacing(robot.orientation)
     }
 
-    private func dwell(reduceMotion: Bool, tempo: PlaybackTempo) {
+    private func dwell(reduceMotion: Bool, tempo: PlaybackTempo, victory: Bool = false) {
         let duration: TimeInterval = reduceMotion ? 0.01 : (tempo == .fast ? 0.05 : 0.12)
         robotNode.run(SKAction.wait(forDuration: duration)) { [weak self] in
-            self?.finishPlayback()
+            self?.endStep(victory: victory, reduceMotion: reduceMotion)
+        }
+    }
+
+    private func endStep(victory: Bool, reduceMotion: Bool) {
+        if victory {
+            celebrate(reduceMotion: reduceMotion)
+        } else {
+            finishPlayback()
+        }
+    }
+
+    private func restoreFlagAppearance() {
+        flagNode.removeAllActions()
+        flagNode.alpha = 1
+        flagNode.setScale(1)
+        if flagNode.parent == nil {
+            for objective in level.objectives where objective.kind == .reachFlag {
+                flagNode = makeFlag()
+                flagNode.position = center(of: objective.position)
+                flagNode.zPosition = 2
+                addChild(flagNode)
+            }
         }
     }
 
     private func shake(fault: ExecutionFault, reduceMotion: Bool) {
         if case .pathBlocked(_, _, _, let attempted) = fault {
             flash(at: attempted)
+            Soundscape.shared.playObstacleHit()
         }
         if case .pushBlocked(_, let attempted) = fault {
             flash(at: attempted)
+            Soundscape.shared.playObstacleHit()
         }
+        // Reste sur la case d'origine : le mur / buisson bloque sans y entrer.
         let home = robotAnchor(of: presented.robot.position)
+        robotNode.position = home
         let wash = SKSpriteNode(color: AppTheme.coral.withAlphaComponent(0.28), size: size)
         wash.position = CGPoint(x: size.width / 2, y: size.height / 2)
         wash.zPosition = 8
@@ -418,6 +467,62 @@ final class BoardScene: SKScene {
         }
     }
 
+    private func fallIntoHazard(
+        at destination: GridCoordinate,
+        terrain: TerrainType,
+        tempo: PlaybackTempo,
+        reduceMotion: Bool
+    ) {
+        let target = robotAnchor(of: destination)
+        let moveDuration = tempo.moveDuration(reduceMotion: reduceMotion)
+        flash(at: destination)
+        let arrive = SKAction.move(to: target, duration: moveDuration)
+        let impact = SKAction.run {
+            Soundscape.shared.playHazardHit(terrain)
+        }
+        let sink: SKAction
+        if reduceMotion {
+            sink = .group([.fadeOut(withDuration: 0.01), .scale(to: 0.01, duration: 0.01)])
+        } else if terrain == .spikes {
+            sink = .sequence([
+                .group([
+                    .scale(to: 1.12, duration: 0.08),
+                    .rotate(byAngle: 0.18, duration: 0.08)
+                ]),
+                .group([
+                    .scale(to: 0.2, duration: 0.22),
+                    .fadeOut(withDuration: 0.22),
+                    .moveBy(x: 0, y: -cellSize * 0.08, duration: 0.22)
+                ])
+            ])
+        } else if terrain == .water || terrain == .lava {
+            // Face vers le bas, puis tourne en diminuant jusqu'à disparaître.
+            sink = .sequence([
+                .run { [weak self] in
+                    self?.applyFacing(.south)
+                },
+                .wait(forDuration: 0.04),
+                .group([
+                    .rotate(byAngle: .pi * 2.4, duration: 0.55),
+                    .scale(to: 0.08, duration: 0.55),
+                    .fadeOut(withDuration: 0.55),
+                    .moveBy(x: 0, y: -cellSize * 0.22, duration: 0.55)
+                ])
+            ])
+        } else {
+            sink = .group([
+                .scale(to: 0.15, duration: 0.35),
+                .fadeOut(withDuration: 0.35)
+            ])
+        }
+        robotNode.run(.sequence([arrive, impact, sink])) { [weak self] in
+            self?.robotNode.alpha = 1
+            self?.robotNode.setScale(1)
+            self?.robotNode.zRotation = 0
+            self?.finishPlayback()
+        }
+    }
+
     private func flash(at coordinate: GridCoordinate) {
         let marker = SKShapeNode(path: tilePath())
         marker.fillColor = AppTheme.coral.withAlphaComponent(0.45)
@@ -434,22 +539,42 @@ final class BoardScene: SKScene {
     }
 
     private func celebrate(reduceMotion: Bool) {
+        // De face (sud) : le sol sous le drapeau apparaît quand le drapeau disparaît.
+        applyFacing(.south)
+        flagNode.removeAllActions()
+        robotNode.removeAction(forKey: "idle")
+        robotNode.setScale(1)
+        robotNode.alpha = 1
+        robotNode.zRotation = 0
+        Soundscape.shared.play("success")
+
         guard !reduceMotion else {
+            flagNode.alpha = 0
             finishPlayback()
             return
         }
-        let pulse = SKAction.sequence([
-            .scale(to: 1.12, duration: 0.12),
-            .scale(to: 1, duration: 0.12)
+
+        flagNode.run(.fadeOut(withDuration: 0.2))
+
+        let hop = SKAction.sequence([
+            .moveBy(x: 0, y: cellSize * 0.24, duration: 0.13),
+            .moveBy(x: 0, y: -cellSize * 0.24, duration: 0.13)
         ])
-        robotNode.run(pulse)
-        flagNode.run(.sequence([
-            .scale(to: 1.28, duration: 0.12),
-            .scale(to: 1, duration: 0.16)
-        ]))
-        let radius = cellSize * 1.15
-        for index in 0..<16 {
-            let dot = SKShapeNode(circleOfRadius: cellSize * (index.isMultiple(of: 2) ? 0.07 : 0.045))
+        let squash = SKAction.sequence([
+            .scaleX(to: 1.18, y: 0.86, duration: 0.1),
+            .scaleX(to: 0.9, y: 1.14, duration: 0.1),
+            .scaleX(to: 1.08, y: 0.96, duration: 0.08),
+            .scaleX(to: 1, y: 1, duration: 0.1)
+        ])
+        let wiggle = SKAction.sequence([
+            .rotate(byAngle: 0.12, duration: 0.08),
+            .rotate(byAngle: -0.24, duration: 0.1),
+            .rotate(byAngle: 0.12, duration: 0.08)
+        ])
+
+        let radius = cellSize * 1.2
+        for index in 0..<18 {
+            let dot = SKShapeNode(circleOfRadius: cellSize * (index.isMultiple(of: 2) ? 0.075 : 0.05))
             let colors = [AppTheme.gold, AppTheme.coral, AppTheme.teal, AppTheme.success, AppTheme.move]
             dot.fillColor = colors[index % colors.count]
             dot.strokeColor = .clear
@@ -457,23 +582,29 @@ final class BoardScene: SKScene {
             dot.zPosition = 5
             dot.name = "effect"
             addChild(dot)
-            let angle = CGFloat(index) / 16 * .pi * 2
-            let distance = radius * (index.isMultiple(of: 2) ? 1 : 0.72)
+            let angle = CGFloat(index) / 18 * .pi * 2
+            let distance = radius * (index.isMultiple(of: 2) ? 1 : 0.7)
             let destination = CGPoint(
                 x: robotNode.position.x + cos(angle) * distance,
                 y: robotNode.position.y + sin(angle) * distance
             )
             dot.run(SKAction.sequence([
                 .group([
-                    .move(to: destination, duration: 0.48),
-                    .rotate(byAngle: .pi, duration: 0.48),
-                    .fadeOut(withDuration: 0.48),
-                    .scale(to: 0.2, duration: 0.48)
+                    .move(to: destination, duration: 0.55),
+                    .rotate(byAngle: .pi, duration: 0.55),
+                    .fadeOut(withDuration: 0.55),
+                    .scale(to: 0.2, duration: 0.55)
                 ]),
                 .removeFromParent()
             ]))
         }
-        robotNode.run(SKAction.wait(forDuration: 0.5)) { [weak self] in
+
+        robotNode.run(.sequence([
+            .group([.repeat(hop, count: 2), squash, wiggle]),
+            .wait(forDuration: 0.28)
+        ])) { [weak self] in
+            self?.robotNode.zRotation = 0
+            self?.robotNode.setScale(1)
             self?.finishPlayback()
         }
     }
@@ -489,15 +620,11 @@ final class BoardScene: SKScene {
         ])
         let motion: SKAction = reduceMotion ? move : .group([move, squash])
         robotNode.run(motion) { [weak self] in
-            if victory {
-                self?.celebrate(reduceMotion: reduceMotion)
-            } else {
-                self?.finishPlayback()
-            }
+            self?.endStep(victory: victory, reduceMotion: reduceMotion)
         }
     }
 
-    private func fadeProp(named name: String, tempo: PlaybackTempo, reduceMotion: Bool) {
+    private func fadeProp(named name: String, tempo: PlaybackTempo, reduceMotion: Bool, victory: Bool = false) {
         let duration = reduceMotion ? 0.01 : tempo.moveDuration(reduceMotion: false) * 0.7
         if let node = childNode(withName: name) {
             node.run(SKAction.sequence([
@@ -510,7 +637,7 @@ final class BoardScene: SKScene {
             .scale(to: 1, duration: duration * 0.55)
         ])
         robotNode.run(hop) { [weak self] in
-            self?.finishPlayback()
+            self?.endStep(victory: victory, reduceMotion: reduceMotion)
         }
     }
 
@@ -585,6 +712,7 @@ final class BoardScene: SKScene {
         robotNode.removeAction(forKey: "idle")
         robotNode.setScale(1)
         startIdle()
+        refreshLifeParticlesMotion()
     }
 
     private func startIdle() {
@@ -595,6 +723,194 @@ final class BoardScene: SKScene {
             .scale(to: 1, duration: 0.85)
         ])
         robotNode.run(.repeatForever(bob), withKey: "idle")
+    }
+
+    private static let sparkTexture: SKTexture = {
+        let side: CGFloat = 10
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: side, height: side))
+        let image = renderer.image { context in
+            UIColor.white.setFill()
+            context.cgContext.fillEllipse(in: CGRect(x: 0, y: 0, width: side, height: side))
+        }
+        return SKTexture(image: image)
+    }()
+
+    private static let leafTexture: SKTexture = {
+        let size = CGSize(width: 16, height: 22)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { context in
+            let cg = context.cgContext
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.beginPath()
+            cg.move(to: CGPoint(x: size.width * 0.5, y: 1))
+            cg.addQuadCurve(
+                to: CGPoint(x: size.width * 0.5, y: size.height - 1),
+                control: CGPoint(x: size.width * 1.05, y: size.height * 0.45)
+            )
+            cg.addQuadCurve(
+                to: CGPoint(x: size.width * 0.5, y: 1),
+                control: CGPoint(x: -size.width * 0.05, y: size.height * 0.45)
+            )
+            cg.closePath()
+            cg.fillPath()
+        }
+        return SKTexture(image: image)
+    }()
+
+    private func attachLifeParticles(for terrain: TerrainType, at position: CGPoint) {
+        guard let emitter = makeLifeEmitter(for: terrain) else { return }
+        emitter.name = "life-\(terrain.rawValue)"
+        emitter.position = position
+        emitter.zPosition = 1.05
+        if PlaySettings.prefersReducedMotion {
+            emitter.particleBirthRate = 0
+        }
+        addChild(emitter)
+        if terrain == .lava {
+            let smoke = makeLavaSmokeEmitter()
+            smoke.name = "life-lava-smoke"
+            smoke.position = CGPoint(x: position.x, y: position.y + tileSpan * 0.22)
+            smoke.zPosition = 1.08
+            if PlaySettings.prefersReducedMotion {
+                smoke.particleBirthRate = 0
+            }
+            addChild(smoke)
+        }
+    }
+
+    private func refreshLifeParticlesMotion() {
+        let calm = PlaySettings.prefersReducedMotion
+        enumerateChildNodes(withName: "life-*") { node, _ in
+            guard let emitter = node as? SKEmitterNode else { return }
+            let rate = (emitter.userData?["birthRate"] as? NSNumber)?.doubleValue ?? 0
+            emitter.particleBirthRate = calm ? 0 : CGFloat(rate)
+            if calm {
+                emitter.resetSimulation()
+            }
+        }
+    }
+
+    /// Taille de case de référence : à cette taille, l'échelle visuelle reste celle d'origine.
+    private var particleSizeFactor: CGFloat {
+        max(0.45, cellSize / 44)
+    }
+
+    /// Les séquences SpriteKit sont absolues : on les multiplie par le facteur de case.
+    private func particleScaleSequence(_ values: [CGFloat], times: [NSNumber]) -> SKKeyframeSequence {
+        let factor = particleSizeFactor
+        return SKKeyframeSequence(keyframeValues: values.map { $0 * factor }, times: times)
+    }
+
+    private func makeLifeEmitter(for terrain: TerrainType) -> SKEmitterNode? {
+        let emitter = SKEmitterNode()
+        let factor = particleSizeFactor
+        emitter.particleTexture = Self.sparkTexture
+        emitter.particleBlendMode = .alpha
+        emitter.particlePositionRange = CGVector(dx: tileSpan * 0.42, dy: tileSpan * 0.28)
+        emitter.emissionAngleRange = .pi * 2
+        emitter.particleAlphaSequence = SKKeyframeSequence(keyframeValues: [0, 0.7, 0], times: [0, 0.35, 1])
+        emitter.particleColorBlendFactor = 1
+
+        switch terrain {
+        case .water:
+            emitter.particleBirthRate = 4.4
+            emitter.particleLifetime = 1.9
+            emitter.particleLifetimeRange = 0.4
+            emitter.particleSpeed = cellSize * 0.09
+            emitter.particleSpeedRange = cellSize * 0.06
+            emitter.emissionAngle = .pi / 2
+            emitter.emissionAngleRange = .pi / 2.4
+            emitter.particlePositionRange = CGVector(dx: tileSpan * 0.92, dy: tileSpan * 0.55)
+            emitter.yAcceleration = cellSize * 0.045
+            emitter.particleScale = 0.55 * factor
+            emitter.particleScaleRange = emitter.particleScale * 0.4
+            emitter.particleScaleSequence = particleScaleSequence([0.35, 0.7, 0.15], times: [0, 0.4, 1])
+            emitter.particleColor = UIColor(red: 0.55, green: 0.88, blue: 1, alpha: 1)
+            emitter.particleColorBlendFactorSequence = SKKeyframeSequence(
+                keyframeValues: [1, 1],
+                times: [0, 1]
+            )
+            let cyan = UIColor(red: 0.45, green: 0.82, blue: 1, alpha: 1)
+            let white = UIColor(white: 1, alpha: 1)
+            emitter.particleColorSequence = SKKeyframeSequence(keyframeValues: [cyan, white, cyan], times: [0, 0.5, 1])
+            emitter.particleAlphaSequence = SKKeyframeSequence(keyframeValues: [0.25, 0.95, 0.55, 0], times: [0, 0.25, 0.7, 1])
+        case .lava:
+            emitter.particleBirthRate = 5.0
+            emitter.particleLifetime = 1.4
+            emitter.particleLifetimeRange = 0.35
+            emitter.particleSpeed = cellSize * 0.13
+            emitter.particleSpeedRange = cellSize * 0.09
+            emitter.emissionAngle = .pi / 2
+            emitter.emissionAngleRange = .pi / 3
+            emitter.particlePositionRange = CGVector(dx: tileSpan * 0.92, dy: tileSpan * 0.55)
+            emitter.yAcceleration = cellSize * 0.07
+            emitter.particleScale = 0.6 * factor
+            emitter.particleScaleRange = emitter.particleScale * 0.45
+            emitter.particleScaleSequence = particleScaleSequence([0.35, 0.7, 0.15], times: [0, 0.4, 1])
+            let orange = UIColor(red: 1, green: 0.55, blue: 0.12, alpha: 1)
+            let yellow = UIColor(red: 1, green: 0.86, blue: 0.28, alpha: 1)
+            let red = UIColor(red: 1, green: 0.28, blue: 0.08, alpha: 1)
+            emitter.particleColorSequence = SKKeyframeSequence(keyframeValues: [orange, yellow, red], times: [0, 0.45, 1])
+            emitter.particleAlphaSequence = SKKeyframeSequence(keyframeValues: [0.3, 1, 0.55, 0], times: [0, 0.18, 0.68, 1])
+        case .bush:
+            emitter.particleTexture = Self.leafTexture
+            emitter.particleBirthRate = 3.2
+            emitter.particleLifetime = 2.4
+            emitter.particleLifetimeRange = 0.5
+            emitter.particleSpeed = cellSize * 0.03
+            emitter.particleSpeedRange = cellSize * 0.02
+            emitter.emissionAngle = 0
+            emitter.emissionAngleRange = .pi * 2
+            emitter.particlePositionRange = CGVector(dx: tileSpan * 0.55, dy: tileSpan * 0.42)
+            emitter.xAcceleration = 0
+            emitter.yAcceleration = 0
+            emitter.particleScale = 0.75 * factor
+            emitter.particleScaleRange = emitter.particleScale * 0.25
+            emitter.particleScaleSequence = particleScaleSequence([0.55, 0.95, 0.55], times: [0, 0.4, 1])
+            emitter.particleRotation = -.pi / 6
+            emitter.particleRotationRange = .pi * 0.6
+            emitter.particleRotationSpeed = 0.55
+            let lime = UIColor(red: 0.78, green: 0.98, blue: 0.32, alpha: 1)
+            let mint = UIColor(red: 0.55, green: 0.92, blue: 0.42, alpha: 1)
+            let pale = UIColor(red: 0.94, green: 1, blue: 0.62, alpha: 1)
+            emitter.particleColorSequence = SKKeyframeSequence(keyframeValues: [mint, lime, pale], times: [0, 0.4, 1])
+            emitter.particleAlphaSequence = SKKeyframeSequence(keyframeValues: [0.15, 0.72, 0.58, 0], times: [0, 0.12, 0.7, 1])
+        default:
+            return nil
+        }
+
+        emitter.numParticlesToEmit = 0
+        emitter.userData = NSMutableDictionary(dictionary: ["birthRate": emitter.particleBirthRate])
+        return emitter
+    }
+
+    private func makeLavaSmokeEmitter() -> SKEmitterNode {
+        let factor = particleSizeFactor
+        let smoke = SKEmitterNode()
+        smoke.particleTexture = Self.sparkTexture
+        smoke.particleBlendMode = .alpha
+        smoke.particleBirthRate = 2.8
+        smoke.particleLifetime = 2.8
+        smoke.particleLifetimeRange = 0.7
+        smoke.particleSpeed = cellSize * 0.16
+        smoke.particleSpeedRange = cellSize * 0.06
+        smoke.emissionAngle = .pi / 2
+        smoke.emissionAngleRange = .pi / 6
+        smoke.particlePositionRange = CGVector(dx: tileSpan * 0.55, dy: tileSpan * 0.1)
+        smoke.yAcceleration = cellSize * 0.08
+        smoke.xAcceleration = cellSize * 0.012
+        smoke.particleScale = 0.85 * factor
+        smoke.particleScaleRange = smoke.particleScale * 0.45
+        smoke.particleScaleSequence = particleScaleSequence([0.45, 1.25, 1.7], times: [0, 0.4, 1])
+        smoke.particleColorBlendFactor = 1
+        let peach = UIColor(red: 1, green: 0.78, blue: 0.58, alpha: 1)
+        let cream = UIColor(red: 1, green: 0.92, blue: 0.82, alpha: 1)
+        let mist = UIColor(red: 0.96, green: 0.88, blue: 0.8, alpha: 1)
+        smoke.particleColorSequence = SKKeyframeSequence(keyframeValues: [peach, cream, mist], times: [0, 0.45, 1])
+        smoke.particleAlphaSequence = SKKeyframeSequence(keyframeValues: [0.12, 0.38, 0.2, 0], times: [0, 0.18, 0.62, 1])
+        smoke.numParticlesToEmit = 0
+        smoke.userData = NSMutableDictionary(dictionary: ["birthRate": smoke.particleBirthRate])
+        return smoke
     }
 
     private func pulseMechanisms(at coordinate: GridCoordinate) {

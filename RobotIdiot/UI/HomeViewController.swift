@@ -14,7 +14,6 @@ final class HomeViewController: UIViewController {
     private let confetti = UIImageView(image: UIImage(named: "HomeConfetti"))
     private let continueButton = AppTheme.filledButton(title: "Continuer", systemImage: "play.fill", prominent: true)
     private let campaignButton = UIButton(type: .custom)
-    private let generatedButton = AppTheme.filledButton(title: "Défis libres", systemImage: "trophy", prominent: false, tone: .primary)
     private let settingsButton = UIButton(type: .custom)
     private let continueGlow = UIView()
     private var generationTicket = 0
@@ -39,14 +38,8 @@ final class HomeViewController: UIViewController {
         confetti.isUserInteractionEnabled = false
 
         styleMain(continueButton, mark: "play", radius: 30)
-        styleMain(generatedButton, mark: "trophy", radius: 28)
-        if var configuration = generatedButton.configuration {
-            configuration.baseBackgroundColor = UIColor(hex: 0x6C3CE0)
-            generatedButton.configuration = configuration
-        }
         continueButton.addTarget(self, action: #selector(continueCampaign), for: .touchUpInside)
         campaignButton.addTarget(self, action: #selector(openCampaign), for: .touchUpInside)
-        generatedButton.addTarget(self, action: #selector(openChallenges), for: .touchUpInside)
 
         let stage = UIView()
         stage.translatesAutoresizingMaskIntoConstraints = false
@@ -84,7 +77,7 @@ final class HomeViewController: UIViewController {
         continueRow.alignment = .fill
         continueRow.translatesAutoresizingMaskIntoConstraints = false
 
-        let actions = UIStackView(arrangedSubviews: [continueRow, generatedButton, settingsButton])
+        let actions = UIStackView(arrangedSubviews: [continueRow, settingsButton])
         actions.axis = .vertical
         actions.spacing = 12
         actions.alignment = .fill
@@ -156,7 +149,7 @@ final class HomeViewController: UIViewController {
             backdrop.topAnchor.constraint(equalTo: view.topAnchor),
             backdrop.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             backdrop.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            backdrop.bottomAnchor.constraint(equalTo: stage.bottomAnchor),
+            backdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             badge.centerXAnchor.constraint(equalTo: stage.centerXAnchor),
             badge.bottomAnchor.constraint(equalTo: stage.bottomAnchor, constant: 16),
             badge.widthAnchor.constraint(equalToConstant: 230),
@@ -165,7 +158,6 @@ final class HomeViewController: UIViewController {
             actions.widthAnchor.constraint(equalTo: column.widthAnchor),
             continueButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 68),
             campaignButton.widthAnchor.constraint(equalTo: campaignButton.heightAnchor),
-            generatedButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 62),
             settingsButton.heightAnchor.constraint(equalToConstant: 64)
         ])
 
@@ -199,7 +191,6 @@ final class HomeViewController: UIViewController {
         waveToken += 1
         backdrop.stop()
         continueButton.isEnabled = true
-        generatedButton.isEnabled = true
     }
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
@@ -283,7 +274,7 @@ final class HomeViewController: UIViewController {
         confetti.alpha = 0
         badge.alpha = 0
         badge.transform = CGAffineTransform(translationX: 0, y: 28).scaledBy(x: 0.7, y: 0.7)
-        let mains = [continueButton, generatedButton, settingsButton]
+        let mains = [continueButton, settingsButton]
         let squares = [campaignButton]
         (mains + squares).forEach {
             $0.alpha = 0
@@ -380,10 +371,6 @@ final class HomeViewController: UIViewController {
 
     @objc private func openCampaign() {
         navigationController?.pushViewController(WorldMapViewController(), animated: true)
-    }
-
-    @objc private func openChallenges() {
-        navigationController?.pushViewController(ChallengeViewController(), animated: true)
     }
 
     @objc private func openSettings() {
@@ -555,10 +542,18 @@ private final class HomeBurstView: UIView {
     private let rays = UIImageView()
     private let cyanClouds = UIImageView(image: UIImage(named: "HomeCloudCyan"))
     private let blueClouds = UIImageView(image: UIImage(named: "HomeCloudBlue"))
+    private let midCyanClouds = UIImageView(image: UIImage(named: "HomeCloudCyan"))
+    private let midBlueClouds = UIImageView(image: UIImage(named: "HomeCloudBlue"))
     private let groundClip = UIView()
     private let groundRow = UIView()
     private var moving = false
     private var arrangedWidth: CGFloat = -1
+
+    /// Proportions natives des assets (évite l'étirement pixelisé).
+    private static let cyanAspect: CGFloat = 121 / 520
+    private static let blueAspect: CGFloat = 112 / 469
+    private static let bandAspect: CGFloat = 387 / 1024
+    private static let raysAspect: CGFloat = 868 / 1006
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -566,19 +561,21 @@ private final class HomeBurstView: UIView {
         clipsToBounds = true
         backgroundColor = UIColor(hex: 0x24145F)
         rays.image = UIImage(named: "HomeRays")
-        rays.contentMode = .scaleAspectFill
+        rays.contentMode = .scaleAspectFit
         rays.translatesAutoresizingMaskIntoConstraints = false
         addSubview(rays)
         NSLayoutConstraint.activate([
             rays.centerXAnchor.constraint(equalTo: centerXAnchor),
-            rays.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -20),
-            rays.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1.35),
-            rays.heightAnchor.constraint(equalTo: rays.widthAnchor, multiplier: 0.86)
+            rays.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -24),
+            rays.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1.28),
+            rays.heightAnchor.constraint(equalTo: rays.widthAnchor, multiplier: Self.raysAspect)
         ])
-        cyanClouds.alpha = 0.72
-        blueClouds.alpha = 0.5
-        for cloud in [cyanClouds, blueClouds] {
-            cloud.contentMode = .scaleAspectFill
+        cyanClouds.alpha = 0.78
+        blueClouds.alpha = 0.55
+        midCyanClouds.alpha = 0.42
+        midBlueClouds.alpha = 0.32
+        for cloud in [cyanClouds, blueClouds, midCyanClouds, midBlueClouds] {
+            cloud.contentMode = .scaleAspectFit
             cloud.isUserInteractionEnabled = false
             addSubview(cloud)
         }
@@ -596,8 +593,10 @@ private final class HomeBurstView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         guard bounds.width > 1 else { return }
-        cyanClouds.frame = CGRect(x: -24, y: bounds.height * 0.1, width: bounds.width + 48, height: 86)
-        blueClouds.frame = CGRect(x: -36, y: bounds.height * 0.24, width: bounds.width + 72, height: 96)
+        placeCloud(cyanClouds, widthFactor: 1.18, y: bounds.height * 0.02, aspect: Self.cyanAspect)
+        placeCloud(blueClouds, widthFactor: 1.26, y: bounds.height * 0.14, aspect: Self.blueAspect)
+        placeCloud(midCyanClouds, widthFactor: 1.22, y: bounds.height * 0.28, aspect: Self.cyanAspect)
+        placeCloud(midBlueClouds, widthFactor: 1.3, y: bounds.height * 0.38, aspect: Self.blueAspect)
         placeGround()
         let widthChanged = abs(bounds.width - arrangedWidth) > 0.5
         arrangedWidth = bounds.width
@@ -606,12 +605,25 @@ private final class HomeBurstView: UIView {
         }
     }
 
+    private func placeCloud(_ view: UIImageView, widthFactor: CGFloat, y: CGFloat, aspect: CGFloat) {
+        let width = bounds.width * widthFactor
+        let height = width * aspect
+        view.frame = CGRect(x: (bounds.width - width) * 0.5, y: y, width: width, height: height)
+    }
+
     private func placeGround() {
-        let height: CGFloat = 128
-        groundClip.frame = CGRect(x: 0, y: bounds.height - height, width: bounds.width, height: height)
-        let rowWidth = bounds.width + 180
-        let rowHeight = height + 36
-        let rebuild = groundRow.subviews.isEmpty || abs(groundRow.bounds.width - rowWidth) > 1
+        let rowWidth = bounds.width * 1.35
+        let rowHeight = rowWidth * Self.bandAspect
+        let clipHeight = min(bounds.height * 0.48, rowHeight * 1.08)
+        groundClip.frame = CGRect(
+            x: 0,
+            y: bounds.height - clipHeight,
+            width: bounds.width,
+            height: clipHeight
+        )
+        let rebuild = groundRow.subviews.isEmpty
+            || abs(groundRow.bounds.width - rowWidth) > 1
+            || abs(groundRow.bounds.height - rowHeight) > 1
         groundRow.bounds = CGRect(x: 0, y: 0, width: rowWidth, height: rowHeight)
         groundRow.layer.anchorPoint = CGPoint(x: 0.5, y: 1)
         groundRow.center = CGPoint(x: groundClip.bounds.midX, y: groundClip.bounds.maxY)
@@ -619,7 +631,7 @@ private final class HomeBurstView: UIView {
         groundRow.subviews.forEach { $0.removeFromSuperview() }
         let view = UIImageView(image: UIImage(named: "HomeCloudBand"))
         view.frame = groundRow.bounds
-        view.contentMode = .scaleAspectFill
+        view.contentMode = .scaleAspectFit
         view.clipsToBounds = true
         groundRow.addSubview(view)
     }
@@ -646,21 +658,24 @@ private final class HomeBurstView: UIView {
         moving = false
         rays.layer.removeAnimation(forKey: "spin")
         groundRow.layer.removeAnimation(forKey: "ken")
-        cyanClouds.layer.removeAnimation(forKey: "fade")
-        blueClouds.layer.removeAnimation(forKey: "fade")
+        for cloud in [cyanClouds, blueClouds, midCyanClouds, midBlueClouds] {
+            cloud.layer.removeAnimation(forKey: "fade")
+        }
     }
 
     private func startDecor() {
         guard bounds.width > 1, moving else { return }
-        fade(cyanClouds, from: 0.28, to: 0.92, duration: 4.2)
-        fade(blueClouds, from: 0.9, to: 0.22, duration: 5.4)
+        fade(cyanClouds, from: 0.42, to: 0.9, duration: 4.2)
+        fade(blueClouds, from: 0.72, to: 0.28, duration: 5.4)
+        fade(midCyanClouds, from: 0.2, to: 0.55, duration: 6.1)
+        fade(midBlueClouds, from: 0.48, to: 0.18, duration: 7.0)
         groundRow.layer.removeAnimation(forKey: "ken")
         let zoom = CABasicAnimation(keyPath: "transform.scale")
-        zoom.fromValue = 1.04
-        zoom.toValue = 1.2
+        zoom.fromValue = 1.02
+        zoom.toValue = 1.08
         let pan = CABasicAnimation(keyPath: "transform.translation.x")
-        pan.fromValue = 18
-        pan.toValue = -22
+        pan.fromValue = 12
+        pan.toValue = -14
         let group = CAAnimationGroup()
         group.animations = [zoom, pan]
         group.duration = 18

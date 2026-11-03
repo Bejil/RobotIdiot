@@ -60,8 +60,10 @@ final class CampaignStore {
            decoded.progress.formulaVersion == CatalogCampaign.formulaVersion {
             archive = decoded
         } else {
+            // Nouvelle formule / pack : progression effacée → les intros de commandes recommencent.
             archive = CampaignStore.freshArchive()
             persistLocked()
+            PlaySettings.resetIntroducedCommands()
         }
     }
 
@@ -122,6 +124,7 @@ final class CampaignStore {
         archive = CampaignStore.freshArchive()
         persistLocked()
         lock.unlock()
+        PlaySettings.resetIntroducedCommands()
     }
 
     private func persistLocked() {

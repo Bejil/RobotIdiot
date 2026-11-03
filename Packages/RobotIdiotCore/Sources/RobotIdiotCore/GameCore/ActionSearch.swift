@@ -39,6 +39,9 @@ public struct ActionSearch: Equatable, Sendable {
                 guard case .success(let applied) = WorldRules.apply(command: command, to: current, level: level) else {
                     continue
                 }
+                if applied.game.grid.cell(at: applied.game.robot.position)?.terrain.isLethal == true {
+                    continue
+                }
                 let next = signature(applied.game)
                 let steps = path + [command]
                 if WorldRules.isSatisfied(applied.game, level: level) {

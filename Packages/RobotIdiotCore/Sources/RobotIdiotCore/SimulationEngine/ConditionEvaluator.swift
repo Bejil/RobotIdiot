@@ -21,10 +21,10 @@ public enum ConditionEvaluator {
         }
     }
 
-    /// La case devant le robot existe et le robot peut y entrer.
+    /// La case devant le robot existe et le robot peut y entrer sans mourir.
     public static func isFreeAhead(_ game: GameState) -> Bool {
         guard let cell = cellAhead(game) else { return false }
-        return cell.allowsRobotEntry
+        return cell.allowsSafeRobotEntry
     }
 
     private static func cellAhead(_ game: GameState) -> Cell? {

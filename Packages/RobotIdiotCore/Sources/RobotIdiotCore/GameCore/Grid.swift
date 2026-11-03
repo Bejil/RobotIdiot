@@ -11,8 +11,25 @@ public enum TerrainType: String, Codable, Hashable, Sendable {
     case stone
     case water
 
-    /// Tout ce qui n'est pas le sol arrête le robot. Les variantes ne changent que l'apparence.
-    public var blocksMovement: Bool { self != .floor }
+    /// Mur, buisson et autres obstacles solides : le robot reste sur sa case.
+    public var blocksMovement: Bool {
+        switch self {
+        case .floor, .spikes, .lava, .water:
+            return false
+        case .wall, .bush, .cracked, .shutter, .stone:
+            return true
+        }
+    }
+
+    /// Pics, lave et eau : le robot peut y entrer, puis meurt.
+    public var isLethal: Bool {
+        switch self {
+        case .spikes, .lava, .water:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 /// Occupation dynamique d'une case. Le robot n'y est pas stocké :
@@ -81,14 +98,20 @@ public struct Cell: Codable, Hashable, Sendable {
 
     /// Une clé se traverse : la ramasser est une commande.
     /// Une caisse et une porte fermée bloquent le passage.
+    /// L'eau, la lave et les pics restent accessibles (puis mortels).
     public var allowsRobotEntry: Bool {
         !terrain.blocksMovement && occupancy == .empty && !containsCrate && !containsClosedDoor
     }
 
+    /// Entrée sans danger : pas d'obstacle solide ni de terrain mortel.
+    public var allowsSafeRobotEntry: Bool {
+        allowsRobotEntry && !terrain.isLethal
+    }
+
     /// La case d'arrivée d'une caisse est un sol sans autre caisse ni porte fermée.
-    /// Une clé ne bloque pas la caisse.
+    /// Une clé ne bloque pas la caisse. Les terrains mortels non plus.
     public var allowsCrate: Bool {
-        !terrain.blocksMovement && occupancy == .empty && !containsCrate && !containsClosedDoor
+        !terrain.blocksMovement && !terrain.isLethal && occupancy == .empty && !containsCrate && !containsClosedDoor
     }
 
     public var containsCrate: Bool {

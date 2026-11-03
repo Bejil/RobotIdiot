@@ -1,5 +1,6 @@
 import AVFoundation
 import UIKit
+import RobotIdiotCore
 
 /// Sons et musique synthétisés. Aucun fichier audio n'est embarqué.
 final class Soundscape {
@@ -13,6 +14,9 @@ final class Soundscape {
     private var unavailable = false
     private let lightHaptic = UIImpactFeedbackGenerator(style: .light)
     private let softHaptic = UIImpactFeedbackGenerator(style: .soft)
+    private let mediumHaptic = UIImpactFeedbackGenerator(style: .medium)
+    private let rigidHaptic = UIImpactFeedbackGenerator(style: .rigid)
+    private let heavyHaptic = UIImpactFeedbackGenerator(style: .heavy)
     private let selectionHaptic = UISelectionFeedbackGenerator()
     private let noticeHaptic = UINotificationFeedbackGenerator()
 
@@ -32,11 +36,44 @@ final class Soundscape {
         tones["turn"] = tone(frequency: 330, seconds: 0.07, volume: 0.28)
         tones["success"] = sequence([523, 659, 784], note: 0.11, volume: 0.32)
         tones["error"] = tone(frequency: 174, seconds: 0.18, volume: 0.3)
+        tones["bump"] = obstacleBump()
+        tones["spikes"] = spikesHit()
+        tones["water"] = waterSplash()
+        tones["lava"] = lavaSizzle()
         tones["music"] = sequence([262, 330, 392, 440, 392, 330], note: 0.42, volume: 0.16)
         lightHaptic.prepare()
         softHaptic.prepare()
+        mediumHaptic.prepare()
+        rigidHaptic.prepare()
+        heavyHaptic.prepare()
         selectionHaptic.prepare()
         noticeHaptic.prepare()
+        NotificationCenter.default.addObserver(
+            forName: PlaySettings.changed,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshMusic()
+        }
+    }
+
+    /// Mur, buisson ou autre obstacle solide : le robot reste sur place.
+    func playObstacleHit() {
+        play("bump")
+    }
+
+    /// Danger mortel selon le terrain (pics, eau, lave).
+    func playHazardHit(_ terrain: TerrainType) {
+        switch terrain {
+        case .spikes:
+            play("spikes")
+        case .water:
+            play("water")
+        case .lava:
+            play("lava")
+        default:
+            play("error")
+        }
     }
 
     func noteInteraction(sender: Any?, event: UIEvent?) {
@@ -63,8 +100,9 @@ final class Soundscape {
         effects.scheduleBuffer(buffer, at: nil, options: [])
     }
 
-    func setMusic(playing: Bool) {
-        guard playing, PlaySettings.music, let buffer = tones["music"] else {
+    /// Suit le réglage Musique. Ne relance pas la boucle si elle tourne déjà.
+    func refreshMusic() {
+        guard PlaySettings.music, let buffer = tones["music"] else {
             if music.isPlaying { music.stop() }
             return
         }
@@ -93,38 +131,79 @@ final class Soundscape {
         case "error":
             noticeHaptic.notificationOccurred(.warning)
             noticeHaptic.prepare()
+        case "bump":
+            rigidHaptic.impactOccurred(intensity: 1)
+            rigidHaptic.prepare()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) { [weak self] in
+                guard let self, force || PlaySettings.haptics else { return }
+                self.mediumHaptic.impactOccurred(intensity: 0.55)
+                self.mediumHaptic.prepare()
+            }
+        case "spikes":
+            rigidHaptic.impactOccurred(intensity: 1)
+            rigidHaptic.prepare()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.045) { [weak self] in
+                guard let self, force || PlaySettings.haptics else { return }
+                self.rigidHaptic.impactOccurred(intensity: 0.85)
+                self.rigidHaptic.prepare()
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                guard let self, force || PlaySettings.haptics else { return }
+                self.noticeHaptic.notificationOccurred(.error)
+                self.noticeHaptic.prepare()
+            }
+        case "water":
+            softHaptic.impactOccurred(intensity: 0.9)
+            softHaptic.prepare()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
+                guard let self, force || PlaySettings.haptics else { return }
+                self.softHaptic.impactOccurred(intensity: 0.55)
+                self.softHaptic.prepare()
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
+                guard let self, force || PlaySettings.haptics else { return }
+                self.lightHaptic.impactOccurred(intensity: 0.4)
+                self.lightHaptic.prepare()
+            }
+        case "lava":
+            heavyHaptic.impactOccurred(intensity: 1)
+            heavyHaptic.prepare()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.09) { [weak self] in
+                guard let self, force || PlaySettings.haptics else { return }
+                self.heavyHaptic.impactOccurred(intensity: 0.7)
+                self.heavyHaptic.prepare()
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                guard let self, force || PlaySettings.haptics else { return }
+                self.noticeHaptic.notificationOccurred(.warning)
+                self.noticeHaptic.prepare()
+            }
         default:
             break
         }
     }
 
     private func startIfNeeded() {
-        guard !unavailable, !engine.isRunning else { return }
+        guard !unavailable else { return }
         do {
+            // playback + mixWithOthers : nos sons cohabitent avec Spotify / Apple Music / etc.
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.ambient, options: [.mixWithOthers])
-            try session.setActive(true)
-            try engine.start()
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try session.setActive(true, options: [])
+            if !engine.isRunning {
+                try engine.start()
+            }
         } catch {
             unavailable = true
         }
     }
 
     private func tone(frequency: Double, seconds: Double, volume: Float) -> AVAudioPCMBuffer? {
-        guard format.sampleRate > 0, format.channelCount > 0 else { return nil }
-        let frames = AVAudioFrameCount(format.sampleRate * seconds)
-        guard frames > 0, let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames),
-              let data = buffer.floatChannelData?[0] else { return nil }
-        buffer.frameLength = frames
-        let sampleRate = format.sampleRate
-        for index in 0..<Int(frames) {
-            let time = Double(index) / sampleRate
+        synthesize(seconds: seconds) { time, _ in
             let attack = min(1, time / 0.012)
             let release = min(1, max(0, (seconds - time) / 0.028))
-            let sample = sin(2 * Double.pi * frequency * time) * attack * release
-            data[index] = Float(sample) * volume
+            return sin(2 * Double.pi * frequency * time) * attack * release * Double(volume)
         }
-        return buffer
     }
 
     private func sequence(_ frequencies: [Double], note: Double, volume: Float) -> AVAudioPCMBuffer? {
@@ -142,6 +221,60 @@ final class Soundscape {
                 destination[cursor + index] = source[index]
             }
             cursor += count
+        }
+        return buffer
+    }
+
+    private func obstacleBump() -> AVAudioPCMBuffer? {
+        synthesize(seconds: 0.16) { time, _ in
+            let thud = sin(2 * Double.pi * 95 * time) * exp(-time * 28)
+            let knock = sin(2 * Double.pi * 210 * time) * exp(-time * 18) * 0.55
+            let click = sin(2 * Double.pi * 880 * time) * exp(-time * 55) * 0.35
+            return (thud + knock + click) * 0.55
+        }
+    }
+
+    private func spikesHit() -> AVAudioPCMBuffer? {
+        synthesize(seconds: 0.22) { time, _ in
+            let metallic = sin(2 * Double.pi * 1450 * time) * exp(-time * 22)
+            let ring = sin(2 * Double.pi * 920 * time) * exp(-time * 14) * 0.55
+            let jab = sin(2 * Double.pi * 240 * time) * exp(-time * 30) * 0.7
+            let spark = ((time * 17_000).truncatingRemainder(dividingBy: 1) * 2 - 1) * exp(-time * 40) * 0.25
+            return (metallic + ring + jab + spark) * 0.48
+        }
+    }
+
+    private func waterSplash() -> AVAudioPCMBuffer? {
+        synthesize(seconds: 0.38) { time, index in
+            let drop = sin(2 * Double.pi * (520 - time * 380) * time) * exp(-time * 6) * 0.55
+            let bubble = sin(2 * Double.pi * (280 - time * 120) * time) * exp(-time * 4.5) * 0.4
+            let noiseSeed = sin(Double(index) * 12.9898) * 43758.5453
+            let foam = (noiseSeed.truncatingRemainder(dividingBy: 1) * 2 - 1) * exp(-time * 7) * 0.22
+            return (drop + bubble + foam) * 0.5
+        }
+    }
+
+    private func lavaSizzle() -> AVAudioPCMBuffer? {
+        synthesize(seconds: 0.42) { time, index in
+            let rumble = sin(2 * Double.pi * 70 * time) * exp(-time * 3.2) * 0.7
+            let growl = sin(2 * Double.pi * 118 * time) * exp(-time * 4) * 0.45
+            let noiseSeed = sin(Double(index) * 78.233) * 43758.5453
+            let hiss = (noiseSeed.truncatingRemainder(dividingBy: 1) * 2 - 1) * exp(-time * 2.4) * 0.28
+            let crackle = sin(2 * Double.pi * 640 * time) * exp(-time * 16) * 0.2
+            return (rumble + growl + hiss + crackle) * 0.52
+        }
+    }
+
+    private func synthesize(seconds: Double, sample: (_ time: Double, _ index: Int) -> Double) -> AVAudioPCMBuffer? {
+        guard format.sampleRate > 0, format.channelCount > 0 else { return nil }
+        let frames = AVAudioFrameCount(format.sampleRate * seconds)
+        guard frames > 0, let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames),
+              let data = buffer.floatChannelData?[0] else { return nil }
+        buffer.frameLength = frames
+        let sampleRate = format.sampleRate
+        for index in 0..<Int(frames) {
+            let time = Double(index) / sampleRate
+            data[index] = Float(max(-1, min(1, sample(time, index))))
         }
         return buffer
     }

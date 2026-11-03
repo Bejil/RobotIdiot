@@ -106,4 +106,14 @@ enum TestLevels {
             validation: ValidationMetadata(status: .handcrafted)
         )
     }
+
+    static func room(robot: RobotState, terrain: [GridCoordinate: TerrainType]) -> Level {
+        var level = openRoom(robot: robot)
+        for (coordinate, surface) in terrain {
+            level.grid.updateCell(at: coordinate) { cell in
+                cell.terrain = surface
+            }
+        }
+        return level
+    }
 }

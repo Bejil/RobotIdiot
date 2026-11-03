@@ -81,8 +81,6 @@ final class SettingsViewController: UITableViewController {
         alert.addAction(UIAlertAction(title: "Annuler", style: .cancel))
         alert.addAction(UIAlertAction(title: "Effacer", style: .destructive) { [weak self] _ in
             CampaignStore.shared.reset()
-            ChallengeStore.shared.reset()
-            PlaySettings.resetIntroducedCommands()
             self?.tableView.reloadSections(IndexSet(integer: 2), with: .automatic)
         })
         present(alert, animated: true)

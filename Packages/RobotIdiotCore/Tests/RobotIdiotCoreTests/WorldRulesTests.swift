@@ -109,4 +109,33 @@ final class WorldRulesTests: XCTestCase {
         }
         XCTAssertEqual(before.robot.position, GridCoordinate(x: 1, y: 1))
     }
+
+    func testBushBlocksWithoutEntering() {
+        let level = TestLevels.room(
+            robot: RobotState(position: GridCoordinate(x: 1, y: 1), orientation: .east),
+            terrain: [GridCoordinate(x: 2, y: 1): .bush]
+        )
+        let before = GameState.initial(from: level)
+        let result = WorldRules.apply(command: .moveForward, to: before, level: level)
+        guard case .failure(.pathBlocked(true, let attempted)) = result else {
+            return XCTFail("Le buisson aurait dû bloquer")
+        }
+        XCTAssertEqual(attempted, GridCoordinate(x: 2, y: 1))
+        XCTAssertEqual(before.robot.position, GridCoordinate(x: 1, y: 1))
+    }
+
+    func testLethalTilesAllowEntry() {
+        for terrain in [TerrainType.spikes, .water, .lava] {
+            let level = TestLevels.room(
+                robot: RobotState(position: GridCoordinate(x: 1, y: 1), orientation: .east),
+                terrain: [GridCoordinate(x: 2, y: 1): terrain]
+            )
+            let result = WorldRules.apply(command: .moveForward, to: .initial(from: level), level: level)
+            guard case .success(let applied) = result else {
+                return XCTFail("\(terrain) aurait dû être accessible")
+            }
+            XCTAssertEqual(applied.game.robot.position, GridCoordinate(x: 2, y: 1))
+            XCTAssertTrue(terrain.isLethal)
+        }
+    }
 }

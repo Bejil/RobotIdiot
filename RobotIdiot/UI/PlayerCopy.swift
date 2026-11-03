@@ -115,12 +115,34 @@ enum PlayerCopy {
             } else if cell?.containsClosedDoor == true {
                 obstacle = "une porte"
             } else {
-                obstacle = "un mur"
+                switch cell?.terrain {
+                case .bush:
+                    obstacle = "un buisson"
+                case .spikes:
+                    obstacle = "des pics"
+                case .water:
+                    obstacle = "de l'eau"
+                case .lava:
+                    obstacle = "de la lave"
+                default:
+                    obstacle = "un mur"
+                }
             }
             if forward {
                 return ("Déplacement impossible :", "le robot est bloqué par \(obstacle).")
             }
             return ("Déplacement impossible :", "le robot ne peut pas reculer, il est bloqué par \(obstacle).")
+        case .hazard(_, _, let terrain, _):
+            switch terrain {
+            case .spikes:
+                return ("Robot détruit :", "le robot a marché sur des pics.")
+            case .water:
+                return ("Robot perdu :", "le robot a coulé dans l'eau.")
+            case .lava:
+                return ("Robot perdu :", "le robot a coulé dans la lave.")
+            default:
+                return ("Robot perdu :", "le robot a marché sur un danger.")
+            }
         case .commandUnavailable:
             return ("Commande impossible :", "cette commande n'est pas disponible dans ce niveau.")
         case .nothingToPickUp:
@@ -151,6 +173,17 @@ enum PlayerCopy {
                 return "Le robot ne peut pas avancer : la case devant lui est bloquée."
             }
             return "Le robot ne peut pas reculer : la case derrière lui est bloquée."
+        case .hazard(_, _, let terrain, _):
+            switch terrain {
+            case .spikes:
+                return "Le robot a marché sur des pics."
+            case .water:
+                return "Le robot a coulé dans l'eau."
+            case .lava:
+                return "Le robot a coulé dans la lave."
+            default:
+                return "Le robot a marché sur un danger."
+            }
         case .commandUnavailable:
             return "Cette commande n'est pas disponible dans ce niveau."
         case .nothingToPickUp:

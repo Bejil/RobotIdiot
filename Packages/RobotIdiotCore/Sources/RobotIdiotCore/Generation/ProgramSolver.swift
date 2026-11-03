@@ -97,7 +97,7 @@ public enum ProgramSolver {
             if current == flag { return true }
             for direction in Direction.allCases {
                 let next = current.translated(by: direction)
-                guard !seen.contains(next), level.grid.cell(at: next)?.allowsRobotEntry == true else { continue }
+                guard !seen.contains(next), level.grid.cell(at: next)?.allowsSafeRobotEntry == true else { continue }
                 seen.insert(next)
                 queue.append(next)
             }

@@ -155,4 +155,25 @@ final class SimulationEngineTests: XCTestCase {
         XCTAssertNil(outcome.event)
         XCTAssertEqual(outcome.state, settled)
     }
+
+    func testEnteringWaterMovesThenFails() {
+        let level = TestLevels.room(
+            robot: RobotState(position: GridCoordinate(x: 1, y: 1), orientation: .east),
+            terrain: [GridCoordinate(x: 2, y: 1): .water]
+        )
+        let move = Instruction(command: .moveForward)
+        var engine = SimulationEngine(level: level, program: Program(instructions: [move]))
+        let final = engine.runUntilTerminal()
+        XCTAssertEqual(final.status, .failed)
+        XCTAssertEqual(final.game.robot.position, GridCoordinate(x: 2, y: 1))
+        guard case .hazard(_, let id, .water, let at)? = final.fault else {
+            return XCTFail("L'eau doit tuer après l'entrée")
+        }
+        XCTAssertEqual(id, move.id)
+        XCTAssertEqual(at, GridCoordinate(x: 2, y: 1))
+        guard case .enteredHazard(_, let to, .water, _, _)? = final.history.last?.event else {
+            return XCTFail("L'événement doit montrer l'entrée dans l'eau")
+        }
+        XCTAssertEqual(to, GridCoordinate(x: 2, y: 1))
+    }
 }

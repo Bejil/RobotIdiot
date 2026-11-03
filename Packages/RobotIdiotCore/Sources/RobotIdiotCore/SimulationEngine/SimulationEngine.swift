@@ -128,15 +128,47 @@ public struct SimulationEngine: Sendable {
                 return fail(fault(violation, instruction: instruction))
             case .success(let applied):
                 state.game = applied.game
+                state.cursor.frames[state.cursor.frames.count - 1].childIndex += 1
+                if state.game.isVictory {
+                    state.history.append(ExecutionRecord(
+                        instructionID: instruction.id,
+                        command: instruction.command,
+                        event: applied.event
+                    ))
+                    state.status = .succeeded
+                    return StepOutcome(event: applied.event, state: state)
+                }
+                if case .moved(let from, let to, let forward, let command) = applied.event,
+                   let terrain = state.game.grid.cell(at: to)?.terrain,
+                   terrain.isLethal {
+                    let fault = ExecutionFault.hazard(
+                        command: command,
+                        instructionID: instruction.id,
+                        terrain: terrain,
+                        at: to
+                    )
+                    state.status = .failed
+                    state.fault = fault
+                    let event = SimulationEvent.enteredHazard(
+                        from: from,
+                        to: to,
+                        terrain: terrain,
+                        forward: forward,
+                        command: command
+                    )
+                    state.history.append(ExecutionRecord(
+                        instructionID: instruction.id,
+                        command: instruction.command,
+                        event: event
+                    ))
+                    return StepOutcome(event: event, state: state)
+                }
                 state.history.append(ExecutionRecord(
                     instructionID: instruction.id,
                     command: instruction.command,
                     event: applied.event
                 ))
-                state.cursor.frames[state.cursor.frames.count - 1].childIndex += 1
-                if state.game.isVictory {
-                    state.status = .succeeded
-                } else if isDrained() {
+                if isDrained() {
                     state.status = .exhausted
                 }
                 return StepOutcome(event: applied.event, state: state)
