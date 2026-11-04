@@ -26,6 +26,9 @@ final class AdsService: NSObject {
     static let shared = AdsService()
     static let didBecomeReady = Notification.Name("AdsService.didBecomeReady")
 
+    /// Coupe toutes les pubs (bannière, interstitiels, rewarded) + le flux UMP.
+    static let areEnabled = true
+
     private(set) var isReady = false
     private var isStarted = false
     private var launchInterstitial: InterstitialAd?
@@ -43,6 +46,10 @@ final class AdsService: NSObject {
 
     /// Démarre le SDK uniquement après consentement UMP (`canRequestAds`).
     func start(completion: (() -> Void)? = nil) {
+        guard Self.areEnabled else {
+            completion?()
+            return
+        }
         guard AdsConsentManager.shared.canRequestAds else {
             completion?()
             return
@@ -79,7 +86,7 @@ final class AdsService: NSObject {
     // MARK: - Launch
 
     func showLaunchInterstitialIfNeeded(from controller: UIViewController) {
-        guard isReady, !didShowLaunchInterstitial else { return }
+        guard Self.areEnabled, isReady, !didShowLaunchInterstitial else { return }
         waitForInterstitial(
             getter: { [weak self] in self?.launchInterstitial },
             loader: { [weak self] in self?.loadLaunchInterstitial() },
@@ -102,22 +109,27 @@ final class AdsService: NSObject {
         banner.adUnitID = AdUnit.homeBanner
         banner.rootViewController = rootViewController
         banner.translatesAutoresizingMaskIntoConstraints = false
-        banner.heightAnchor.constraint(equalToConstant: AdSizeBanner.size.height).isActive = true
-        if isReady {
-            banner.load(Request())
+        if Self.areEnabled {
+            banner.heightAnchor.constraint(equalToConstant: AdSizeBanner.size.height).isActive = true
+            if isReady {
+                banner.load(Request())
+            }
+        } else {
+            banner.isHidden = true
+            banner.heightAnchor.constraint(equalToConstant: 0).isActive = true
         }
         return banner
     }
 
     func loadHomeBannerIfNeeded(_ banner: BannerView?) {
-        guard isReady, let banner else { return }
+        guard Self.areEnabled, isReady, let banner else { return }
         banner.load(Request())
     }
 
     // MARK: - Level success
 
     func showLevelSuccessInterstitial(from controller: UIViewController, then completion: @escaping () -> Void) {
-        guard isReady else {
+        guard Self.areEnabled, isReady else {
             completion()
             return
         }
@@ -146,7 +158,7 @@ final class AdsService: NSObject {
     // MARK: - Error / Modifier
 
     func showErrorInterstitial(from controller: UIViewController, then completion: @escaping () -> Void) {
-        guard isReady else {
+        guard Self.areEnabled, isReady else {
             completion()
             return
         }
@@ -179,7 +191,7 @@ final class AdsService: NSObject {
         onReward: @escaping () -> Void,
         onUnavailable: (() -> Void)? = nil
     ) {
-        guard isReady else {
+        guard Self.areEnabled, isReady else {
             onUnavailable?()
             return
         }

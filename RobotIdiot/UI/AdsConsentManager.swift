@@ -20,6 +20,10 @@ final class AdsConsentManager {
 
     /// À appeler à chaque lancement. Présente le formulaire si nécessaire, puis démarre AdMob dès que possible.
     func gatherConsent(from viewController: UIViewController?, completion: ((Error?) -> Void)? = nil) {
+        guard AdsService.areEnabled else {
+            completion?(nil)
+            return
+        }
         guard !isGathering else {
             completion?(nil)
             return

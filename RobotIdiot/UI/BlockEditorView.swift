@@ -2,6 +2,9 @@ import UIKit
 import RobotIdiotCore
 
 final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate, UITableViewDragDelegate, UITableViewDropDelegate, UITextViewDelegate {
+    /// Largeur de la colonne commandes + espacement avant le programme.
+    static let paletteLaneWidth: CGFloat = 72
+
     private let headerLabel = UILabel()
     private let countLabel = UILabel()
     private let undoButton = UIButton(type: .system)
@@ -19,6 +22,9 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     private let textRow = UIStackView()
     private let gutterView = UITextView()
     private let textView = UITextView()
+    private let programColumn = UIStackView()
+    private let actionsSpacer = UIView()
+    private var actionsSpacerHeight: NSLayoutConstraint?
 
     private var undoStack: [Program] = []
     private var redoStack: [Program] = []
@@ -212,20 +218,31 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         paletteScroll.alwaysBounceVertical = true
         paletteScroll.addSubview(palette)
 
-        let workspace = UIStackView(arrangedSubviews: [paletteScroll, tableView])
+        // Colonne programme : fond gris s'arrête au-dessus des boutons.
+        // La palette à gauche continue jusqu'en bas.
+        actionsSpacer.backgroundColor = .clear
+        actionsSpacer.isUserInteractionEnabled = false
+        let spacerHeight = actionsSpacer.heightAnchor.constraint(equalToConstant: 0)
+        actionsSpacerHeight = spacerHeight
+
+        programColumn.axis = .vertical
+        programColumn.spacing = 8
+        programColumn.alignment = .fill
+        programColumn.addArrangedSubview(tableView)
+        programColumn.addArrangedSubview(textRow)
+        programColumn.addArrangedSubview(banner)
+        programColumn.addArrangedSubview(actionsSpacer)
+
+        let workspace = UIStackView(arrangedSubviews: [paletteScroll, programColumn])
         workspace.axis = .horizontal
         workspace.spacing = 16
         workspace.alignment = .fill
-        workspace.isLayoutMarginsRelativeArrangement = true
-        workspace.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-
-        let column = UIStackView(arrangedSubviews: [workspace, textRow, banner])
-        column.axis = .vertical
-        column.spacing = 8
-        column.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(column)
+        workspace.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(workspace)
 
         banner.setContentHuggingPriority(.required, for: .vertical)
+        actionsSpacer.setContentHuggingPriority(.required, for: .vertical)
+        actionsSpacer.setContentCompressionResistancePriority(.required, for: .vertical)
         paletteScroll.backgroundColor = .clear
         paletteScroll.setContentHuggingPriority(.init(1), for: .vertical)
         paletteScroll.setContentCompressionResistancePriority(.init(1), for: .vertical)
@@ -237,10 +254,10 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         textRow.setContentCompressionResistancePriority(.init(1), for: .vertical)
 
         NSLayoutConstraint.activate([
-            column.topAnchor.constraint(equalTo: topAnchor),
-            column.leadingAnchor.constraint(equalTo: leadingAnchor),
-            column.trailingAnchor.constraint(equalTo: trailingAnchor),
-            column.bottomAnchor.constraint(equalTo: bottomAnchor),
+            workspace.topAnchor.constraint(equalTo: topAnchor),
+            workspace.leadingAnchor.constraint(equalTo: leadingAnchor),
+            workspace.trailingAnchor.constraint(equalTo: trailingAnchor),
+            workspace.bottomAnchor.constraint(equalTo: bottomAnchor),
             bannerLabel.topAnchor.constraint(equalTo: banner.topAnchor, constant: 10),
             bannerLabel.leadingAnchor.constraint(equalTo: banner.leadingAnchor, constant: 12),
             bannerLabel.trailingAnchor.constraint(equalTo: banner.trailingAnchor, constant: -12),
@@ -251,6 +268,7 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
             palette.leadingAnchor.constraint(equalTo: paletteScroll.contentLayoutGuide.leadingAnchor),
             palette.trailingAnchor.constraint(equalTo: paletteScroll.contentLayoutGuide.trailingAnchor),
             palette.widthAnchor.constraint(equalTo: paletteScroll.frameLayoutGuide.widthAnchor),
+            spacerHeight,
             tableView.heightAnchor.constraint(greaterThanOrEqualToConstant: 88).prioritized(.defaultHigh),
             textRow.heightAnchor.constraint(greaterThanOrEqualToConstant: 88).prioritized(.defaultHigh)
         ])
@@ -258,6 +276,11 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         rebuildPalette()
         refreshHint()
         refreshChrome()
+    }
+
+    /// Réserve sous le programme la place pour Exécuter / vitesse (sans agrandir le fond gris).
+    func reserveBottomActions(height: CGFloat) {
+        actionsSpacerHeight?.constant = max(0, height)
     }
 
     private func configureIconButton(_ button: UIButton, image: String, label: String, action: Selector) {

@@ -199,7 +199,16 @@ final class GameViewController: UIViewController {
             if let campaign = self.campaign {
                 CampaignStore.shared.save(program, at: campaign)
             }
-            self.restoreRobot()
+            // Pendant l'édition au repos, ne pas resetter le plateau :
+            // ça coupait et relançait l'animation idle du robot.
+            if self.isAnimating || self.wantsContinuous {
+                self.restoreRobot()
+                return
+            }
+            self.engine.reset(program: program)
+            self.editor.clearHighlight()
+            self.editor.setErrorMessage(nil)
+            self.updateControls()
         }
     }
 
@@ -290,6 +299,9 @@ final class GameViewController: UIViewController {
         if let constraint = sheetHeightConstraint, abs(constraint.constant - clamped) > 0.5 {
             constraint.constant = clamped
         }
+        // Espace sous le fond gris : petit écart + boutons + marge basse + home indicator.
+        // (Le stack ajoute déjà 8 pt au-dessus du spacer.)
+        editor.reserveBottomActions(height: 52 + 8 + 6 + view.safeAreaInsets.bottom)
     }
 
     private func applyLayout() {
@@ -340,9 +352,13 @@ final class GameViewController: UIViewController {
             editor.topAnchor.constraint(equalTo: limitsLabel.bottomAnchor, constant: 14),
             editor.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 12),
             editor.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -12),
+            editor.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            runButton.topAnchor.constraint(equalTo: editor.bottomAnchor, constant: 8),
-            runButton.leadingAnchor.constraint(equalTo: editor.leadingAnchor),
+            // Sous la liste du programme (à droite de la palette), pas sous toute la largeur.
+            runButton.leadingAnchor.constraint(
+                equalTo: editor.leadingAnchor,
+                constant: BlockEditorView.paletteLaneWidth
+            ),
             runButton.bottomAnchor.constraint(equalTo: guide.bottomAnchor, constant: -8),
             runButton.heightAnchor.constraint(equalToConstant: 52),
 
@@ -353,6 +369,7 @@ final class GameViewController: UIViewController {
             speedToggle.heightAnchor.constraint(equalTo: runButton.heightAnchor)
         ]
         NSLayoutConstraint.activate(layoutConstraints)
+        editor.reserveBottomActions(height: 52 + 8 + 6 + view.safeAreaInsets.bottom)
         view.bringSubviewToFront(sheet)
         view.bringSubviewToFront(sheetGrabber)
         view.bringSubviewToFront(limitsLabel)

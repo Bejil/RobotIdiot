@@ -427,8 +427,10 @@ enum GameArt {
 
     private static func assetName(_ piece: BoardPiece) -> String {
         switch piece {
-        case .grassA, .grassB, .goal:
+        case .grassA, .grassB:
             return "BoardGrass"
+        case .goal:
+            return "BoardGoal"
         case .stone:
             return "BoardStone"
         case .slab:

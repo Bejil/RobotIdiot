@@ -27,9 +27,10 @@ final class ExecutionAlertView: UIView {
         card.layer.shadowOffset = CGSize(width: 0, height: 8)
         card.translatesAutoresizingMaskIntoConstraints = false
 
-        robot.image = UIImage(named: "HomeHero")
+        robot.image = UIImage(named: "RobotSad") ?? UIImage(named: "HomeHero")
         robot.contentMode = .scaleAspectFit
         robot.isUserInteractionEnabled = false
+        robot.accessibilityLabel = "Robot triste"
         robot.translatesAutoresizingMaskIntoConstraints = false
         addSubview(robot)
         addSubview(card)

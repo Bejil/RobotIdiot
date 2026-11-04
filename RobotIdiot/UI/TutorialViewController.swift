@@ -20,9 +20,9 @@ final class TutorialViewController: UIViewController {
 
     private let pages: [Page] = [
         Page(
-            eyebrow: "Principe",
-            title: "Le robot est idiot.\nC’est toi le cerveau.",
-            body: "Il fait exactement ce que tu écris, dans l’ordre, sans jamais deviner. Une mauvaise instruction, et il bloque. Une bonne suite, et il atteint le drapeau.",
+            eyebrow: "Histoire",
+            title: "Le robot est idiot.\nIl a besoin de toi.",
+            body: "Sa batterie tire à sa fin. Sans toi, il n’atteindra jamais sa base de chargement. Tu es son cerveau : écris le programme qui le ramène à la borne, pas à pas, sans qu’il ait à réfléchir.",
             accent: UIColor(hex: 0x7B3FF2),
             art: .hero
         ),
@@ -49,15 +49,15 @@ final class TutorialViewController: UIViewController {
         ),
         Page(
             eyebrow: "Phase 3 · Réussir",
-            title: "Atteins le drapeau.\nGagne des étoiles.",
-            body: "Quand le robot arrive au drapeau, c’est gagné. Les étoiles récompensent un programme court et propre : moins d’actions inutiles, plus d’étoiles.",
+            title: "Mène-le à sa\nbase de chargement.",
+            body: "La borne lumineuse est son refuge. Quand le robot y pose le pied, il se recharge — niveau réussi. Les étoiles récompensent un programme court et propre : moins d’actions inutiles, plus d’étoiles.",
             accent: UIColor(hex: 0xFFD200),
             art: .victory
         ),
         Page(
             eyebrow: "Phase 4 · Progresser",
             title: "Dix mondes,\ncent niveaux.",
-            body: "Chaque monde introduit de nouveaux pièges et objets. Continue pour reprendre ta place, ou ouvre Progression pour choisir un niveau. Les nouvelles commandes s’expliquent toutes seules au moment où tu en as besoin.",
+            body: "Chaque monde cache une nouvelle base et de nouveaux pièges. Continue pour reprendre ta place, ou ouvre Progression pour choisir un niveau. Les nouvelles commandes s’expliquent toutes seules au moment où tu en as besoin.",
             accent: UIColor(hex: 0xFF5A6E),
             art: .campaign
         )
@@ -539,9 +539,9 @@ private final class TutorialPageView: UIView {
         board.layer.cornerCurve = .continuous
         pinArt(board, width: 0.7, height: 0.62, y: 0.18)
 
-        let flag = UIImageView(image: UIImage(named: "BoardFlag"))
-        flag.contentMode = .scaleAspectFit
-        pinArt(flag, width: 0.22, height: 0.28, y: 0.12, x: 0.62)
+        let goal = UIImageView(image: UIImage(named: "BoardGoal") ?? UIImage(named: "W1Goal"))
+        goal.contentMode = .scaleAspectFit
+        pinArt(goal, width: 0.28, height: 0.28, y: 0.14, x: 0.58)
 
         let robot = UIImageView(image: UIImage(named: "BoardMascot"))
         robot.contentMode = .scaleAspectFit
@@ -606,21 +606,11 @@ private final class TutorialPageView: UIView {
             worlds.heightAnchor.constraint(equalTo: artHost.heightAnchor, multiplier: 0.48)
         ])
         for world in 1...4 {
-            let tile = UIImageView(image: UIImage(named: "W\(world)Grass") ?? UIImage(named: "BoardGrass"))
-            tile.contentMode = .scaleAspectFill
+            let tile = UIImageView(image: UIImage(named: "W\(world)Goal") ?? UIImage(named: "BoardGoal"))
+            tile.contentMode = .scaleAspectFit
             tile.clipsToBounds = true
             tile.layer.cornerRadius = 16
             tile.layer.cornerCurve = .continuous
-            let flag = UIImageView(image: UIImage(named: "W\(world)Flag") ?? UIImage(named: "BoardFlag"))
-            flag.contentMode = .scaleAspectFit
-            flag.translatesAutoresizingMaskIntoConstraints = false
-            tile.addSubview(flag)
-            NSLayoutConstraint.activate([
-                flag.centerXAnchor.constraint(equalTo: tile.centerXAnchor),
-                flag.centerYAnchor.constraint(equalTo: tile.centerYAnchor),
-                flag.widthAnchor.constraint(equalTo: tile.widthAnchor, multiplier: 0.55),
-                flag.heightAnchor.constraint(equalTo: tile.heightAnchor, multiplier: 0.55)
-            ])
             worlds.addArrangedSubview(tile)
             artViews.append(tile)
         }
