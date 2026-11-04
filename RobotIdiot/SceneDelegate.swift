@@ -29,6 +29,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(settingsChanged), name: PlaySettings.changed, object: nil)
         window.makeKeyAndVisible()
         Soundscape.shared.refreshMusic()
+        AdsConsentManager.shared.gatherConsent(from: navigation)
     }
 
     @objc private func settingsChanged() {

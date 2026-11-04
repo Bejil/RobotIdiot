@@ -33,6 +33,12 @@ final class HomeViewController: UIViewController {
         view.backgroundColor = AppTheme.cream
         navigationItem.backButtonDisplayMode = .minimal
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(adsDidBecomeReady),
+            name: AdsService.didBecomeReady,
+            object: nil
+        )
 
         logo.contentMode = .scaleAspectFit
         logo.isAccessibilityElement = true
@@ -190,14 +196,24 @@ final class HomeViewController: UIViewController {
     private func offerLaunchAdIfNeeded() {
         guard !didOfferLaunchAd else { return }
         guard presentedViewController == nil else { return }
+        guard AdsService.shared.isReady else { return }
         didOfferLaunchAd = true
-        // Attend le démarrage SDK + le chargement de l'interstitiel.
+        // Attend le chargement de l'interstitiel après démarrage AdMob.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self, self.presentedViewController == nil else {
                 self?.didOfferLaunchAd = false
                 return
             }
             AdsService.shared.showLaunchInterstitialIfNeeded(from: self)
+        }
+    }
+
+    @objc private func adsDidBecomeReady() {
+        AdsService.shared.loadHomeBannerIfNeeded(bannerView)
+        if view.window != nil,
+           presentedViewController == nil,
+           navigationController?.viewControllers.count == 1 {
+            offerLaunchAdIfNeeded()
         }
     }
 

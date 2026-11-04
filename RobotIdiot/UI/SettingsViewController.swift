@@ -22,12 +22,13 @@ final class SettingsViewController: UITableViewController {
         tableView.reloadData()
     }
 
-    override func numberOfSections(in tableView: UITableView) -> Int { 3 }
+    override func numberOfSections(in tableView: UITableView) -> Int { 4 }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
         case 0: return 3
         case 1: return 1
+        case 2: return AdsConsentManager.shared.isPrivacyOptionsRequired ? 1 : 0
         default: return 2
         }
     }
@@ -36,12 +37,13 @@ final class SettingsViewController: UITableViewController {
         switch section {
         case 0: return "Son"
         case 1: return "Tutoriel"
+        case 2: return AdsConsentManager.shared.isPrivacyOptionsRequired ? "Confidentialité" : nil
         default: return "Progression"
         }
     }
 
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        section == 2 ? "Effacer oublie la progression de la campagne." : nil
+        section == 3 ? "Effacer oublie la progression de la campagne." : nil
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -55,6 +57,8 @@ final class SettingsViewController: UITableViewController {
         case (1, 0):
             return textCell(title: "Revoir le tutoriel", color: AppTheme.tealDark, accessory: .disclosureIndicator)
         case (2, 0):
+            return textCell(title: "Options de confidentialité", color: AppTheme.tealDark, accessory: .disclosureIndicator)
+        case (3, 0):
             return textCell(title: worldSummary(), color: AppTheme.ink, accessory: .none)
         default:
             return textCell(title: "Effacer la progression", color: AppTheme.coral, accessory: .none)
@@ -62,7 +66,9 @@ final class SettingsViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
-        indexPath.section == 1 || (indexPath.section == 2 && indexPath.row == 1)
+        indexPath.section == 1
+            || indexPath.section == 2
+            || (indexPath.section == 3 && indexPath.row == 1)
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -72,7 +78,13 @@ final class SettingsViewController: UITableViewController {
             present(TutorialViewController(), animated: true)
             return
         }
-        guard indexPath.section == 2, indexPath.row == 1 else { return }
+        if indexPath.section == 2 {
+            AdsConsentManager.shared.presentPrivacyOptions(from: self) { [weak self] _ in
+                self?.tableView.reloadData()
+            }
+            return
+        }
+        guard indexPath.section == 3, indexPath.row == 1 else { return }
         let alert = UIAlertController(
             title: "Effacer la progression ?",
             message: "La progression de la campagne sera oubliée.",
@@ -81,7 +93,7 @@ final class SettingsViewController: UITableViewController {
         alert.addAction(UIAlertAction(title: "Annuler", style: .cancel))
         alert.addAction(UIAlertAction(title: "Effacer", style: .destructive) { [weak self] _ in
             CampaignStore.shared.reset()
-            self?.tableView.reloadSections(IndexSet(integer: 2), with: .automatic)
+            self?.tableView.reloadSections(IndexSet(integer: 3), with: .automatic)
         })
         present(alert, animated: true)
     }

@@ -24,7 +24,9 @@ enum AdUnit {
 @MainActor
 final class AdsService: NSObject {
     static let shared = AdsService()
+    static let didBecomeReady = Notification.Name("AdsService.didBecomeReady")
 
+    private(set) var isReady = false
     private var isStarted = false
     private var launchInterstitial: InterstitialAd?
     private var successInterstitial: InterstitialAd?
@@ -39,7 +41,12 @@ final class AdsService: NSObject {
         super.init()
     }
 
+    /// Démarre le SDK uniquement après consentement UMP (`canRequestAds`).
     func start(completion: (() -> Void)? = nil) {
+        guard AdsConsentManager.shared.canRequestAds else {
+            completion?()
+            return
+        }
         guard !isStarted else {
             completion?()
             return
@@ -52,13 +59,17 @@ final class AdsService: NSObject {
 #endif
         MobileAds.shared.start { [weak self] _ in
             Task { @MainActor in
-                self?.preloadAll()
+                guard let self else { return }
+                self.isReady = true
+                self.preloadAll()
+                NotificationCenter.default.post(name: Self.didBecomeReady, object: self)
                 completion?()
             }
         }
     }
 
     func preloadAll() {
+        guard isReady else { return }
         loadLaunchInterstitial()
         loadSuccessInterstitial()
         loadErrorInterstitial()
@@ -68,7 +79,7 @@ final class AdsService: NSObject {
     // MARK: - Launch
 
     func showLaunchInterstitialIfNeeded(from controller: UIViewController) {
-        guard !didShowLaunchInterstitial else { return }
+        guard isReady, !didShowLaunchInterstitial else { return }
         waitForInterstitial(
             getter: { [weak self] in self?.launchInterstitial },
             loader: { [weak self] in self?.loadLaunchInterstitial() },
@@ -92,13 +103,24 @@ final class AdsService: NSObject {
         banner.rootViewController = rootViewController
         banner.translatesAutoresizingMaskIntoConstraints = false
         banner.heightAnchor.constraint(equalToConstant: AdSizeBanner.size.height).isActive = true
-        banner.load(Request())
+        if isReady {
+            banner.load(Request())
+        }
         return banner
+    }
+
+    func loadHomeBannerIfNeeded(_ banner: BannerView?) {
+        guard isReady, let banner else { return }
+        banner.load(Request())
     }
 
     // MARK: - Level success
 
     func showLevelSuccessInterstitial(from controller: UIViewController, then completion: @escaping () -> Void) {
+        guard isReady else {
+            completion()
+            return
+        }
         waitForInterstitial(
             getter: { [weak self] in self?.successInterstitial },
             loader: { [weak self] in self?.loadSuccessInterstitial() },
@@ -124,6 +146,10 @@ final class AdsService: NSObject {
     // MARK: - Error / Modifier
 
     func showErrorInterstitial(from controller: UIViewController, then completion: @escaping () -> Void) {
+        guard isReady else {
+            completion()
+            return
+        }
         waitForInterstitial(
             getter: { [weak self] in self?.errorInterstitial },
             loader: { [weak self] in self?.loadErrorInterstitial() },
@@ -153,6 +179,10 @@ final class AdsService: NSObject {
         onReward: @escaping () -> Void,
         onUnavailable: (() -> Void)? = nil
     ) {
+        guard isReady else {
+            onUnavailable?()
+            return
+        }
         waitForRewarded(timeout: 5) { [weak self] ad in
             guard let self else {
                 onUnavailable?()
@@ -272,7 +302,7 @@ final class AdsService: NSObject {
     // MARK: - Loading
 
     private func loadLaunchInterstitial() {
-        guard launchInterstitial == nil else { return }
+        guard isReady, launchInterstitial == nil else { return }
         InterstitialAd.load(with: AdUnit.launchInterstitial, request: Request()) { [weak self] ad, error in
             Task { @MainActor in
                 if let error {
@@ -285,7 +315,7 @@ final class AdsService: NSObject {
     }
 
     private func loadSuccessInterstitial() {
-        guard successInterstitial == nil else { return }
+        guard isReady, successInterstitial == nil else { return }
         InterstitialAd.load(with: AdUnit.levelSuccessInterstitial, request: Request()) { [weak self] ad, error in
             Task { @MainActor in
                 if let error {
@@ -298,7 +328,7 @@ final class AdsService: NSObject {
     }
 
     private func loadErrorInterstitial() {
-        guard errorInterstitial == nil else { return }
+        guard isReady, errorInterstitial == nil else { return }
         InterstitialAd.load(with: AdUnit.errorInterstitial, request: Request()) { [weak self] ad, error in
             Task { @MainActor in
                 if let error {
@@ -311,7 +341,7 @@ final class AdsService: NSObject {
     }
 
     private func loadHelpRewarded() {
-        guard helpRewarded == nil else { return }
+        guard isReady, helpRewarded == nil else { return }
         RewardedInterstitialAd.load(with: AdUnit.helpRewardedInterstitial, request: Request()) { [weak self] ad, error in
             Task { @MainActor in
                 if let error {
