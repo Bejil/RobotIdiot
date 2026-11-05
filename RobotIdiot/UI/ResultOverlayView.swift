@@ -13,6 +13,7 @@ final class ResultOverlayView: UIView {
     private let robot = UIImageView(image: UIImage(named: "VictoryRobot"))
     private let stars = UIStackView()
     private var starViews: [UIImageView] = []
+    private var starSizeConstraints: [NSLayoutConstraint] = []
     private let detailsCard = UIView()
     private let sizeValue = UILabel()
     private let actionValue = UILabel()
@@ -23,6 +24,11 @@ final class ResultOverlayView: UIView {
     private let nextButton = AppTheme.filledButton(title: "Niveau suivant", systemImage: "play.fill", prominent: true)
     private let retryButton = AppTheme.filledButton(title: "Réessayer", systemImage: "arrow.clockwise", prominent: false, tone: .primary)
     private let exitButton = AppTheme.filledButton(title: "Retour", systemImage: "house.fill", prominent: false, tone: .primary)
+    private let stage = UIView()
+    private let actions = UIStackView()
+    private let sidePanel = UIStackView()
+    private var contentConstraints: [NSLayoutConstraint] = []
+    private var usesWideLayout = false
     private var playing = false
     private var driftedWidth: CGFloat = -1
 
@@ -30,162 +36,13 @@ final class ResultOverlayView: UIView {
         super.init(frame: frame)
         backgroundColor = UIColor(hex: 0x10245F)
         isAccessibilityElement = false
-
-        rays.contentMode = .scaleAspectFill
-        rays.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(rays)
-
-        clouds.show(UIImage(named: "VictoryClouds"))
-        clouds.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(clouds)
-
-        ribbon.contentMode = .scaleAspectFit
-        ribbon.isAccessibilityElement = true
-        ribbon.accessibilityLabel = "Niveau réussi !"
-        ribbon.translatesAutoresizingMaskIntoConstraints = false
-
-        confetti.contentMode = .scaleAspectFit
-        confetti.isUserInteractionEnabled = false
-        confetti.translatesAutoresizingMaskIntoConstraints = false
-
-        robot.contentMode = .scaleAspectFit
-        robot.isAccessibilityElement = false
-        robot.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
-        robot.setContentHuggingPriority(.defaultLow, for: .vertical)
-        robot.translatesAutoresizingMaskIntoConstraints = false
-
-        stars.axis = .horizontal
-        stars.spacing = 10
-        stars.alignment = .center
-        stars.translatesAutoresizingMaskIntoConstraints = false
-        let starImage = UIImage(named: "VictoryStar")
-        for _ in 0..<3 {
-            let image = UIImageView(image: starImage)
-            image.contentMode = .scaleAspectFit
-            image.translatesAutoresizingMaskIntoConstraints = false
-            image.widthAnchor.constraint(equalToConstant: 78).isActive = true
-            image.heightAnchor.constraint(equalToConstant: 74).isActive = true
-            stars.addArrangedSubview(image)
-            starViews.append(image)
+        buildChrome()
+        buildContent()
+        installBaseConstraints()
+        applyContentLayout(wide: false)
+        registerForTraitChanges([UITraitHorizontalSizeClass.self, UITraitVerticalSizeClass.self]) { (view: Self, _) in
+            view.refreshLayoutIfNeeded()
         }
-
-        style(nextButton, fill: AppTheme.gold, ink: AppTheme.line, imageOnRight: true)
-        style(retryButton, fill: UIColor(hex: 0x7B3FF2), ink: .white, imageOnRight: true)
-        style(exitButton, fill: UIColor(hex: 0x7B3FF2), ink: .white, imageOnRight: true)
-        nextButton.addTarget(self, action: #selector(nextTapped), for: .touchUpInside)
-        retryButton.addTarget(self, action: #selector(retryTapped), for: .touchUpInside)
-        exitButton.addTarget(self, action: #selector(exitTapped), for: .touchUpInside)
-        nextButton.isHidden = true
-
-        detailsCard.backgroundColor = .white
-        detailsCard.layer.cornerRadius = 24
-        detailsCard.layer.cornerCurve = .continuous
-        detailsCard.translatesAutoresizingMaskIntoConstraints = false
-        let heading = UILabel()
-        heading.text = "Détails"
-        heading.font = AppTheme.font(18, .heavy, textStyle: .headline)
-        heading.textColor = AppTheme.line
-        heading.setContentCompressionResistancePriority(.required, for: .vertical)
-        boltRow.axis = .horizontal
-        boltRow.spacing = 8
-        boltRow.isHidden = true
-        let boltIcon = UIImageView(image: GameArt.piece(.bolt))
-        boltIcon.contentMode = .scaleAspectFit
-        boltIcon.translatesAutoresizingMaskIntoConstraints = false
-        boltIcon.widthAnchor.constraint(equalToConstant: 28).isActive = true
-        boltIcon.heightAnchor.constraint(equalToConstant: 28).isActive = true
-        boltValue.font = AppTheme.font(16, .heavy, textStyle: .body)
-        boltValue.textColor = AppTheme.line
-        boltRow.addArrangedSubview(boltIcon)
-        boltRow.addArrangedSubview(boltValue)
-
-        let rows = UIStackView(arrangedSubviews: [
-            heading,
-            detailRow(title: "Taille", value: sizeValue),
-            detailRow(title: "Actions", value: actionValue),
-            detailRow(title: "Déplacements", value: moveValue),
-            boltRow,
-            noteLabel
-        ])
-        rows.axis = .vertical
-        rows.spacing = 8
-        rows.setCustomSpacing(12, after: heading)
-        rows.translatesAutoresizingMaskIntoConstraints = false
-        noteLabel.font = AppTheme.font(14, .medium, textStyle: .subheadline)
-        noteLabel.textColor = UIColor(hex: 0x5C6578)
-        noteLabel.numberOfLines = 0
-        noteLabel.setContentCompressionResistancePriority(.required, for: .vertical)
-        detailsCard.setContentCompressionResistancePriority(.required, for: .vertical)
-        detailsCard.addSubview(rows)
-
-        let actions = UIStackView(arrangedSubviews: [nextButton, retryButton, exitButton])
-        actions.axis = .vertical
-        actions.spacing = 10
-        actions.translatesAutoresizingMaskIntoConstraints = false
-
-        let stage = UIView()
-        stage.translatesAutoresizingMaskIntoConstraints = false
-        stage.addSubview(confetti)
-        stage.addSubview(robot)
-
-        addSubview(ribbon)
-        addSubview(stars)
-        addSubview(stage)
-        addSubview(detailsCard)
-        addSubview(actions)
-
-        NSLayoutConstraint.activate([
-            rays.topAnchor.constraint(equalTo: topAnchor),
-            rays.leadingAnchor.constraint(equalTo: leadingAnchor, constant: -12),
-            rays.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 12),
-            rays.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 0.72),
-
-            clouds.leadingAnchor.constraint(equalTo: leadingAnchor),
-            clouds.trailingAnchor.constraint(equalTo: trailingAnchor),
-            clouds.heightAnchor.constraint(equalToConstant: 120),
-            clouds.bottomAnchor.constraint(equalTo: stage.bottomAnchor, constant: 24),
-
-            ribbon.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 8),
-            ribbon.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            ribbon.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            ribbon.heightAnchor.constraint(equalToConstant: 108),
-
-            stars.topAnchor.constraint(equalTo: ribbon.bottomAnchor, constant: 6),
-            stars.centerXAnchor.constraint(equalTo: centerXAnchor),
-
-            stage.topAnchor.constraint(equalTo: stars.bottomAnchor, constant: 4),
-            stage.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stage.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stage.bottomAnchor.constraint(equalTo: detailsCard.topAnchor, constant: -8),
-
-            detailsCard.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 22),
-            detailsCard.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -22),
-            detailsCard.bottomAnchor.constraint(equalTo: actions.topAnchor, constant: -12),
-            rows.topAnchor.constraint(equalTo: detailsCard.topAnchor, constant: 14),
-            rows.leadingAnchor.constraint(equalTo: detailsCard.leadingAnchor, constant: 16),
-            rows.trailingAnchor.constraint(equalTo: detailsCard.trailingAnchor, constant: -16),
-            rows.bottomAnchor.constraint(equalTo: detailsCard.bottomAnchor, constant: -14),
-
-            confetti.centerXAnchor.constraint(equalTo: stage.centerXAnchor),
-            confetti.centerYAnchor.constraint(equalTo: robot.centerYAnchor),
-            confetti.widthAnchor.constraint(equalTo: stage.widthAnchor, multiplier: 0.92),
-            confetti.heightAnchor.constraint(equalTo: confetti.widthAnchor, multiplier: 0.47),
-
-            robot.centerXAnchor.constraint(equalTo: stage.centerXAnchor),
-            robot.centerYAnchor.constraint(equalTo: stage.centerYAnchor),
-            robot.widthAnchor.constraint(equalTo: stage.widthAnchor, multiplier: 0.62).prioritized(.defaultHigh),
-            robot.heightAnchor.constraint(equalTo: robot.widthAnchor, multiplier: 1.03).prioritized(.defaultHigh),
-            robot.heightAnchor.constraint(lessThanOrEqualTo: stage.heightAnchor),
-            robot.topAnchor.constraint(greaterThanOrEqualTo: stage.topAnchor),
-            robot.bottomAnchor.constraint(lessThanOrEqualTo: stage.bottomAnchor),
-
-            actions.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 22),
-            actions.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -22),
-            actions.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -12),
-            nextButton.heightAnchor.constraint(equalToConstant: 58),
-            retryButton.heightAnchor.constraint(equalToConstant: 52),
-            exitButton.heightAnchor.constraint(equalToConstant: 52)
-        ])
     }
 
     required init?(coder: NSCoder) {
@@ -194,6 +51,7 @@ final class ResultOverlayView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        refreshLayoutIfNeeded()
         guard playing, bounds.width > 1, abs(bounds.width - driftedWidth) > 0.5 else { return }
         driftedWidth = bounds.width
         clouds.start(duration: 34, reversed: false)
@@ -250,7 +108,237 @@ final class ResultOverlayView: UIView {
         accessibilityLabel = label
         UIAccessibility.post(notification: .screenChanged, argument: ribbon)
         playing = true
+        refreshLayoutIfNeeded()
         animateArrival()
+    }
+
+    private func buildChrome() {
+        rays.contentMode = .scaleAspectFill
+        rays.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(rays)
+
+        clouds.show(UIImage(named: "VictoryClouds"))
+        clouds.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(clouds)
+
+        ribbon.contentMode = .scaleAspectFit
+        ribbon.isAccessibilityElement = true
+        ribbon.accessibilityLabel = "Niveau réussi !"
+        ribbon.translatesAutoresizingMaskIntoConstraints = false
+
+        confetti.contentMode = .scaleAspectFit
+        confetti.isUserInteractionEnabled = false
+        confetti.translatesAutoresizingMaskIntoConstraints = false
+
+        robot.contentMode = .scaleAspectFit
+        robot.isAccessibilityElement = false
+        robot.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        robot.setContentHuggingPriority(.defaultLow, for: .vertical)
+        robot.translatesAutoresizingMaskIntoConstraints = false
+
+        stars.axis = .horizontal
+        stars.spacing = 10
+        stars.alignment = .center
+        stars.translatesAutoresizingMaskIntoConstraints = false
+        let starImage = UIImage(named: "VictoryStar")
+        for _ in 0..<3 {
+            let image = UIImageView(image: starImage)
+            image.contentMode = .scaleAspectFit
+            image.translatesAutoresizingMaskIntoConstraints = false
+            let width = image.widthAnchor.constraint(equalToConstant: 78)
+            let height = image.heightAnchor.constraint(equalToConstant: 74)
+            width.isActive = true
+            height.isActive = true
+            starSizeConstraints.append(contentsOf: [width, height])
+            stars.addArrangedSubview(image)
+            starViews.append(image)
+        }
+    }
+
+    private func buildContent() {
+        style(nextButton, fill: AppTheme.gold, ink: AppTheme.line, imageOnRight: true)
+        style(retryButton, fill: UIColor(hex: 0x7B3FF2), ink: .white, imageOnRight: true)
+        style(exitButton, fill: UIColor(hex: 0x7B3FF2), ink: .white, imageOnRight: true)
+        nextButton.addTarget(self, action: #selector(nextTapped), for: .touchUpInside)
+        retryButton.addTarget(self, action: #selector(retryTapped), for: .touchUpInside)
+        exitButton.addTarget(self, action: #selector(exitTapped), for: .touchUpInside)
+        nextButton.isHidden = true
+
+        detailsCard.backgroundColor = .white
+        detailsCard.layer.cornerRadius = 24
+        detailsCard.layer.cornerCurve = .continuous
+        detailsCard.translatesAutoresizingMaskIntoConstraints = false
+        let heading = UILabel()
+        heading.text = "Détails"
+        heading.font = AppTheme.font(18, .heavy, textStyle: .headline)
+        heading.textColor = AppTheme.line
+        heading.setContentCompressionResistancePriority(.required, for: .vertical)
+        boltRow.axis = .horizontal
+        boltRow.spacing = 8
+        boltRow.isHidden = true
+        let boltIcon = UIImageView(image: GameArt.piece(.bolt))
+        boltIcon.contentMode = .scaleAspectFit
+        boltIcon.translatesAutoresizingMaskIntoConstraints = false
+        boltIcon.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        boltIcon.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        boltValue.font = AppTheme.font(16, .heavy, textStyle: .body)
+        boltValue.textColor = AppTheme.line
+        boltRow.addArrangedSubview(boltIcon)
+        boltRow.addArrangedSubview(boltValue)
+
+        let rows = UIStackView(arrangedSubviews: [
+            heading,
+            detailRow(title: "Taille", value: sizeValue),
+            detailRow(title: "Actions", value: actionValue),
+            detailRow(title: "Déplacements", value: moveValue),
+            boltRow,
+            noteLabel
+        ])
+        rows.axis = .vertical
+        rows.spacing = 8
+        rows.setCustomSpacing(12, after: heading)
+        rows.translatesAutoresizingMaskIntoConstraints = false
+        noteLabel.font = AppTheme.font(14, .medium, textStyle: .subheadline)
+        noteLabel.textColor = UIColor(hex: 0x5C6578)
+        noteLabel.numberOfLines = 0
+        noteLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        detailsCard.setContentCompressionResistancePriority(.required, for: .vertical)
+        detailsCard.addSubview(rows)
+        NSLayoutConstraint.activate([
+            rows.topAnchor.constraint(equalTo: detailsCard.topAnchor, constant: 14),
+            rows.leadingAnchor.constraint(equalTo: detailsCard.leadingAnchor, constant: 16),
+            rows.trailingAnchor.constraint(equalTo: detailsCard.trailingAnchor, constant: -16),
+            rows.bottomAnchor.constraint(equalTo: detailsCard.bottomAnchor, constant: -14)
+        ])
+
+        actions.axis = .vertical
+        actions.spacing = 10
+        actions.translatesAutoresizingMaskIntoConstraints = false
+        [nextButton, retryButton, exitButton].forEach { actions.addArrangedSubview($0) }
+
+        sidePanel.axis = .vertical
+        sidePanel.spacing = 12
+        sidePanel.alignment = .fill
+        sidePanel.translatesAutoresizingMaskIntoConstraints = false
+        sidePanel.setContentHuggingPriority(.required, for: .vertical)
+        sidePanel.setContentCompressionResistancePriority(.required, for: .vertical)
+        detailsCard.setContentHuggingPriority(.required, for: .vertical)
+        sidePanel.addArrangedSubview(detailsCard)
+        sidePanel.addArrangedSubview(actions)
+
+        stage.translatesAutoresizingMaskIntoConstraints = false
+        stage.addSubview(confetti)
+        stage.addSubview(robot)
+
+        addSubview(ribbon)
+        addSubview(stars)
+        addSubview(stage)
+        addSubview(sidePanel)
+    }
+
+    private func installBaseConstraints() {
+        NSLayoutConstraint.activate([
+            rays.topAnchor.constraint(equalTo: topAnchor),
+            rays.leadingAnchor.constraint(equalTo: leadingAnchor, constant: -12),
+            rays.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 12),
+            rays.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 0.72),
+
+            clouds.leadingAnchor.constraint(equalTo: leadingAnchor),
+            clouds.trailingAnchor.constraint(equalTo: trailingAnchor),
+            clouds.heightAnchor.constraint(equalToConstant: 120),
+            clouds.bottomAnchor.constraint(equalTo: stage.bottomAnchor, constant: 24),
+
+            confetti.centerXAnchor.constraint(equalTo: stage.centerXAnchor),
+            confetti.centerYAnchor.constraint(equalTo: robot.centerYAnchor),
+            confetti.widthAnchor.constraint(equalTo: stage.widthAnchor, multiplier: 0.92),
+            confetti.heightAnchor.constraint(equalTo: confetti.widthAnchor, multiplier: 0.47),
+
+            robot.centerXAnchor.constraint(equalTo: stage.centerXAnchor),
+            robot.centerYAnchor.constraint(equalTo: stage.centerYAnchor),
+            robot.widthAnchor.constraint(equalTo: stage.widthAnchor, multiplier: 0.62).prioritized(.defaultHigh),
+            robot.heightAnchor.constraint(equalTo: robot.widthAnchor, multiplier: 1.03).prioritized(.defaultHigh),
+            robot.heightAnchor.constraint(lessThanOrEqualTo: stage.heightAnchor),
+            robot.widthAnchor.constraint(lessThanOrEqualTo: stage.widthAnchor),
+            robot.topAnchor.constraint(greaterThanOrEqualTo: stage.topAnchor),
+            robot.bottomAnchor.constraint(lessThanOrEqualTo: stage.bottomAnchor),
+
+            nextButton.heightAnchor.constraint(equalToConstant: 58),
+            retryButton.heightAnchor.constraint(equalToConstant: 52),
+            exitButton.heightAnchor.constraint(equalToConstant: 52)
+        ])
+    }
+
+    private func prefersWideLayout() -> Bool {
+        bounds.width > 1 && bounds.width > bounds.height * 1.05
+    }
+
+    private func refreshLayoutIfNeeded() {
+        let wide = prefersWideLayout()
+        guard wide != usesWideLayout || contentConstraints.isEmpty else { return }
+        applyContentLayout(wide: wide)
+    }
+
+    private func applyContentLayout(wide: Bool) {
+        NSLayoutConstraint.deactivate(contentConstraints)
+        usesWideLayout = wide
+        setStarSize(wide ? CGSize(width: 52, height: 50) : CGSize(width: 78, height: 74))
+        stars.spacing = wide ? 8 : 10
+        actions.axis = .vertical
+        actions.spacing = wide ? 8 : 10
+
+        let guide = safeAreaLayoutGuide
+        if wide {
+            // Célébration à gauche ; panneau détails+boutons compact et centré à droite.
+            sidePanel.spacing = 12
+            contentConstraints = [
+                ribbon.topAnchor.constraint(equalTo: guide.topAnchor, constant: 10),
+                ribbon.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+                ribbon.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.46, constant: -28),
+                ribbon.heightAnchor.constraint(equalToConstant: 72),
+
+                stars.topAnchor.constraint(equalTo: ribbon.bottomAnchor, constant: 4),
+                stars.centerXAnchor.constraint(equalTo: ribbon.centerXAnchor),
+
+                stage.topAnchor.constraint(equalTo: stars.bottomAnchor, constant: 2),
+                stage.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+                stage.trailingAnchor.constraint(equalTo: ribbon.trailingAnchor),
+                stage.bottomAnchor.constraint(equalTo: guide.bottomAnchor, constant: -16),
+
+                sidePanel.centerYAnchor.constraint(equalTo: guide.centerYAnchor),
+                sidePanel.leadingAnchor.constraint(equalTo: ribbon.trailingAnchor, constant: 18),
+                sidePanel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -22),
+                sidePanel.topAnchor.constraint(greaterThanOrEqualTo: guide.topAnchor, constant: 12),
+                sidePanel.bottomAnchor.constraint(lessThanOrEqualTo: guide.bottomAnchor, constant: -12)
+            ]
+        } else {
+            sidePanel.spacing = 12
+            contentConstraints = [
+                ribbon.topAnchor.constraint(equalTo: guide.topAnchor, constant: 8),
+                ribbon.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+                ribbon.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+                ribbon.heightAnchor.constraint(equalToConstant: 108),
+
+                stars.topAnchor.constraint(equalTo: ribbon.bottomAnchor, constant: 6),
+                stars.centerXAnchor.constraint(equalTo: centerXAnchor),
+
+                stage.topAnchor.constraint(equalTo: stars.bottomAnchor, constant: 4),
+                stage.leadingAnchor.constraint(equalTo: leadingAnchor),
+                stage.trailingAnchor.constraint(equalTo: trailingAnchor),
+                stage.bottomAnchor.constraint(equalTo: sidePanel.topAnchor, constant: -8),
+
+                sidePanel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 22),
+                sidePanel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -22),
+                sidePanel.bottomAnchor.constraint(equalTo: guide.bottomAnchor, constant: -12)
+            ]
+        }
+        NSLayoutConstraint.activate(contentConstraints)
+        setNeedsLayout()
+    }
+
+    private func setStarSize(_ size: CGSize) {
+        for (index, constraint) in starSizeConstraints.enumerated() {
+            constraint.constant = index.isMultiple(of: 2) ? size.width : size.height
+        }
     }
 
     private func style(_ button: UIButton, fill: UIColor, ink: UIColor, imageOnRight: Bool) {
@@ -290,6 +378,10 @@ final class ResultOverlayView: UIView {
     private func animateArrival() {
         clouds.start(duration: 34, reversed: false)
         guard !PlaySettings.prefersReducedMotion else { return }
+        rays.layer.removeAllAnimations()
+        ribbon.layer.removeAllAnimations()
+        confetti.layer.removeAllAnimations()
+        robot.layer.removeAllAnimations()
         rays.transform = CGAffineTransform(scaleX: 0.92, y: 0.92)
         UIView.animate(withDuration: 1.4, delay: 0, options: [.repeat, .autoreverse, .allowUserInteraction, .curveEaseInOut]) {
             self.rays.transform = CGAffineTransform(scaleX: 1.04, y: 1.04)

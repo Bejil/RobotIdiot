@@ -11,6 +11,8 @@ final class GameViewController: UIViewController {
     private let skView = SKView()
     private let boardSlot = UIView()
     private let boardFrame = UIView()
+    private let worldTitleLabel = UILabel()
+    private let levelTitleLabel = UILabel()
     private let editor = BlockEditorView()
     private let statusLabel = UILabel()
     private let sheet = UIView()
@@ -36,6 +38,8 @@ final class GameViewController: UIViewController {
     private var sheetHeight: CGFloat = 0
     private var sheetDragStartHeight: CGFloat = 0
     private var hasLaidOutSheet = false
+    private var usesSideBySideLayout = false
+    private var lastSideBySideSplit: (leftTrailing: CGFloat, rightLeading: CGFloat)?
     private var bonusRemainingCount = 0
 
     init(level: Level, campaign: LevelAddress? = nil) {
@@ -55,24 +59,22 @@ final class GameViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = AppTheme.cream
-        if let campaign {
-            navigationItem.title = PlayerCopy.campaignTitle(campaign)
-        } else {
-            navigationItem.title = PlayerCopy.title(for: level)
-        }
+        // Monde / niveau affichés au-dessus du plateau (plus dans la barre de navigation).
+        navigationItem.title = nil
         navigationItem.backButtonDisplayMode = .minimal
         installBarButtons()
         NotificationCenter.default.addObserver(self, selector: #selector(settingsChanged), name: PlaySettings.changed, object: nil)
 
         configureStatus()
         configureBoard()
+        configureLevelHeaders()
         configureTransport()
         configureEditor()
         configureOverlay()
         configureErrorAlert()
         installSubviews()
         applyLayout()
-        registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: Self, _) in
+        registerForTraitChanges([UITraitHorizontalSizeClass.self, UITraitVerticalSizeClass.self]) { (controller: Self, _) in
             controller.applyLayout()
         }
 
@@ -132,6 +134,44 @@ final class GameViewController: UIViewController {
             skView.trailingAnchor.constraint(equalTo: boardFrame.trailingAnchor),
             skView.bottomAnchor.constraint(equalTo: boardFrame.bottomAnchor)
         ])
+    }
+
+    private func configureLevelHeaders() {
+        let world: Int
+        let levelNumber: Int
+        let finale: Bool
+        if let campaign {
+            world = campaign.world
+            levelNumber = campaign.level
+            finale = CatalogCampaign.layout.isFinale(campaign.level)
+        } else {
+            world = level.worldNumber
+            levelNumber = level.levelNumber
+            finale = false
+        }
+
+        worldTitleLabel.text = PlayerCopy.worldTitle(world)
+        worldTitleLabel.font = AppTheme.font(34, .heavy, textStyle: .largeTitle)
+        worldTitleLabel.textColor = AppTheme.gold
+        worldTitleLabel.textAlignment = .left
+        worldTitleLabel.adjustsFontForContentSizeCategory = true
+        worldTitleLabel.adjustsFontSizeToFitWidth = true
+        worldTitleLabel.minimumScaleFactor = 0.75
+        worldTitleLabel.numberOfLines = 1
+        worldTitleLabel.accessibilityTraits = .header
+
+        if level.id.hasPrefix("gen-") {
+            levelTitleLabel.text = PlayerCopy.title(for: level)
+        } else {
+            levelTitleLabel.text = PlayerCopy.levelSlotTitle(level: levelNumber, finale: finale)
+        }
+        levelTitleLabel.font = AppTheme.font(18, .semibold, textStyle: .title3)
+        levelTitleLabel.textColor = AppTheme.inkSoft
+        levelTitleLabel.textAlignment = .left
+        levelTitleLabel.adjustsFontForContentSizeCategory = true
+        levelTitleLabel.adjustsFontSizeToFitWidth = true
+        levelTitleLabel.minimumScaleFactor = 0.8
+        levelTitleLabel.numberOfLines = 1
     }
 
     private func configureTransport() {
@@ -249,12 +289,14 @@ final class GameViewController: UIViewController {
     }
 
     private func installSubviews() {
-        [boardSlot, boardFrame, sheet, sheetGrabber, sheetHandle, limitsLabel, helpButton, editor, runButton, speedToggle, overlay, errorAlert, commandIntro, helpAlert].forEach {
+        [boardSlot, boardFrame, worldTitleLabel, levelTitleLabel, sheet, sheetGrabber, sheetHandle, limitsLabel, helpButton, editor, runButton, speedToggle, overlay, errorAlert, commandIntro, helpAlert].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
         boardSlot.isUserInteractionEnabled = false
         view.addSubview(boardSlot)
         view.addSubview(boardFrame)
+        view.addSubview(worldTitleLabel)
+        view.addSubview(levelTitleLabel)
         view.addSubview(sheet)
         view.addSubview(sheetGrabber)
         sheetGrabber.addSubview(sheetHandle)
@@ -290,37 +332,148 @@ final class GameViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         guard view.bounds.height > 1 else { return }
-        if !hasLaidOutSheet {
-            hasLaidOutSheet = true
-            sheetHeight = collapsedSheetHeightBaseline()
-        }
-        let clamped = clampSheetHeight(sheetHeight)
-        sheetHeight = clamped
-        if let constraint = sheetHeightConstraint, abs(constraint.constant - clamped) > 0.5 {
-            constraint.constant = clamped
+        let sideBySide = shouldUseSideBySideLayout()
+        let splitChanged: Bool = {
+            guard sideBySide else { return false }
+            let split = sideBySideSplitX()
+            guard let last = lastSideBySideSplit else { return true }
+            return abs(last.leftTrailing - split.leftTrailing) > 0.5
+                || abs(last.rightLeading - split.rightLeading) > 0.5
+        }()
+        if sideBySide != usesSideBySideLayout || splitChanged {
+            applyLayout()
+        } else if !usesSideBySideLayout {
+            if !hasLaidOutSheet {
+                hasLaidOutSheet = true
+                sheetHeight = collapsedSheetHeightBaseline()
+            }
+            let clamped = clampSheetHeight(sheetHeight)
+            sheetHeight = clamped
+            if let constraint = sheetHeightConstraint, abs(constraint.constant - clamped) > 0.5 {
+                constraint.constant = clamped
+            }
         }
         // Espace sous le fond gris : petit écart + boutons + marge basse + home indicator.
         // (Le stack ajoute déjà 8 pt au-dessus du spacer.)
         editor.reserveBottomActions(height: 52 + 8 + 6 + view.safeAreaInsets.bottom)
     }
 
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: { _ in
+            self.applyLayout()
+        })
+    }
+
+    private struct VerticalFold {
+        let frame: CGRect
+        let isActive: Bool
+    }
+
+    /// Duo (charnière verticale) ou écran assez large → un panneau par moitié.
+    private func shouldUseSideBySideLayout() -> Bool {
+        let size = view.bounds.size
+        guard size.width > 1, size.height > 1 else { return false }
+        // Duo (charnière verticale) : toujours un panneau par écran.
+        if verticalFold() != nil { return true }
+        // iPad / iPhone portrait : même UI empilée que sur iPhone.
+        if size.height >= size.width { return false }
+        // Paysage assez large : plateau | commandes.
+        return size.width >= 600
+    }
+
+    /// Charnière verticale (pli livre). Inclut la région inactive (Duo à plat, largeur 0).
+    private func verticalFold() -> VerticalFold? {
+        guard #available(iOS 27.1, *) else { return nil }
+        let regions = view.reservedRegions(kind: .division, options: .includeInactive)
+        guard let region = regions.first(where: { region in
+            // Pli livre : bande verticale (plus haute que large, ou très étroite / nulle à plat).
+            region.frame.height >= region.frame.width || region.frame.width <= 48
+        }) else { return nil }
+        return VerticalFold(frame: region.frame, isActive: region.isActive)
+    }
+
+    /// Fin de la moitié gauche (plateau) / début de la moitié droite (commandes), calés sur la charnière.
+    private func sideBySideSplitX() -> (leftTrailing: CGFloat, rightLeading: CGFloat) {
+        let width = view.bounds.width
+        let gap: CGFloat = 12
+        if let fold = verticalFold() {
+            // Toujours respecter le pli (actif ou non) : un contenu par écran, rien sur la charnière.
+            let left = max(fold.frame.minX - gap, 200)
+            let right = min(fold.frame.maxX + gap, width - 200)
+            if right > left { return (left, right) }
+        }
+        // iPad / large sans charnière : moitié exacte de la vue.
+        let mid = width * 0.5
+        return (mid - gap, mid + gap)
+    }
+
+    private func boardHeaderConstraints(
+        topAnchor: NSLayoutYAxisAnchor,
+        leadingAnchor: NSLayoutXAxisAnchor,
+        trailingAnchor: NSLayoutXAxisAnchor,
+        leadingInset: CGFloat,
+        trailingInset: CGFloat,
+        topInset: CGFloat = 10
+    ) -> [NSLayoutConstraint] {
+        [
+            worldTitleLabel.topAnchor.constraint(equalTo: topAnchor, constant: topInset),
+            worldTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: leadingInset),
+            worldTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: trailingInset),
+
+            levelTitleLabel.topAnchor.constraint(equalTo: worldTitleLabel.bottomAnchor, constant: 4),
+            levelTitleLabel.leadingAnchor.constraint(equalTo: worldTitleLabel.leadingAnchor),
+            levelTitleLabel.trailingAnchor.constraint(equalTo: worldTitleLabel.trailingAnchor)
+        ]
+    }
+
     private func applyLayout() {
         NSLayoutConstraint.deactivate(layoutConstraints)
+        usesSideBySideLayout = shouldUseSideBySideLayout()
+        if usesSideBySideLayout {
+            lastSideBySideSplit = sideBySideSplitX()
+            applySideBySideLayout()
+        } else {
+            lastSideBySideSplit = nil
+            applyStackedLayout()
+        }
+        editor.reserveBottomActions(height: 52 + 8 + 6 + view.safeAreaInsets.bottom)
+        bringGameChromeToFront()
+    }
+
+    private func applyStackedLayout() {
         let guide = view.safeAreaLayoutGuide
         let initialHeight = sheetHeight > 1 ? sheetHeight : max(280, view.bounds.height * 0.4)
         sheetHeight = initialHeight
         let height = sheet.heightAnchor.constraint(equalToConstant: initialHeight)
         sheetHeightConstraint = height
-        layoutConstraints = [
+
+        sheet.layer.cornerRadius = 28
+        sheet.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        sheetGrabber.isHidden = false
+        sheetHandle.isHidden = false
+        sheetGrabber.isUserInteractionEnabled = true
+
+        worldTitleLabel.textAlignment = .center
+        levelTitleLabel.textAlignment = .center
+
+        layoutConstraints = boardHeaderConstraints(
+            topAnchor: guide.topAnchor,
+            leadingAnchor: guide.leadingAnchor,
+            trailingAnchor: guide.trailingAnchor,
+            leadingInset: 20,
+            trailingInset: -20,
+            topInset: 8
+        ) + [
             sheet.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             sheet.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             sheet.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             height,
 
-            boardSlot.topAnchor.constraint(equalTo: guide.topAnchor, constant: 4),
-            boardSlot.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 12),
-            boardSlot.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -12),
-            boardSlot.bottomAnchor.constraint(equalTo: sheet.topAnchor, constant: -12),
+            boardSlot.topAnchor.constraint(equalTo: levelTitleLabel.bottomAnchor, constant: 14),
+            boardSlot.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 20),
+            boardSlot.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -16),
+            boardSlot.bottomAnchor.constraint(equalTo: sheet.topAnchor, constant: -16),
 
             boardFrame.centerXAnchor.constraint(equalTo: boardSlot.centerXAnchor),
             boardFrame.centerYAnchor.constraint(equalTo: boardSlot.centerYAnchor),
@@ -369,7 +522,100 @@ final class GameViewController: UIViewController {
             speedToggle.heightAnchor.constraint(equalTo: runButton.heightAnchor)
         ]
         NSLayoutConstraint.activate(layoutConstraints)
-        editor.reserveBottomActions(height: 52 + 8 + 6 + view.safeAreaInsets.bottom)
+    }
+
+    private func applySideBySideLayout() {
+        let guide = view.safeAreaLayoutGuide
+        sheetHeightConstraint = nil
+
+        sheet.layer.cornerRadius = 24
+        sheet.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        sheetGrabber.isHidden = true
+        sheetHandle.isHidden = true
+        sheetGrabber.isUserInteractionEnabled = false
+
+        let split = sideBySideSplitX()
+        let leftPad: CGFloat = 24
+        let bottomPad: CGFloat = 28
+        worldTitleLabel.textAlignment = .left
+        levelTitleLabel.textAlignment = .left
+
+        // Gauche = plateau (+ titres) ; droite = commandes. Ancré sur view pour coller à la charnière.
+        layoutConstraints = [
+            worldTitleLabel.topAnchor.constraint(equalTo: guide.topAnchor, constant: 12),
+            worldTitleLabel.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: leftPad),
+            worldTitleLabel.trailingAnchor.constraint(equalTo: view.leadingAnchor, constant: split.leftTrailing - 16),
+
+            levelTitleLabel.topAnchor.constraint(equalTo: worldTitleLabel.bottomAnchor, constant: 6),
+            levelTitleLabel.leadingAnchor.constraint(equalTo: worldTitleLabel.leadingAnchor),
+            levelTitleLabel.trailingAnchor.constraint(equalTo: worldTitleLabel.trailingAnchor),
+
+            boardSlot.topAnchor.constraint(equalTo: levelTitleLabel.bottomAnchor, constant: 16),
+            boardSlot.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: leftPad),
+            boardSlot.trailingAnchor.constraint(equalTo: view.leadingAnchor, constant: split.leftTrailing - 8),
+            boardSlot.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -bottomPad),
+
+            boardFrame.centerXAnchor.constraint(equalTo: boardSlot.centerXAnchor),
+            boardFrame.centerYAnchor.constraint(equalTo: boardSlot.centerYAnchor),
+            boardFrame.widthAnchor.constraint(equalTo: boardFrame.heightAnchor),
+            boardFrame.widthAnchor.constraint(lessThanOrEqualTo: boardSlot.widthAnchor),
+            boardFrame.heightAnchor.constraint(lessThanOrEqualTo: boardSlot.heightAnchor),
+            boardFrame.widthAnchor.constraint(equalTo: boardSlot.widthAnchor).prioritized(UILayoutPriority(750)),
+            boardFrame.heightAnchor.constraint(equalTo: boardSlot.heightAnchor).prioritized(UILayoutPriority(750)),
+            boardFrame.leadingAnchor.constraint(greaterThanOrEqualTo: boardSlot.leadingAnchor),
+            boardFrame.trailingAnchor.constraint(lessThanOrEqualTo: boardSlot.trailingAnchor),
+
+            sheet.topAnchor.constraint(equalTo: guide.topAnchor, constant: 12),
+            sheet.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: split.rightLeading),
+            sheet.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -12),
+            sheet.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -bottomPad),
+
+            // Grabber conservé dans la hiérarchie mais masqué : contraintes minimales.
+            sheetGrabber.topAnchor.constraint(equalTo: sheet.topAnchor),
+            sheetGrabber.leadingAnchor.constraint(equalTo: sheet.leadingAnchor),
+            sheetGrabber.trailingAnchor.constraint(equalTo: sheet.trailingAnchor),
+            sheetGrabber.heightAnchor.constraint(equalToConstant: 0),
+            sheetHandle.centerXAnchor.constraint(equalTo: sheetGrabber.centerXAnchor),
+            sheetHandle.centerYAnchor.constraint(equalTo: sheetGrabber.centerYAnchor),
+            sheetHandle.widthAnchor.constraint(equalToConstant: 44),
+            sheetHandle.heightAnchor.constraint(equalToConstant: 5),
+
+            limitsLabel.topAnchor.constraint(equalTo: sheet.topAnchor, constant: 16),
+            limitsLabel.leadingAnchor.constraint(equalTo: sheet.leadingAnchor, constant: 16),
+            limitsLabel.trailingAnchor.constraint(equalTo: helpButton.leadingAnchor, constant: -10),
+
+            helpButton.trailingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: -14),
+            helpButton.centerYAnchor.constraint(equalTo: limitsLabel.centerYAnchor),
+            helpButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 92),
+            helpButton.heightAnchor.constraint(equalToConstant: 36),
+
+            editor.topAnchor.constraint(equalTo: limitsLabel.bottomAnchor, constant: 12),
+            editor.leadingAnchor.constraint(equalTo: sheet.leadingAnchor, constant: 10),
+            editor.trailingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: -10),
+            editor.bottomAnchor.constraint(equalTo: sheet.bottomAnchor),
+
+            runButton.leadingAnchor.constraint(
+                equalTo: editor.leadingAnchor,
+                constant: BlockEditorView.paletteLaneWidth
+            ),
+            runButton.bottomAnchor.constraint(equalTo: sheet.bottomAnchor, constant: -max(14, view.safeAreaInsets.bottom + 6)),
+            runButton.heightAnchor.constraint(equalToConstant: 52),
+
+            speedToggle.leadingAnchor.constraint(equalTo: runButton.trailingAnchor, constant: 8),
+            speedToggle.trailingAnchor.constraint(equalTo: editor.trailingAnchor),
+            speedToggle.centerYAnchor.constraint(equalTo: runButton.centerYAnchor),
+            speedToggle.widthAnchor.constraint(equalToConstant: 72),
+            speedToggle.heightAnchor.constraint(equalTo: runButton.heightAnchor)
+        ]
+        NSLayoutConstraint.activate(layoutConstraints)
+    }
+
+    private func bringGameChromeToFront() {
+        view.bringSubviewToFront(worldTitleLabel)
+        view.bringSubviewToFront(levelTitleLabel)
         view.bringSubviewToFront(sheet)
         view.bringSubviewToFront(sheetGrabber)
         view.bringSubviewToFront(limitsLabel)
@@ -419,6 +665,7 @@ final class GameViewController: UIViewController {
     }
 
     @objc private func dragSheet(_ gesture: UIPanGestureRecognizer) {
+        guard !usesSideBySideLayout else { return }
         switch gesture.state {
         case .began:
             sheetDragStartHeight = sheetHeight
