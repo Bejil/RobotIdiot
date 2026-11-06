@@ -39,6 +39,13 @@ final class AdsService: NSObject {
     private var pendingCompletion: (() -> Void)?
     private var didShowLaunchInterstitial = false
     private var isPresenting = false
+    private let successInterstitialCadenceKey = "robotidiot.successInterstitialCadence"
+
+    /// Compteur de « Niveau suivant » depuis la dernière pub succès (affiche tous les 2).
+    private var successInterstitialCadence: Int {
+        get { UserDefaults.standard.integer(forKey: successInterstitialCadenceKey) }
+        set { UserDefaults.standard.set(newValue, forKey: successInterstitialCadenceKey) }
+    }
 
     private override init() {
         super.init()
@@ -85,19 +92,30 @@ final class AdsService: NSObject {
 
     // MARK: - Launch
 
-    func showLaunchInterstitialIfNeeded(from controller: UIViewController) {
-        guard Self.areEnabled, isReady, !didShowLaunchInterstitial else { return }
+    func showLaunchInterstitialIfNeeded(from controller: UIViewController, then completion: (() -> Void)? = nil) {
+        let finish = { completion?() }
+        guard Self.areEnabled, isReady, !didShowLaunchInterstitial else {
+            finish()
+            return
+        }
         waitForInterstitial(
             getter: { [weak self] in self?.launchInterstitial },
             loader: { [weak self] in self?.loadLaunchInterstitial() },
             timeout: 8
         ) { [weak self] ad in
-            guard let self else { return }
-            guard let ad else { return }
+            guard let self else {
+                finish()
+                return
+            }
+            guard let ad else {
+                finish()
+                return
+            }
             self.didShowLaunchInterstitial = true
             self.launchInterstitial = nil
             self.present(interstitial: ad, from: controller) {
                 self.loadLaunchInterstitial()
+                finish()
             }
         }
     }
@@ -129,6 +147,14 @@ final class AdsService: NSObject {
     // MARK: - Level success
 
     func showLevelSuccessInterstitial(from controller: UIViewController, then completion: @escaping () -> Void) {
+        successInterstitialCadence += 1
+        // Une pub tous les deux passages « Niveau suivant ».
+        guard successInterstitialCadence >= 2 else {
+            completion()
+            return
+        }
+        successInterstitialCadence = 0
+
         guard Self.areEnabled, isReady else {
             completion()
             return

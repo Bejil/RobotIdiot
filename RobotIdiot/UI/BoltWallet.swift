@@ -50,6 +50,14 @@ final class BoltWallet {
         return gained
     }
 
+    /// Crédit libre (récompenses quotidiennes, etc.).
+    func credit(_ amount: Int) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard amount > 0 else { return }
+        balance += amount
+    }
+
     @discardableResult
     func spend(_ amount: Int) -> Bool {
         lock.lock()

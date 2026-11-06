@@ -59,6 +59,9 @@ final class CampaignStore {
            let decoded = try? JSONDecoder().decode(CampaignArchive.self, from: data),
            decoded.progress.formulaVersion == CatalogCampaign.formulaVersion {
             archive = decoded
+            // Les programmes des niveaux déjà réussis ne sont plus conservés.
+            purgeCompletedProgramsLocked()
+            persistLocked()
         } else {
             // Nouvelle formule / pack : progression effacée → les intros de commandes recommencent.
             archive = CampaignStore.freshArchive()
@@ -84,6 +87,8 @@ final class CampaignStore {
     func record(_ score: LevelScore, at address: LevelAddress) {
         lock.lock()
         CampaignRules.record(score, at: address, in: &archive.progress)
+        // Une fois le niveau réussi, on oublie le programme (rejouer part d'une feuille blanche).
+        archive.programs.removeAll { $0.address == address }
         persistLocked()
         lock.unlock()
     }
@@ -95,11 +100,20 @@ final class CampaignStore {
     func program(at address: LevelAddress) -> Program? {
         lock.lock()
         defer { lock.unlock() }
+        // Pas de brouillon pour un niveau déjà validé.
+        guard archive.progress.score(at: address) == nil else { return nil }
         return archive.programs.first { $0.address == address }?.program
     }
 
     func save(_ program: Program, at address: LevelAddress) {
         lock.lock()
+        // Ne mémorise le programme que tant que le niveau n'est pas réussi.
+        guard archive.progress.score(at: address) == nil else {
+            archive.programs.removeAll { $0.address == address }
+            persistLocked()
+            lock.unlock()
+            return
+        }
         if let index = archive.programs.firstIndex(where: { $0.address == address }) {
             archive.programs[index].program = program
         } else {
@@ -127,6 +141,12 @@ final class CampaignStore {
         PlaySettings.resetIntroducedCommands()
         // Les écrous déjà gagnés restent : seule la progression de campagne est effacée.
         // (Une mise à jour de formule recrée le store ; le portefeuille est indépendant.)
+    }
+
+    private func purgeCompletedProgramsLocked() {
+        // Copie locale : `removeAll` mute `archive` et ne peut pas lire `archive.progress` en même temps.
+        let progress = archive.progress
+        archive.programs.removeAll { progress.score(at: $0.address) != nil }
     }
 
     private func persistLocked() {

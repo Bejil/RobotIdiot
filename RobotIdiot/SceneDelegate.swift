@@ -30,11 +30,31 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.makeKeyAndVisible()
         Soundscape.shared.refreshMusic()
         AdsConsentManager.shared.gatherConsent(from: navigation)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(openDailyHubFromReminder),
+            name: DailyReminderNotifications.openDailyHub,
+            object: nil
+        )
+        if let response = connectionOptions.notificationResponse {
+            DailyReminderNotifications.handleResponse(response)
+        }
     }
 
     @objc private func settingsChanged() {
         PlaySettings.applyInterfaceScale(to: window)
         Soundscape.shared.refreshMusic()
+    }
+
+    @objc private func openDailyHubFromReminder() {
+        guard let navigation = window?.rootViewController as? UINavigationController else { return }
+        if navigation.topViewController is DailyHubViewController { return }
+        if let existing = navigation.viewControllers.first(where: { $0 is DailyHubViewController }) {
+            navigation.popToViewController(existing, animated: true)
+            return
+        }
+        _ = DailyStore.shared.selection()
+        navigation.pushViewController(DailyHubViewController(), animated: true)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
@@ -49,7 +69,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
-        // Called when the scene will move from an active state to an inactive state.
+        // Called when the scene will move from the active state to an inactive state.
         // This may occur due to temporary interruptions (ex. an incoming phone call).
     }
 
@@ -66,4 +86,3 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 
 }
-

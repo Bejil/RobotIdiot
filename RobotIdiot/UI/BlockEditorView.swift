@@ -46,6 +46,17 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         modeControl.selectedSegmentIndex == 1 && textDraft != nil
     }
 
+    /// Mode « bug du jour » : une seule substitution de primitive.
+    private(set) var isSinglePrimitiveReplaceMode = false
+    private var baselineProgram: Program?
+    private var selectedReplaceID: UUID?
+    private var replacedID: UUID?
+
+    var hasModifiedFromBaseline: Bool {
+        guard let baselineProgram else { return false }
+        return !program.hasSameCommands(as: baselineProgram)
+    }
+
     var isLocked = false {
         didSet { applyLock() }
     }
@@ -75,17 +86,40 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         textDraft = nil
         undoStack.removeAll()
         redoStack.removeAll()
+        if isSinglePrimitiveReplaceMode {
+            selectedReplaceID = nil
+            replacedID = nil
+            baselineProgram = program
+        }
         reload()
     }
 
+    /// Charge le programme buggé et n'autorise qu'une substitution de primitive.
+    func enableSinglePrimitiveReplace(baseline: Program) {
+        isSinglePrimitiveReplaceMode = true
+        baselineProgram = baseline
+        selectedReplaceID = nil
+        replacedID = nil
+        modeControl.selectedSegmentIndex = 0
+        modeControl.isEnabled = false
+        modeControl.isHidden = true
+        textRow.isHidden = true
+        clearButton.isHidden = true
+        replaceProgram(baseline)
+        hintLabel.text = "Touche une commande, puis choisis son remplacement dans la colonne de gauche."
+        refreshChrome()
+    }
+
     func setErrorMessage(_ message: String?) {
-        bannerLabel.text = message
-        banner.isHidden = message == nil
-        banner.accessibilityLabel = message
-        layoutIfNeeded()
-        if message != nil {
+        // Ancien bandeau rouge : remplacé par les alertes chartées.
+        banner.isHidden = true
+        bannerLabel.text = nil
+        guard let message, !message.isEmpty else { return }
+        guard let host = nearestViewController else {
             UIAccessibility.post(notification: .announcement, argument: message)
+            return
         }
+        ChartedConfirmAlertView.presentNotice(from: host, message: message)
     }
 
     func highlight(active: UUID?, failed: UUID?) {
@@ -137,7 +171,7 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         targetButton.titleLabel?.numberOfLines = 0
         targetButton.setTitleColor(AppTheme.control, for: .normal)
         targetButton.contentHorizontalAlignment = .leading
-        targetButton.addTarget(self, action: #selector(clearInsertion), for: .touchUpInside)
+        targetButton.addTarget(self, action: #selector(targetBannerTapped), for: .touchUpInside)
         targetButton.isHidden = true
 
         modeControl.selectedSegmentIndex = 0
@@ -335,9 +369,9 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         button.addTarget(self, action: #selector(addCommand(_:)), for: .touchUpInside)
         button.widthAnchor.constraint(equalToConstant: 56).isActive = true
         button.heightAnchor.constraint(equalToConstant: 48).isActive = true
-        let ink: UIColor = command.category == .control ? .black : .white
+        let ink = CommandChrome.paletteInk(command)
         if var configuration = button.configuration {
-            let colors = commandBadgeColors(command)
+            let colors = CommandChrome.badgeColors(command)
             configuration.title = PlayerCopy.commandShortTitle(command)
             configuration.image = GameArt.fitted(GameArt.commandIcon(command), side: 22)
             configuration.imagePlacement = .top
@@ -379,7 +413,11 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         }
     }
 
-    @objc private func clearInsertion() {
+    @objc private func targetBannerTapped() {
+        if isSinglePrimitiveReplaceMode {
+            revertBugEdits(selecting: selectedReplaceID ?? replacedID)
+            return
+        }
         insertionParentID = nil
         refreshChrome()
         refreshVisibleCells()
@@ -389,6 +427,10 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         guard !isLocked, CommandType.allCases.indices.contains(sender.tag) else { return }
         let command = CommandType.allCases[sender.tag]
         guard allowed.contains(command) else { return }
+        if isSinglePrimitiveReplaceMode {
+            applySinglePrimitiveReplace(command)
+            return
+        }
         if let limit = constraintsLimit.maxBlocks, program.blockCount >= limit {
             setErrorMessage(PlayerCopy.explain(ProgramIssue.tooManyBlocks(limit: limit)))
             return
@@ -432,13 +474,19 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         program = previous
         insertionParentID = nil
         textDraft = nil
+        if isSinglePrimitiveReplaceMode {
+            if let baselineProgram, program.hasSameCommands(as: baselineProgram) {
+                replacedID = nil
+                selectedReplaceID = nil
+            }
+        }
         reload()
         if modeControl.selectedSegmentIndex == 1 { showProgramInText() }
         onProgramChange?(program)
     }
 
     @objc private func redo() {
-        guard !isLocked, let next = redoStack.popLast() else { return }
+        guard !isLocked, !isSinglePrimitiveReplaceMode, let next = redoStack.popLast() else { return }
         undoStack.append(program)
         program = next
         insertionParentID = nil
@@ -448,19 +496,28 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         onProgramChange?(program)
     }
 
+    var canClearProgram: Bool {
+        !program.instructions.isEmpty && !isLocked && !isSinglePrimitiveReplaceMode
+    }
+
+    func requestClearProgram() {
+        confirmClear()
+    }
+
     @objc private func confirmClear() {
-        guard !isLocked, !program.instructions.isEmpty else { return }
-        let alert = UIAlertController(
-            title: "Effacer le programme ?",
-            message: "Toutes les commandes seront retirées.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "Annuler", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Effacer", style: .destructive) { [weak self] _ in
+        guard canClearProgram, let host = nearestViewController else { return }
+        ChartedConfirmAlertView.present(
+            from: host,
+            ribbon: "Attention",
+            headline: "Effacer le programme ?",
+            detail: "Toutes les commandes seront retirées.",
+            confirmTitle: "Effacer",
+            accent: .destructive,
+            confirmSystemImage: "trash"
+        ) { [weak self] in
             self?.insertionParentID = nil
             self?.commit { $0.instructions.removeAll() }
-        })
-        nearestViewController?.present(alert, animated: true)
+        }
     }
 
     private func commit(_ change: (inout Program) -> Void) {
@@ -483,6 +540,55 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         refreshChrome()
     }
 
+    private func applySinglePrimitiveReplace(_ command: CommandType) {
+        guard !command.isContainer else {
+            setErrorMessage("Dans ce défi, seuls les blocs simples peuvent être remplacés.")
+            return
+        }
+        let target = selectedReplaceID ?? replacedID
+        guard let target,
+              let current = program.instruction(id: target),
+              !current.command.isContainer else {
+            setErrorMessage("Touche d'abord la commande incorrecte dans le programme.")
+            return
+        }
+        // Une autre commande a déjà été modifiée : on la rétablit avant d'éditer la nouvelle cible.
+        if let replacedID, replacedID != target, hasModifiedFromBaseline {
+            revertBugEdits(selecting: target)
+        }
+        guard let live = program.instruction(id: selectedReplaceID ?? target),
+              !live.command.isContainer else {
+            setErrorMessage("Touche d'abord la commande incorrecte dans le programme.")
+            return
+        }
+        let replaceID = selectedReplaceID ?? target
+        commit { program in
+            _ = program.replacePrimitive(command, on: replaceID)
+        }
+        selectedReplaceID = replaceID
+        replacedID = hasModifiedFromBaseline ? replaceID : nil
+        setErrorMessage(nil)
+        refreshChrome()
+        refreshVisibleCells()
+    }
+
+    /// Remet le programme buggé d'origine et sélectionne éventuellement une nouvelle cible.
+    private func revertBugEdits(selecting id: UUID?) {
+        guard let baselineProgram else { return }
+        undoStack.removeAll()
+        redoStack.removeAll()
+        program = baselineProgram
+        replacedID = nil
+        selectedReplaceID = id
+        insertionParentID = nil
+        activeID = nil
+        failedID = nil
+        ancestorIDs = []
+        setErrorMessage(nil)
+        reload()
+        onProgramChange?(program)
+    }
+
     private func refreshChrome() {
         if let limit = constraintsLimit.maxBlocks {
             countLabel.text = "\(PlayerCopy.blockCount(program.blockCount)) sur \(limit)"
@@ -490,10 +596,22 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
             countLabel.text = PlayerCopy.blockCount(program.blockCount)
         }
         undoButton.isEnabled = !undoStack.isEmpty && !isLocked
-        redoButton.isEnabled = !redoStack.isEmpty && !isLocked
-        clearButton.isEnabled = !program.instructions.isEmpty && !isLocked
+        redoButton.isEnabled = !redoStack.isEmpty && !isLocked && !isSinglePrimitiveReplaceMode
+        clearButton.isEnabled = !program.instructions.isEmpty && !isLocked && !isSinglePrimitiveReplaceMode
         emptyLabel.isHidden = !program.instructions.isEmpty
         tableView.backgroundView = program.instructions.isEmpty ? emptyLabel : nil
+        if isSinglePrimitiveReplaceMode {
+            insertionParentID = nil
+            if hasModifiedFromBaseline {
+                targetButton.isHidden = false
+                targetButton.setTitle("1 commande modifiée. Touche ici ou une autre commande pour annuler.", for: .normal)
+                targetButton.accessibilityLabel = "Annuler la modification"
+                targetButton.isEnabled = true
+            } else {
+                targetButton.isHidden = true
+            }
+            return
+        }
         if let parent = insertionParentID, let instruction = program.instruction(id: parent), instruction.command.isContainer {
             let name = PlayerCopy.commandTitle(instruction.command)
             targetButton.setTitle("Ajout dans \(name). Touche pour revenir à la suite.", for: .normal)
@@ -535,6 +653,23 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         tableView.deselectRow(at: indexPath, animated: true)
         guard !isLocked, program.rows.indices.contains(indexPath.row) else { return }
         let instruction = program.rows[indexPath.row].instruction
+        if isSinglePrimitiveReplaceMode {
+            guard !instruction.command.isContainer else {
+                setErrorMessage("Les blocs Répète et Si ne se modifient pas ici.")
+                return
+            }
+            Soundscape.shared.play("select")
+            // Changer de cible annule l'éventuelle substitution déjà faite (une seule à la fois).
+            if let replacedID, replacedID != instruction.id, hasModifiedFromBaseline {
+                revertBugEdits(selecting: instruction.id)
+                return
+            }
+            selectedReplaceID = instruction.id
+            setErrorMessage(nil)
+            refreshChrome()
+            refreshVisibleCells()
+            return
+        }
         guard instruction.command.isContainer else { return }
         Soundscape.shared.play("select")
         insertionParentID = insertionParentID == instruction.id ? nil : instruction.id
@@ -545,35 +680,44 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     private func configure(_ cell: CommandBlockCell, at indexPath: IndexPath) {
         let row = program.rows[indexPath.row]
         let instruction = row.instruction
+        let allowsStructural = !isLocked && !isSinglePrimitiveReplaceMode
+        let isReplaceTarget = isSinglePrimitiveReplaceMode
+            && (instruction.id == selectedReplaceID || instruction.id == replacedID)
         cell.apply(
             instruction: instruction,
             depth: row.depth,
             position: indexPath.row + 1,
             total: program.rows.count,
-            isActive: instruction.id == activeID,
+            isActive: instruction.id == activeID || isReplaceTarget,
             isAncestor: ancestorIDs.contains(instruction.id),
             isFailed: instruction.id == failedID,
             isInsertionTarget: instruction.id == insertionParentID,
-            allowsEditing: !isLocked
+            allowsEditing: allowsStructural
         )
         cell.onDelete = { [weak self] in
-            self?.commit { $0.remove(id: instruction.id) }
+            guard let self, !self.isSinglePrimitiveReplaceMode else { return }
+            self.commit { $0.remove(id: instruction.id) }
         }
         cell.onCondition = { [weak self] condition in
-            self?.commit { $0.setCondition(condition, on: instruction.id) }
+            guard let self, !self.isSinglePrimitiveReplaceMode else { return }
+            self.commit { $0.setCondition(condition, on: instruction.id) }
         }
-        cell.accessibilityCustomActions = [
-            action("Monter") { [weak self] in
-                self?.shift(instruction.id, offset: -1) ?? false
-            },
-            action("Descendre") { [weak self] in
-                self?.shift(instruction.id, offset: 1) ?? false
-            },
-            action("Dupliquer") { [weak self] in
-                self?.commit { $0.duplicate(id: instruction.id) }
-                return true
-            }
-        ]
+        if isSinglePrimitiveReplaceMode {
+            cell.accessibilityCustomActions = []
+        } else {
+            cell.accessibilityCustomActions = [
+                action("Monter") { [weak self] in
+                    self?.shift(instruction.id, offset: -1) ?? false
+                },
+                action("Descendre") { [weak self] in
+                    self?.shift(instruction.id, offset: 1) ?? false
+                },
+                action("Dupliquer") { [weak self] in
+                    self?.commit { $0.duplicate(id: instruction.id) }
+                    return true
+                }
+            ]
+        }
     }
 
     private func shift(_ id: UUID, offset: Int) -> Bool {
@@ -588,7 +732,7 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     }
 
     func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
-        !isLocked && program.nestingDepth <= 1
+        !isLocked && !isSinglePrimitiveReplaceMode && program.nestingDepth <= 1
     }
 
     func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
@@ -615,7 +759,7 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard !isLocked, program.rows.indices.contains(indexPath.row) else { return nil }
+        guard !isLocked, !isSinglePrimitiveReplaceMode, program.rows.indices.contains(indexPath.row) else { return nil }
         let instruction = program.rows[indexPath.row].instruction
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             let up = UIAction(title: "Monter", image: UIImage(systemName: "arrow.up")) { _ in
@@ -635,7 +779,7 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        guard !isLocked, program.rows.indices.contains(indexPath.row) else { return nil }
+        guard !isLocked, !isSinglePrimitiveReplaceMode, program.rows.indices.contains(indexPath.row) else { return nil }
         let instruction = program.rows[indexPath.row].instruction
         let duplicate = UIContextualAction(style: .normal, title: "Dupliquer") { [weak self] _, _, done in
             Soundscape.shared.play("select")
@@ -910,7 +1054,7 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     }
 
     func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-        guard !isLocked, program.rows.indices.contains(indexPath.row) else { return [] }
+        guard !isLocked, !isSinglePrimitiveReplaceMode, program.rows.indices.contains(indexPath.row) else { return [] }
         let identifier = program.rows[indexPath.row].id
         let item = UIDragItem(itemProvider: NSItemProvider(object: identifier.uuidString as NSString))
         item.localObject = identifier
@@ -988,17 +1132,6 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard scrollView === textView else { return }
         gutterView.contentOffset = CGPoint(x: 0, y: textView.contentOffset.y)
-    }
-}
-
-private func commandBadgeColors(_ command: CommandType) -> (background: UIColor, foreground: UIColor) {
-    switch command.category {
-    case .movement:
-        return (UIColor(hex: 0x2F9BFF), .white)
-    case .interaction:
-        return (UIColor(hex: 0x7A2CF7), .white)
-    case .control:
-        return (UIColor(hex: 0xFFD200), UIColor(hex: 0x1A1440))
     }
 }
 
@@ -1142,7 +1275,7 @@ private final class CommandBlockCell: UITableViewCell {
             titleLabel.text = PlayerCopy.commandTitle(instruction.command)
         }
         indexLabel.text = "\(position)"
-        let colors = commandBadgeColors(instruction.command)
+        let colors = CommandChrome.badgeColors(instruction.command)
         iconView.image = GameArt.commandIcon(instruction.command)
         iconView.tintColor = isFailed ? .white : colors.foreground
         stripe.backgroundColor = isFailed ? UIColor.white.withAlphaComponent(0.22) : colors.background

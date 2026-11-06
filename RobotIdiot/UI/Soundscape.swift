@@ -19,6 +19,12 @@ final class Soundscape {
     private let heavyHaptic = UIImpactFeedbackGenerator(style: .heavy)
     private let selectionHaptic = UISelectionFeedbackGenerator()
     private let noticeHaptic = UINotificationFeedbackGenerator()
+    /// Évite les doubles sons quand UIKit envoie plusieurs `sendAction` pour un même tap (ex. UIBarButtonItem).
+    private var lastUISoundAt: CFTimeInterval = 0
+    private var moveFlip = false
+    private let musicRestingVolume: Float = 0.13
+    private var musicFadeTimer: Timer?
+    private var duckRestoreWork: DispatchWorkItem?
 
     private init() {
         format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
@@ -26,21 +32,27 @@ final class Soundscape {
         engine.attach(music)
         engine.connect(effects, to: engine.mainMixerNode, format: format)
         engine.connect(music, to: engine.mainMixerNode, format: format)
-        effects.volume = 0.55
-        music.volume = 0.16
-        tones["tap"] = tone(frequency: 520, seconds: 0.045, volume: 0.35)
-        tones["ui"] = tone(frequency: 880, seconds: 0.028, volume: 0.3)
-        tones["toggle"] = sequence([620, 860], note: 0.045, volume: 0.26)
-        tones["select"] = tone(frequency: 640, seconds: 0.04, volume: 0.28)
-        tones["move"] = tone(frequency: 440, seconds: 0.06, volume: 0.28)
-        tones["turn"] = tone(frequency: 330, seconds: 0.07, volume: 0.28)
-        tones["success"] = sequence([523, 659, 784], note: 0.11, volume: 0.32)
-        tones["error"] = tone(frequency: 174, seconds: 0.18, volume: 0.3)
+        effects.volume = 0.58
+        music.volume = 0
+        tones["tap"] = softTone(frequency: 540, seconds: 0.05, volume: 0.28, harmonic: 0.18)
+        tones["ui"] = softTone(frequency: 920, seconds: 0.032, volume: 0.24, harmonic: 0.12)
+        tones["toggle"] = sequence([640, 900], note: 0.04, volume: 0.22)
+        tones["select"] = softTone(frequency: 680, seconds: 0.045, volume: 0.24, harmonic: 0.2)
+        tones["move"] = footstep(pitch: 1)
+        tones["moveAlt"] = footstep(pitch: 0.92)
+        tones["turn"] = turnWhoosh()
+        tones["collect"] = collectChime()
+        tones["pickup"] = softTone(frequency: 760, seconds: 0.07, volume: 0.26, harmonic: 0.3)
+        tones["open"] = doorOpen()
+        tones["push"] = cratePush()
+        tones["activate"] = switchClick()
+        tones["success"] = victoryFanfare()
+        tones["error"] = softTone(frequency: 168, seconds: 0.2, volume: 0.28, harmonic: 0.35)
         tones["bump"] = obstacleBump()
         tones["spikes"] = spikesHit()
         tones["water"] = waterSplash()
         tones["lava"] = lavaSizzle()
-        tones["music"] = sequence([262, 330, 392, 440, 392, 330], note: 0.42, volume: 0.16)
+        tones["music"] = musicLoop()
         lightHaptic.prepare()
         softHaptic.prepare()
         mediumHaptic.prepare()
@@ -85,32 +97,93 @@ final class Soundscape {
         guard event != nil else { return }
         if sender is UITextField || sender is UITextView { return }
         if sender is UISegmentedControl {
-            play("toggle")
+            playDebouncedUISound("toggle")
         } else if sender is UIControl || sender is UIBarButtonItem {
-            play("ui")
+            playDebouncedUISound("ui")
         }
     }
 
+    private func playDebouncedUISound(_ name: String) {
+        let now = CACurrentMediaTime()
+        guard now - lastUISoundAt > 0.12 else { return }
+        lastUISoundAt = now
+        play(name)
+    }
+
     func play(_ name: String, forceHaptic: Bool = false) {
-        pulse(name, force: forceHaptic)
-        guard PlaySettings.sound, let buffer = tones[name] else { return }
+        let resolved = resolve(name)
+        pulse(resolved, force: forceHaptic)
+        guard PlaySettings.sound, let buffer = tones[resolved] else { return }
         startIfNeeded()
         guard engine.isRunning else { return }
         if !effects.isPlaying { effects.play() }
         effects.scheduleBuffer(buffer, at: nil, options: [])
+        duckMusicIfNeeded(for: resolved)
+    }
+
+    private func resolve(_ name: String) -> String {
+        guard name == "move" else { return name }
+        moveFlip.toggle()
+        return moveFlip ? "move" : "moveAlt"
     }
 
     /// Suit le réglage Musique. Ne relance pas la boucle si elle tourne déjà.
     func refreshMusic() {
         guard PlaySettings.music, let buffer = tones["music"] else {
-            if music.isPlaying { music.stop() }
+            fadeMusic(to: 0, thenStop: true)
             return
         }
         startIfNeeded()
         guard engine.isRunning else { return }
-        if music.isPlaying { return }
+        if music.isPlaying {
+            fadeMusic(to: musicRestingVolume)
+            return
+        }
+        music.volume = 0
         music.scheduleBuffer(buffer, at: nil, options: .loops)
         music.play()
+        fadeMusic(to: musicRestingVolume)
+    }
+
+    private func duckMusicIfNeeded(for name: String) {
+        guard music.isPlaying, PlaySettings.music else { return }
+        switch name {
+        case "success", "error", "collect", "bump", "spikes", "water", "lava":
+            break
+        default:
+            return
+        }
+        duckRestoreWork?.cancel()
+        music.volume = musicRestingVolume * 0.32
+        let work = DispatchWorkItem { [weak self] in
+            self?.fadeMusic(to: self?.musicRestingVolume ?? 0.13)
+        }
+        duckRestoreWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55, execute: work)
+    }
+
+    private func fadeMusic(to volume: Float, thenStop: Bool = false) {
+        musicFadeTimer?.invalidate()
+        let start = music.volume
+        let steps = 10
+        let stepDuration = 0.04
+        var index = 0
+        musicFadeTimer = Timer.scheduledTimer(withTimeInterval: stepDuration, repeats: true) { [weak self] timer in
+            guard let self else {
+                timer.invalidate()
+                return
+            }
+            index += 1
+            let progress = Float(index) / Float(steps)
+            self.music.volume = start + (volume - start) * progress
+            guard index >= steps else { return }
+            timer.invalidate()
+            self.musicFadeTimer = nil
+            self.music.volume = volume
+            if thenStop, volume <= 0.001 {
+                self.music.stop()
+            }
+        }
     }
 
     private func pulse(_ name: String, force: Bool) {
@@ -119,12 +192,20 @@ final class Soundscape {
         case "ui":
             lightHaptic.impactOccurred()
             lightHaptic.prepare()
-        case "toggle", "select":
+        case "toggle", "select", "activate":
             selectionHaptic.selectionChanged()
             selectionHaptic.prepare()
-        case "move", "turn", "tap":
-            softHaptic.impactOccurred(intensity: 0.7)
+        case "move", "moveAlt", "turn", "tap", "pickup", "open", "push":
+            softHaptic.impactOccurred(intensity: 0.65)
             softHaptic.prepare()
+        case "collect":
+            softHaptic.impactOccurred(intensity: 0.85)
+            softHaptic.prepare()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+                guard let self, force || PlaySettings.haptics else { return }
+                self.lightHaptic.impactOccurred(intensity: 0.45)
+                self.lightHaptic.prepare()
+            }
         case "success":
             noticeHaptic.notificationOccurred(.success)
             noticeHaptic.prepare()
@@ -186,9 +267,9 @@ final class Soundscape {
     private func startIfNeeded() {
         guard !unavailable else { return }
         do {
-            // playback + mixWithOthers : nos sons cohabitent avec Spotify / Apple Music / etc.
+            // ambient + mixWithOthers : cohabite avec Spotify et respecte le silent switch.
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
             try session.setActive(true, options: [])
             if !engine.isRunning {
                 try engine.start()
@@ -198,16 +279,31 @@ final class Soundscape {
         }
     }
 
-    private func tone(frequency: Double, seconds: Double, volume: Float) -> AVAudioPCMBuffer? {
+    private func softTone(
+        frequency: Double,
+        seconds: Double,
+        volume: Float,
+        harmonic: Double = 0.15
+    ) -> AVAudioPCMBuffer? {
         synthesize(seconds: seconds) { time, _ in
-            let attack = min(1, time / 0.012)
-            let release = min(1, max(0, (seconds - time) / 0.028))
-            return sin(2 * Double.pi * frequency * time) * attack * release * Double(volume)
+            let attack = min(1, time / 0.01)
+            let release = min(1, max(0, (seconds - time) / 0.035))
+            let fundamental = sin(2 * Double.pi * frequency * time)
+            let overtone = sin(2 * Double.pi * frequency * 2 * time) * harmonic
+            return (fundamental + overtone) * attack * release * Double(volume)
         }
     }
 
+    private func tone(frequency: Double, seconds: Double, volume: Float) -> AVAudioPCMBuffer? {
+        softTone(frequency: frequency, seconds: seconds, volume: volume, harmonic: 0.12)
+    }
+
     private func sequence(_ frequencies: [Double], note: Double, volume: Float) -> AVAudioPCMBuffer? {
-        let pieces = frequencies.compactMap { tone(frequency: $0, seconds: note, volume: volume) }
+        let pieces = frequencies.compactMap { softTone(frequency: $0, seconds: note, volume: volume, harmonic: 0.14) }
+        return join(pieces)
+    }
+
+    private func join(_ pieces: [AVAudioPCMBuffer]) -> AVAudioPCMBuffer? {
         let total = pieces.reduce(0) { $0 + Int($1.frameLength) }
         guard total > 0,
               let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(total)),
@@ -223,6 +319,83 @@ final class Soundscape {
             cursor += count
         }
         return buffer
+    }
+
+    private func footstep(pitch: Double) -> AVAudioPCMBuffer? {
+        synthesize(seconds: 0.07) { time, index in
+            let freq = 380 * pitch
+            let body = sin(2 * Double.pi * freq * time) * exp(-time * 42)
+            let soft = sin(2 * Double.pi * freq * 1.5 * time) * exp(-time * 55) * 0.35
+            let noiseSeed = sin(Double(index) * 12.9898) * 43758.5453
+            let scuff = (noiseSeed.truncatingRemainder(dividingBy: 1) * 2 - 1) * exp(-time * 70) * 0.12
+            return (body + soft + scuff) * 0.32
+        }
+    }
+
+    private func turnWhoosh() -> AVAudioPCMBuffer? {
+        synthesize(seconds: 0.09) { time, _ in
+            let freq = 280 + time * 220
+            let sweep = sin(2 * Double.pi * freq * time) * exp(-time * 18)
+            let air = sin(2 * Double.pi * (520 + time * 160) * time) * exp(-time * 28) * 0.35
+            return (sweep + air) * 0.3
+        }
+    }
+
+    private func collectChime() -> AVAudioPCMBuffer? {
+        join([
+            softTone(frequency: 784, seconds: 0.07, volume: 0.26, harmonic: 0.25),
+            softTone(frequency: 988, seconds: 0.09, volume: 0.24, harmonic: 0.2),
+            softTone(frequency: 1175, seconds: 0.11, volume: 0.2, harmonic: 0.18)
+        ].compactMap { $0 })
+    }
+
+    private func doorOpen() -> AVAudioPCMBuffer? {
+        synthesize(seconds: 0.14) { time, _ in
+            let creak = sin(2 * Double.pi * (190 + time * 80) * time) * exp(-time * 10) * 0.55
+            let latch = sin(2 * Double.pi * 740 * time) * exp(-time * 35) * 0.4
+            return (creak + latch) * 0.34
+        }
+    }
+
+    private func cratePush() -> AVAudioPCMBuffer? {
+        synthesize(seconds: 0.12) { time, index in
+            let scrape = sin(2 * Double.pi * 140 * time) * exp(-time * 14) * 0.6
+            let wood = sin(2 * Double.pi * 260 * time) * exp(-time * 20) * 0.35
+            let noiseSeed = sin(Double(index) * 78.233) * 43758.5453
+            let grit = (noiseSeed.truncatingRemainder(dividingBy: 1) * 2 - 1) * exp(-time * 22) * 0.18
+            return (scrape + wood + grit) * 0.36
+        }
+    }
+
+    private func switchClick() -> AVAudioPCMBuffer? {
+        synthesize(seconds: 0.06) { time, _ in
+            let tick = sin(2 * Double.pi * 1100 * time) * exp(-time * 55)
+            let body = sin(2 * Double.pi * 420 * time) * exp(-time * 38) * 0.45
+            return (tick + body) * 0.3
+        }
+    }
+
+    private func victoryFanfare() -> AVAudioPCMBuffer? {
+        join([
+            softTone(frequency: 523, seconds: 0.1, volume: 0.28, harmonic: 0.18),
+            softTone(frequency: 659, seconds: 0.1, volume: 0.28, harmonic: 0.18),
+            softTone(frequency: 784, seconds: 0.12, volume: 0.3, harmonic: 0.2),
+            softTone(frequency: 1046, seconds: 0.16, volume: 0.26, harmonic: 0.16)
+        ].compactMap { $0 })
+    }
+
+    private func musicLoop() -> AVAudioPCMBuffer? {
+        // Phrase douce en Do majeur, un peu plus longue et moins mécanique.
+        let melody: [(Double, Double)] = [
+            (262, 0.34), (330, 0.34), (392, 0.34), (440, 0.42),
+            (392, 0.28), (349, 0.28), (330, 0.34), (294, 0.42),
+            (262, 0.34), (294, 0.28), (330, 0.34), (392, 0.5),
+            (349, 0.34), (330, 0.42), (294, 0.5), (262, 0.62)
+        ]
+        let pieces = melody.compactMap { note in
+            softTone(frequency: note.0, seconds: note.1, volume: 0.13, harmonic: 0.1)
+        }
+        return join(pieces)
     }
 
     private func obstacleBump() -> AVAudioPCMBuffer? {

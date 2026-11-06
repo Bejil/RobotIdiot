@@ -1,11 +1,18 @@
 import UIKit
 import RobotIdiotCore
 
+#if DEBUG
+private let debugUnlockAllCampaignLevels = true
+#else
+private let debugUnlockAllCampaignLevels = false
+#endif
+
 final class WorldMapViewController: UIViewController {
     private let scrollView = UIScrollView()
     private let path = WorldPathView()
     private var unlockedWorld = 1
     private var progress = CampaignProgress(campaignSeed: 1)
+    private var backdrop: AmbientBackdropView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -13,8 +20,10 @@ final class WorldMapViewController: UIViewController {
         navigationItem.title = "Progression"
         navigationItem.backButtonDisplayMode = .minimal
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+        backdrop = AmbientBackdropView.install(in: view)
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.alwaysBounceVertical = true
+        scrollView.backgroundColor = .clear
         path.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(path)
         view.addSubview(scrollView)
@@ -34,12 +43,25 @@ final class WorldMapViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        if let navigation = navigationController {
+            AppTheme.apply(to: navigation)
+        }
+        backdrop.start()
         progress = CampaignStore.shared.progress()
-        unlockedWorld = min(
-            CatalogCampaign.worldCount,
-            CampaignRules.unlockedWorld(in: progress, layout: CatalogCampaign.layout)
-        )
+        if debugUnlockAllCampaignLevels {
+            unlockedWorld = CatalogCampaign.worldCount
+        } else {
+            unlockedWorld = min(
+                CatalogCampaign.worldCount,
+                CampaignRules.unlockedWorld(in: progress, layout: CatalogCampaign.layout)
+            )
+        }
         reloadCards()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        backdrop.stop()
     }
 
     private func reloadCards() {
@@ -51,7 +73,7 @@ final class WorldMapViewController: UIViewController {
         let currentLevel = CatalogCampaign.level(at: address) == nil ? nil : address
         let maximum = CatalogCampaign.levelsPerWorld * 3
         for world in 1...CatalogCampaign.worldCount {
-            let locked = world > unlockedWorld
+            let locked = !debugUnlockAllCampaignLevels && world > unlockedWorld
             let stars = CampaignRules.stars(inWorld: world, progress: progress)
             let finished = (1...CatalogCampaign.levelsPerWorld).allSatisfy {
                 progress.score(at: LevelAddress(world: world, level: $0)) != nil
@@ -83,7 +105,7 @@ final class WorldMapViewController: UIViewController {
     }
 
     @objc private func openWorld(_ sender: WorldCardControl) {
-        guard sender.world <= unlockedWorld else { return }
+        guard debugUnlockAllCampaignLevels || sender.world <= unlockedWorld else { return }
         navigationController?.pushViewController(WorldLevelsViewController(world: sender.world), animated: true)
     }
 }
@@ -328,6 +350,7 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
     private var gridSide: CGFloat = 100
     private var gridSpan: CGFloat = 320
     private var rowHeight: CGFloat = 100
+    private var ambient: AmbientBackdropView!
 
     init(world: Int) {
         let layout = UICollectionViewFlowLayout()
@@ -351,12 +374,14 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
         navigationItem.backButtonDisplayMode = .minimal
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
+        ambient = AmbientBackdropView.install(in: view)
         let backdrop = UIImageView(image: UIImage(named: "WorldBackdrop\(worldNumber)"))
         backdrop.contentMode = .scaleAspectFill
         backdrop.clipsToBounds = true
+        backdrop.alpha = 0.42
         backdrop.translatesAutoresizingMaskIntoConstraints = false
         let dim = UIView()
-        dim.backgroundColor = UIColor(hex: 0x1A4AD4).withAlphaComponent(0.42)
+        dim.backgroundColor = UIColor(hex: 0x101848).withAlphaComponent(0.28)
         dim.isUserInteractionEnabled = false
         dim.translatesAutoresizingMaskIntoConstraints = false
 
@@ -408,12 +433,14 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
         applyTransparentNavigationBar()
+        ambient.start()
         reload()
         warmAhead()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        ambient.stop()
         if isMovingFromParent, let navigation = navigationController {
             AppTheme.apply(to: navigation)
         }
@@ -432,6 +459,7 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
         navigation.navigationBar.standardAppearance = appearance
         navigation.navigationBar.scrollEdgeAppearance = appearance
         navigation.navigationBar.compactAppearance = appearance
+        navigation.navigationBar.compactScrollEdgeAppearance = appearance
         navigation.navigationBar.tintColor = .white
         navigation.navigationBar.isTranslucent = true
     }
@@ -480,7 +508,8 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "level", for: indexPath) as! LevelTileCell
         let level = indexPath.row + 1
         let address = LevelAddress(world: worldNumber, level: level)
-        let unlocked = CampaignRules.isLevelUnlocked(address, progress: progress, layout: CatalogCampaign.layout)
+        let unlocked = debugUnlockAllCampaignLevels
+            || CampaignRules.isLevelUnlocked(address, progress: progress, layout: CatalogCampaign.layout)
         let stars = progress.score(at: address)?.stars ?? 0
         let wide = level == CatalogCampaign.layout.levelCount
         let optimum = CatalogCampaign.level(at: address)?.scoringRules.efficientExecutionMaxSteps
@@ -502,7 +531,9 @@ final class WorldLevelsViewController: UIViewController, UICollectionViewDataSou
         collectionView.deselectItem(at: indexPath, animated: true)
         Soundscape.shared.play("select")
         let address = LevelAddress(world: worldNumber, level: indexPath.row + 1)
-        guard CampaignRules.isLevelUnlocked(address, progress: progress, layout: CatalogCampaign.layout), preparing == nil else { return }
+        let unlocked = debugUnlockAllCampaignLevels
+            || CampaignRules.isLevelUnlocked(address, progress: progress, layout: CatalogCampaign.layout)
+        guard unlocked, preparing == nil else { return }
         if let level = CampaignStore.shared.level(at: address) {
             open(level, address: address)
             return
