@@ -15,12 +15,14 @@ final class HomeViewController: UIViewController {
     private let confetti = UIImageView(image: UIImage(named: "HomeConfetti"))
     private let continueButton = AppTheme.filledButton(title: "Continuer", systemImage: "play.fill", prominent: true)
     private let campaignButton = UIButton(type: .custom)
-    private let settingsButton = UIButton(type: .custom)
+    private let dailyButton = UIButton(type: .custom)
+    private let dailySubtitleLabel = UILabel()
     private let continueGlow = UIView()
     private var bannerView: BannerView?
     private var generationTicket = 0
     private var didPlayIntro = false
     private var didOfferLaunchAd = false
+    private var didOfferNotificationPrompt = false
     private var waveToken = 0
     private var waveHigh = true
     private let curtain = UIControl()
@@ -77,8 +79,17 @@ final class HomeViewController: UIViewController {
         ])
 
         configureSquare(campaignButton, mark: "list", fill: UIColor(hex: 0x7B3FF2), tint: .white, label: "Progression")
-        configureLabeled(settingsButton, mark: "gear", fill: UIColor(hex: 0x5B6CFF), tint: .white, title: "Réglages")
-        settingsButton.addTarget(self, action: #selector(openSettings), for: .touchUpInside)
+        configureDailyButton()
+        dailyButton.addTarget(self, action: #selector(openDaily), for: .touchUpInside)
+
+        let settingsItem = UIBarButtonItem(
+            image: UIImage(systemName: "gearshape.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 17, weight: .bold)),
+            style: .plain,
+            target: self,
+            action: #selector(openSettings)
+        )
+        settingsItem.accessibilityLabel = "Réglages"
+        navigationItem.leftBarButtonItem = settingsItem
 
         let continueRow = UIStackView(arrangedSubviews: [continueHolder, campaignButton])
         continueRow.axis = .horizontal
@@ -88,9 +99,10 @@ final class HomeViewController: UIViewController {
 
         let banner = AdsService.shared.makeHomeBanner(rootViewController: self)
         bannerView = banner
-        let actions = UIStackView(arrangedSubviews: [continueRow, settingsButton, banner])
+        let actions = UIStackView(arrangedSubviews: [continueRow, dailyButton, banner])
         actions.axis = .vertical
         actions.spacing = 12
+        actions.setCustomSpacing(22, after: dailyButton)
         actions.alignment = .fill
         actions.translatesAutoresizingMaskIntoConstraints = false
 
@@ -169,7 +181,7 @@ final class HomeViewController: UIViewController {
             actions.widthAnchor.constraint(equalTo: column.widthAnchor),
             continueButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 68),
             campaignButton.widthAnchor.constraint(equalTo: campaignButton.heightAnchor),
-            settingsButton.heightAnchor.constraint(equalToConstant: 64)
+            dailyButton.heightAnchor.constraint(equalToConstant: 64)
         ])
 
         installSheet()
@@ -189,38 +201,71 @@ final class HomeViewController: UIViewController {
            curtain.alpha < 0.1 {
             present(TutorialViewController(), animated: true)
         } else {
-            offerLaunchAdIfNeeded()
+            beginPostLaunchFlow()
         }
     }
 
-    private func offerLaunchAdIfNeeded() {
-        guard !didOfferLaunchAd else { return }
+    /// Pub de lancement (si dispo), puis pitch notifications.
+    private func beginPostLaunchFlow() {
+        guard view.window != nil else { return }
         guard presentedViewController == nil else { return }
+        guard navigationController?.viewControllers.count == 1 else { return }
+
+        guard AdsService.areEnabled else {
+            offerNotificationPromptIfNeeded()
+            return
+        }
+        // Attendre AdMob (après UMP) avant d'enchaîner pub → notifications.
         guard AdsService.shared.isReady else { return }
+
+        offerLaunchAdIfNeeded { [weak self] in
+            self?.offerNotificationPromptIfNeeded()
+        }
+    }
+
+    private func offerLaunchAdIfNeeded(then completion: @escaping () -> Void) {
+        if didOfferLaunchAd {
+            completion()
+            return
+        }
         didOfferLaunchAd = true
         // Attend le chargement de l'interstitiel après démarrage AdMob.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self, self.presentedViewController == nil else {
-                self?.didOfferLaunchAd = false
+            guard let self else {
+                completion()
                 return
             }
-            AdsService.shared.showLaunchInterstitialIfNeeded(from: self)
+            guard self.presentedViewController == nil else {
+                self.didOfferLaunchAd = false
+                completion()
+                return
+            }
+            AdsService.shared.showLaunchInterstitialIfNeeded(from: self, then: completion)
         }
+    }
+
+    private func offerNotificationPromptIfNeeded() {
+        guard !didOfferNotificationPrompt else { return }
+        guard view.window != nil else { return }
+        guard presentedViewController == nil else { return }
+        guard navigationController?.viewControllers.count == 1 else { return }
+        didOfferNotificationPrompt = true
+        DailyReminderNotifications.promptAtLaunch(from: self)
     }
 
     @objc private func adsDidBecomeReady() {
         AdsService.shared.loadHomeBannerIfNeeded(bannerView)
-        if view.window != nil,
-           presentedViewController == nil,
-           navigationController?.viewControllers.count == 1 {
-            offerLaunchAdIfNeeded()
-        }
+        beginPostLaunchFlow()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(true, animated: animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        if let navigation = navigationController {
+            AppTheme.apply(to: navigation)
+        }
         refreshContinueTitle()
+        refreshDailySubtitle()
         refreshBoltBadge()
     }
 
@@ -269,37 +314,76 @@ final class HomeViewController: UIViewController {
         ])
     }
 
-    private func configureLabeled(_ button: UIButton, mark: String, fill: UIColor, tint: UIColor, title: String) {
-        button.backgroundColor = fill
-        button.layer.cornerRadius = 22
-        button.accessibilityLabel = title
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOpacity = 0.28
-        button.layer.shadowRadius = 0
-        button.layer.shadowOffset = CGSize(width: 0, height: 4)
-        let image = UIImageView(image: GameArt.fitted(GameArt.mark(mark), side: 26))
+    private func configureDailyButton() {
+        let fill = UIColor(hex: 0x0CA678)
+        let tint = UIColor.white
+        dailyButton.backgroundColor = fill
+        dailyButton.layer.cornerRadius = 22
+        dailyButton.translatesAutoresizingMaskIntoConstraints = false
+        dailyButton.layer.shadowColor = UIColor.black.cgColor
+        dailyButton.layer.shadowOpacity = 0.28
+        dailyButton.layer.shadowRadius = 0
+        dailyButton.layer.shadowOffset = CGSize(width: 0, height: 4)
+
+        let image = UIImageView(image: GameArt.fitted(GameArt.mark("spark"), side: 26))
         image.tintColor = tint
         image.contentMode = .scaleAspectFit
         image.isUserInteractionEnabled = false
-        let label = UILabel()
-        label.text = title
-        label.font = AppTheme.font(18, .heavy, textStyle: .headline)
-        label.textColor = tint
-        label.adjustsFontForContentSizeCategory = true
-        let row = UIStackView(arrangedSubviews: [image, label])
+
+        let title = UILabel()
+        title.text = "Défis du jour"
+        title.font = AppTheme.font(18, .heavy, textStyle: .headline)
+        title.textColor = tint
+        title.adjustsFontForContentSizeCategory = true
+        title.adjustsFontSizeToFitWidth = true
+        title.minimumScaleFactor = 0.75
+
+        dailySubtitleLabel.font = AppTheme.font(12, .bold, textStyle: .caption1)
+        dailySubtitleLabel.textColor = tint.withAlphaComponent(0.88)
+        dailySubtitleLabel.adjustsFontForContentSizeCategory = true
+        dailySubtitleLabel.adjustsFontSizeToFitWidth = true
+        dailySubtitleLabel.minimumScaleFactor = 0.8
+        dailySubtitleLabel.numberOfLines = 1
+
+        let textColumn = UIStackView(arrangedSubviews: [title, dailySubtitleLabel])
+        textColumn.axis = .vertical
+        textColumn.spacing = 1
+        textColumn.alignment = .leading
+
+        let row = UIStackView(arrangedSubviews: [image, textColumn])
         row.axis = .horizontal
         row.spacing = 10
         row.alignment = .center
         row.isUserInteractionEnabled = false
         row.translatesAutoresizingMaskIntoConstraints = false
-        button.addSubview(row)
+        dailyButton.addSubview(row)
         NSLayoutConstraint.activate([
             image.widthAnchor.constraint(equalToConstant: 26),
             image.heightAnchor.constraint(equalToConstant: 26),
-            row.centerXAnchor.constraint(equalTo: button.centerXAnchor),
-            row.centerYAnchor.constraint(equalTo: button.centerYAnchor)
+            row.leadingAnchor.constraint(greaterThanOrEqualTo: dailyButton.leadingAnchor, constant: 16),
+            row.trailingAnchor.constraint(lessThanOrEqualTo: dailyButton.trailingAnchor, constant: -16),
+            row.centerXAnchor.constraint(equalTo: dailyButton.centerXAnchor),
+            row.centerYAnchor.constraint(equalTo: dailyButton.centerYAnchor)
         ])
+        refreshDailySubtitle()
+    }
+
+    private func refreshDailySubtitle() {
+        let selection = DailyStore.shared.selection()
+        var remaining = 0
+        if !DailyStore.shared.hasWonChallenge(on: selection.civilDate) { remaining += 1 }
+        if !DailyStore.shared.hasWonBug(on: selection.civilDate) { remaining += 1 }
+        let subtitle: String
+        switch remaining {
+        case 2:
+            subtitle = "2 défis à réaliser"
+        case 1:
+            subtitle = "1 défi à réaliser"
+        default:
+            subtitle = "Plus aucun défi à réaliser"
+        }
+        dailySubtitleLabel.text = subtitle
+        dailyButton.accessibilityLabel = "Défis du jour, \(subtitle)"
     }
 
     private func playIntro() {
@@ -313,7 +397,7 @@ final class HomeViewController: UIViewController {
         confetti.alpha = 0
         badge.alpha = 0
         badge.transform = CGAffineTransform(translationX: 0, y: 28).scaledBy(x: 0.7, y: 0.7)
-        let mains = [continueButton, settingsButton]
+        let mains = [continueButton, dailyButton]
         let squares = [campaignButton]
         (mains + squares).forEach {
             $0.alpha = 0
@@ -389,30 +473,40 @@ final class HomeViewController: UIViewController {
     }
 
     private func refreshBoltBadge() {
-        let tag = 8801
-        view.viewWithTag(tag)?.removeFromSuperview()
         let count = BoltWallet.shared.balance
+        let pill = UIView()
+        pill.backgroundColor = UIColor(hex: 0x1A1440)
+        pill.layer.cornerRadius = 16
+        pill.layer.cornerCurve = .continuous
+        pill.layer.borderWidth = 1.5
+        pill.layer.borderColor = AppTheme.gold.cgColor
+        pill.isAccessibilityElement = true
+        pill.accessibilityLabel = "\(count) écrou\(count > 1 ? "s" : "")"
+
         let icon = UIImageView(image: GameArt.piece(.bolt))
         icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
         let label = UILabel()
         label.text = "\(count)"
         label.font = AppTheme.font(16, .heavy, textStyle: .headline)
         label.textColor = AppTheme.gold
         let row = UIStackView(arrangedSubviews: [icon, label])
-        row.tag = tag
         row.axis = .horizontal
         row.alignment = .center
-        row.spacing = 4
-        row.isAccessibilityElement = true
-        row.accessibilityLabel = "\(count) écrou\(count > 1 ? "s" : "")"
+        row.spacing = 5
+        row.isUserInteractionEnabled = false
         row.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(row)
+        pill.addSubview(row)
         NSLayoutConstraint.activate([
-            icon.widthAnchor.constraint(equalToConstant: 24),
-            icon.heightAnchor.constraint(equalToConstant: 24),
-            row.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            row.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
+            icon.widthAnchor.constraint(equalToConstant: 20),
+            icon.heightAnchor.constraint(equalToConstant: 20),
+            row.topAnchor.constraint(equalTo: pill.topAnchor, constant: 5),
+            row.bottomAnchor.constraint(equalTo: pill.bottomAnchor, constant: -5),
+            row.leadingAnchor.constraint(equalTo: pill.leadingAnchor, constant: 9),
+            row.trailingAnchor.constraint(equalTo: pill.trailingAnchor, constant: -10),
+            pill.heightAnchor.constraint(equalToConstant: 32)
         ])
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: pill)
     }
 
     @objc private func continueCampaign() {
@@ -437,6 +531,11 @@ final class HomeViewController: UIViewController {
 
     @objc private func openCampaign() {
         navigationController?.pushViewController(WorldMapViewController(), animated: true)
+    }
+
+    @objc private func openDaily() {
+        _ = DailyStore.shared.selection()
+        navigationController?.pushViewController(DailyHubViewController(), animated: true)
     }
 
     @objc private func openSettings() {

@@ -63,7 +63,7 @@ final class TutorialViewController: UIViewController {
         )
     ]
 
-    private let backdrop = TutorialBackdropView()
+    private var backdrop: AmbientBackdropView!
     private let scrollView = UIScrollView()
     private let pageControl = UIPageControl()
     private let chrome = TutorialChromeView()
@@ -94,10 +94,8 @@ final class TutorialViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(hex: 0x24145F)
-
-        backdrop.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(backdrop)
+        view.backgroundColor = AppTheme.cream
+        backdrop = AmbientBackdropView.install(in: view)
 
         scrollView.isPagingEnabled = true
         scrollView.showsHorizontalScrollIndicator = false
@@ -143,11 +141,6 @@ final class TutorialViewController: UIViewController {
 
         let guide = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
-            backdrop.topAnchor.constraint(equalTo: view.topAnchor),
-            backdrop.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            backdrop.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            backdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
             chrome.topAnchor.constraint(equalTo: view.topAnchor),
             chrome.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chrome.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -687,101 +680,5 @@ private final class TutorialChromeView: UIView {
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         let hit = super.hitTest(point, with: event)
         return hit === self ? nil : hit
-    }
-}
-
-// MARK: - Backdrop
-
-private final class TutorialBackdropView: UIView {
-    private let rays = UIImageView(image: UIImage(named: "HomeRays") ?? UIImage(named: "VictoryRays"))
-    private let cyan = UIImageView(image: UIImage(named: "HomeCloudCyan"))
-    private let blue = UIImageView(image: UIImage(named: "HomeCloudBlue"))
-    private let band = UIImageView(image: UIImage(named: "HomeCloudBand"))
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        backgroundColor = UIColor(hex: 0x24145F)
-        clipsToBounds = true
-        rays.contentMode = .scaleAspectFit
-        rays.alpha = 0.55
-        rays.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(rays)
-        for cloud in [cyan, blue] {
-            cloud.contentMode = .scaleAspectFit
-            cloud.alpha = 0.45
-            cloud.translatesAutoresizingMaskIntoConstraints = false
-            addSubview(cloud)
-        }
-        band.contentMode = .scaleAspectFit
-        band.alpha = 0.85
-        band.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(band)
-        NSLayoutConstraint.activate([
-            rays.centerXAnchor.constraint(equalTo: centerXAnchor),
-            rays.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -40),
-            rays.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1.35),
-            rays.heightAnchor.constraint(equalTo: rays.widthAnchor, multiplier: 868 / 1006),
-
-            cyan.leadingAnchor.constraint(equalTo: leadingAnchor, constant: -20),
-            cyan.topAnchor.constraint(equalTo: topAnchor, constant: 40),
-            cyan.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1.1),
-            cyan.heightAnchor.constraint(equalTo: cyan.widthAnchor, multiplier: 121 / 520),
-
-            blue.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 24),
-            blue.topAnchor.constraint(equalTo: topAnchor, constant: 120),
-            blue.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1.15),
-            blue.heightAnchor.constraint(equalTo: blue.widthAnchor, multiplier: 112 / 469),
-
-            band.leadingAnchor.constraint(equalTo: leadingAnchor, constant: -40),
-            band.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 40),
-            band.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 20),
-            band.heightAnchor.constraint(equalTo: widthAnchor, multiplier: 0.42)
-        ])
-    }
-
-    required init?(coder: NSCoder) {
-        nil
-    }
-
-    func start() {
-        guard !PlaySettings.prefersReducedMotion else { return }
-        let spin = CABasicAnimation(keyPath: "transform.rotation.z")
-        spin.fromValue = -0.05
-        spin.toValue = 0.05
-        spin.duration = 10
-        spin.autoreverses = true
-        spin.repeatCount = .infinity
-        spin.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        rays.layer.add(spin, forKey: "spin")
-
-        fade(cyan, from: 0.25, to: 0.7, duration: 4.5)
-        fade(blue, from: 0.65, to: 0.25, duration: 5.5)
-
-        let pan = CABasicAnimation(keyPath: "transform.translation.x")
-        pan.fromValue = 10
-        pan.toValue = -14
-        pan.duration = 16
-        pan.autoreverses = true
-        pan.repeatCount = .infinity
-        pan.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        band.layer.add(pan, forKey: "pan")
-    }
-
-    func stop() {
-        rays.layer.removeAllAnimations()
-        cyan.layer.removeAllAnimations()
-        blue.layer.removeAllAnimations()
-        band.layer.removeAllAnimations()
-    }
-
-    private func fade(_ view: UIView, from: CGFloat, to: CGFloat, duration: CFTimeInterval) {
-        let fade = CABasicAnimation(keyPath: "opacity")
-        fade.fromValue = from
-        fade.toValue = to
-        fade.duration = duration
-        fade.autoreverses = true
-        fade.repeatCount = .infinity
-        fade.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        view.layer.add(fade, forKey: "fade")
     }
 }

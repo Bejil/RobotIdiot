@@ -61,6 +61,21 @@ enum PlaySettings {
         set { write(newValue, key: "robotidiot.tutorialSeen") }
     }
 
+    /// L'utilisateur a déjà vu (ou reporté) l'aide « ouvrir Réglages » après un refus de notifications.
+    static var notificationDeniedHintSeen: Bool {
+        get { stored("robotidiot.notificationDeniedHintSeen", default: false) }
+        set { write(newValue, key: "robotidiot.notificationDeniedHintSeen") }
+    }
+
+    /// Dernier jour civil (appareil) où le pitch / l'aide notifications a été présenté.
+    static var lastNotificationPromptCivilDate: String {
+        get { UserDefaults.standard.string(forKey: "robotidiot.lastNotificationPromptCivilDate") ?? "" }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "robotidiot.lastNotificationPromptCivilDate")
+            NotificationCenter.default.post(name: changed, object: nil)
+        }
+    }
+
     static func hasIntroduced(_ command: CommandType) -> Bool {
         introducedCommands.contains(command.rawValue)
     }

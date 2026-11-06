@@ -160,6 +160,40 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
         return walk(&instructions)
     }
 
+    /// Remplace une primitive existante (jamais un conteneur SI / REPETE).
+    @discardableResult
+    public mutating func replacePrimitive(_ command: CommandType, on id: UUID) -> Bool {
+        guard !command.isContainer else { return false }
+        func walk(_ nodes: inout [Instruction]) -> Bool {
+            for index in nodes.indices {
+                if nodes[index].id == id {
+                    guard !nodes[index].command.isContainer else { return false }
+                    nodes[index].command = command
+                    nodes[index].condition = nil
+                    nodes[index].children = []
+                    return true
+                }
+                if walk(&nodes[index].children) { return true }
+            }
+            return false
+        }
+        return walk(&instructions)
+    }
+
+    /// Compare la structure des commandes en ignorant les identifiants.
+    public func hasSameCommands(as other: Program) -> Bool {
+        Self.sameCommands(instructions, other.instructions)
+    }
+
+    private static func sameCommands(_ lhs: [Instruction], _ rhs: [Instruction]) -> Bool {
+        guard lhs.count == rhs.count else { return false }
+        for (left, right) in zip(lhs, rhs) {
+            guard left.command == right.command, left.condition == right.condition else { return false }
+            guard sameCommands(left.children, right.children) else { return false }
+        }
+        return true
+    }
+
     /// Déplace une instruction parmi ses frères. `offset` vaut -1 ou 1.
     @discardableResult
     public mutating func moveSibling(_ id: UUID, offset: Int) -> Bool {

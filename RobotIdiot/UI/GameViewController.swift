@@ -5,6 +5,7 @@ import RobotIdiotCore
 final class GameViewController: UIViewController {
     private let level: Level
     private let campaign: LevelAddress?
+    private let daily: DailyPlayContext?
     private var engine: SimulationEngine
     private let boardScene: BoardScene
 
@@ -18,8 +19,16 @@ final class GameViewController: UIViewController {
     private let sheet = UIView()
     private let sheetGrabber = UIView()
     private let sheetHandle = UIView()
-    private let limitsLabel = UILabel()
+    private let chromeRow = UIStackView()
+    private let chromeLeftCluster = UIStackView()
+    private let chromeSpacer = UIView()
+    private let boltBadge = UIView()
+    private let boltRow = UIStackView()
+    private let boltIconView = UIImageView()
+    private let boltCountLabel = UILabel()
+    private var displayedBoltCount = 0
     private let helpButton = UIButton(type: .system)
+    private let clearProgramButton = UIButton(type: .system)
     private let speedToggle = UIButton(type: .system)
     private let overlay = ResultOverlayView()
     private let errorAlert = ExecutionAlertView()
@@ -41,11 +50,14 @@ final class GameViewController: UIViewController {
     private var usesSideBySideLayout = false
     private var lastSideBySideSplit: (leftTrailing: CGFloat, rightLeading: CGFloat)?
     private var bonusRemainingCount = 0
+    private var backdrop: AmbientBackdropView!
 
-    init(level: Level, campaign: LevelAddress? = nil) {
-        let framed = level.id.hasPrefix("RI-") ? level : LevelFraming.playfield(level)
+    init(level: Level, campaign: LevelAddress? = nil, daily: DailyPlayContext? = nil) {
+        let keepNative = level.id.hasPrefix("RI-") || level.id.hasPrefix("DAILY-")
+        let framed = keepNative ? level : LevelFraming.playfield(level)
         self.level = framed
         self.campaign = campaign
+        self.daily = daily
         self.tempo = PlaySettings.fastAnimation ? .fast : .normal
         engine = SimulationEngine(level: framed, program: Program())
         boardScene = BoardScene(level: framed, contrast: PlaySettings.contrast)
@@ -59,8 +71,7 @@ final class GameViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = AppTheme.cream
-        // Monde / niveau affichés au-dessus du plateau (plus dans la barre de navigation).
-        navigationItem.title = nil
+        backdrop = AmbientBackdropView.install(in: view)
         navigationItem.backButtonDisplayMode = .minimal
         installBarButtons()
         NotificationCenter.default.addObserver(self, selector: #selector(settingsChanged), name: PlaySettings.changed, object: nil)
@@ -83,13 +94,17 @@ final class GameViewController: UIViewController {
         bonusRemainingCount = level.collectibles.count
         updateStatusIdle()
         updateControls()
-        refreshBoltBarButton()
+        refreshBoltBadge()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        navigationController?.navigationBar.tintColor = .white
+        if let navigation = navigationController {
+            AppTheme.apply(to: navigation)
+            navigation.navigationBar.tintColor = .white
+        }
+        backdrop.start()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -99,6 +114,7 @@ final class GameViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        backdrop.stop()
         navigationController?.navigationBar.tintColor = AppTheme.gold
         playbackToken += 1
         wantsContinuous = false
@@ -150,28 +166,28 @@ final class GameViewController: UIViewController {
             finale = false
         }
 
-        worldTitleLabel.text = PlayerCopy.worldTitle(world)
-        worldTitleLabel.font = AppTheme.font(34, .heavy, textStyle: .largeTitle)
-        worldTitleLabel.textColor = AppTheme.gold
-        worldTitleLabel.textAlignment = .left
-        worldTitleLabel.adjustsFontForContentSizeCategory = true
-        worldTitleLabel.adjustsFontSizeToFitWidth = true
-        worldTitleLabel.minimumScaleFactor = 0.75
-        worldTitleLabel.numberOfLines = 1
-        worldTitleLabel.accessibilityTraits = .header
+        navigationItem.title = finale
+            ? "Monde \(world) / Niveau final"
+            : "Monde \(world) / Niveau \(levelNumber)"
 
-        if level.id.hasPrefix("gen-") {
-            levelTitleLabel.text = PlayerCopy.title(for: level)
+        worldTitleLabel.isHidden = true
+        worldTitleLabel.isAccessibilityElement = false
+
+        // Sous le titre nav : consignes / limites (ex-label à gauche d'Aide).
+        if let daily, daily.kind == .bug, let instructions = daily.instructions, !instructions.isEmpty {
+            levelTitleLabel.text = instructions
+        } else if let daily {
+            levelTitleLabel.text = daily.titleOverride
         } else {
-            levelTitleLabel.text = PlayerCopy.levelSlotTitle(level: levelNumber, finale: finale)
+            levelTitleLabel.text = PlayerCopy.limits(for: level)
         }
-        levelTitleLabel.font = AppTheme.font(18, .semibold, textStyle: .title3)
+        levelTitleLabel.font = AppTheme.font(15, .semibold, textStyle: .subheadline)
         levelTitleLabel.textColor = AppTheme.inkSoft
         levelTitleLabel.textAlignment = .left
         levelTitleLabel.adjustsFontForContentSizeCategory = true
         levelTitleLabel.adjustsFontSizeToFitWidth = true
         levelTitleLabel.minimumScaleFactor = 0.8
-        levelTitleLabel.numberOfLines = 1
+        levelTitleLabel.numberOfLines = 2
     }
 
     private func configureTransport() {
@@ -204,34 +220,104 @@ final class GameViewController: UIViewController {
         speedToggle.accessibilityLabel = "Vitesse d'animation"
         refreshSpeedToggle()
 
-        limitsLabel.font = AppTheme.font(13, .semibold, textStyle: .footnote)
-        limitsLabel.textColor = AppTheme.line
-        limitsLabel.numberOfLines = 2
-        limitsLabel.adjustsFontForContentSizeCategory = true
-        limitsLabel.text = PlayerCopy.limits(for: level)
+        boltBadge.backgroundColor = UIColor(hex: 0x1A1440)
+        boltBadge.layer.cornerRadius = 16
+        boltBadge.layer.cornerCurve = .continuous
+        boltBadge.layer.borderWidth = 1.5
+        boltBadge.layer.borderColor = AppTheme.gold.cgColor
+        boltBadge.isAccessibilityElement = true
+
+        boltRow.axis = .horizontal
+        boltRow.alignment = .center
+        boltRow.spacing = 5
+        boltRow.isUserInteractionEnabled = false
+        boltRow.translatesAutoresizingMaskIntoConstraints = false
+        boltBadge.addSubview(boltRow)
+
+        boltIconView.image = GameArt.piece(.bolt)
+        boltIconView.contentMode = .scaleAspectFit
+        boltCountLabel.font = AppTheme.font(16, .heavy, textStyle: .headline)
+        boltCountLabel.textColor = AppTheme.gold
+        boltCountLabel.adjustsFontForContentSizeCategory = true
+        boltRow.addArrangedSubview(boltIconView)
+        boltRow.addArrangedSubview(boltCountLabel)
+        NSLayoutConstraint.activate([
+            boltRow.topAnchor.constraint(equalTo: boltBadge.topAnchor, constant: 5),
+            boltRow.bottomAnchor.constraint(equalTo: boltBadge.bottomAnchor, constant: -5),
+            boltRow.leadingAnchor.constraint(equalTo: boltBadge.leadingAnchor, constant: 8),
+            boltRow.trailingAnchor.constraint(equalTo: boltBadge.trailingAnchor, constant: -10),
+            boltIconView.widthAnchor.constraint(equalToConstant: 18),
+            boltIconView.heightAnchor.constraint(equalToConstant: 18),
+            boltBadge.heightAnchor.constraint(equalToConstant: 32)
+        ])
+        refreshBoltBadge()
 
         var helpConfiguration = UIButton.Configuration.filled()
         helpConfiguration.title = "Aide"
-        helpConfiguration.image = UIImage(systemName: "questionmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 14, weight: .bold))
-        helpConfiguration.imagePadding = 6
+        helpConfiguration.image = UIImage(systemName: "questionmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 13, weight: .bold))
+        helpConfiguration.imagePadding = 5
         helpConfiguration.baseBackgroundColor = AppTheme.gold
         helpConfiguration.baseForegroundColor = .black
         helpConfiguration.cornerStyle = .capsule
-        helpConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
+        helpConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
         helpConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var updated = incoming
-            updated.font = AppTheme.font(15, .heavy, textStyle: .headline)
+            updated.font = AppTheme.font(14, .heavy, textStyle: .headline)
             return updated
         }
         helpButton.configuration = helpConfiguration
         helpButton.accessibilityLabel = "Aide"
         helpButton.addTarget(self, action: #selector(showHelp), for: .touchUpInside)
+
+        var clearConfiguration = UIButton.Configuration.filled()
+        clearConfiguration.title = "Effacer"
+        clearConfiguration.image = UIImage(systemName: "trash", withConfiguration: UIImage.SymbolConfiguration(pointSize: 12, weight: .bold))
+        clearConfiguration.imagePadding = 5
+        clearConfiguration.baseBackgroundColor = UIColor(hex: 0xE03131)
+        clearConfiguration.baseForegroundColor = .white
+        clearConfiguration.cornerStyle = .capsule
+        clearConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
+        clearConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var updated = incoming
+            updated.font = AppTheme.font(14, .heavy, textStyle: .headline)
+            return updated
+        }
+        clearProgramButton.configuration = clearConfiguration
+        clearProgramButton.accessibilityLabel = "Effacer toutes les commandes"
+        clearProgramButton.addTarget(self, action: #selector(clearAllCommands), for: .touchUpInside)
+
+        boltBadge.setContentHuggingPriority(.required, for: .horizontal)
+        boltBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
+        helpButton.setContentHuggingPriority(.required, for: .horizontal)
+        helpButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        clearProgramButton.setContentHuggingPriority(.required, for: .horizontal)
+        clearProgramButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        chromeLeftCluster.setContentHuggingPriority(.required, for: .horizontal)
+        chromeLeftCluster.setContentCompressionResistancePriority(.required, for: .horizontal)
+        chromeSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        chromeSpacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        chromeSpacer.isUserInteractionEnabled = false
+
+        chromeLeftCluster.axis = .horizontal
+        chromeLeftCluster.alignment = .center
+        chromeLeftCluster.spacing = 8
+        chromeLeftCluster.addArrangedSubview(boltBadge)
+        chromeLeftCluster.addArrangedSubview(helpButton)
+
+        chromeRow.axis = .horizontal
+        chromeRow.alignment = .center
+        chromeRow.spacing = 8
+        chromeRow.addArrangedSubview(chromeLeftCluster)
+        chromeRow.addArrangedSubview(chromeSpacer)
+        chromeRow.addArrangedSubview(clearProgramButton)
     }
 
     private func configureEditor() {
         editor.setAllowedCommands(level.allowedCommands)
         editor.setProgramLimit(level.programConstraints)
-        if let campaign, let saved = CampaignStore.shared.program(at: campaign) {
+        if let daily, daily.kind == .bug, let baseline = daily.baselineProgram {
+            editor.enableSinglePrimitiveReplace(baseline: baseline)
+        } else if let campaign, let saved = CampaignStore.shared.program(at: campaign) {
             editor.replaceProgram(saved)
         }
         editor.onProgramChange = { [weak self] program in
@@ -289,7 +375,7 @@ final class GameViewController: UIViewController {
     }
 
     private func installSubviews() {
-        [boardSlot, boardFrame, worldTitleLabel, levelTitleLabel, sheet, sheetGrabber, sheetHandle, limitsLabel, helpButton, editor, runButton, speedToggle, overlay, errorAlert, commandIntro, helpAlert].forEach {
+        [boardSlot, boardFrame, worldTitleLabel, levelTitleLabel, sheet, sheetGrabber, sheetHandle, chromeRow, editor, runButton, speedToggle, overlay, errorAlert, commandIntro, helpAlert].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
         boardSlot.isUserInteractionEnabled = false
@@ -300,8 +386,7 @@ final class GameViewController: UIViewController {
         view.addSubview(sheet)
         view.addSubview(sheetGrabber)
         sheetGrabber.addSubview(sheetHandle)
-        view.addSubview(limitsLabel)
-        view.addSubview(helpButton)
+        view.addSubview(chromeRow)
         view.addSubview(editor)
         view.addSubview(runButton)
         view.addSubview(speedToggle)
@@ -417,13 +502,15 @@ final class GameViewController: UIViewController {
         topInset: CGFloat = 10
     ) -> [NSLayoutConstraint] {
         [
+            // worldTitleLabel masqué : le titre vit dans la navigation bar.
             worldTitleLabel.topAnchor.constraint(equalTo: topAnchor, constant: topInset),
             worldTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: leadingInset),
             worldTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: trailingInset),
+            worldTitleLabel.heightAnchor.constraint(equalToConstant: 0),
 
-            levelTitleLabel.topAnchor.constraint(equalTo: worldTitleLabel.bottomAnchor, constant: 4),
-            levelTitleLabel.leadingAnchor.constraint(equalTo: worldTitleLabel.leadingAnchor),
-            levelTitleLabel.trailingAnchor.constraint(equalTo: worldTitleLabel.trailingAnchor)
+            levelTitleLabel.topAnchor.constraint(equalTo: topAnchor, constant: topInset),
+            levelTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: leadingInset),
+            levelTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: trailingInset)
         ]
     }
 
@@ -443,7 +530,7 @@ final class GameViewController: UIViewController {
 
     private func applyStackedLayout() {
         let guide = view.safeAreaLayoutGuide
-        let initialHeight = sheetHeight > 1 ? sheetHeight : max(280, view.bounds.height * 0.4)
+        let initialHeight = sheetHeight > 1 ? sheetHeight : max(300, view.bounds.height * 0.46)
         sheetHeight = initialHeight
         let height = sheet.heightAnchor.constraint(equalToConstant: initialHeight)
         sheetHeightConstraint = height
@@ -456,6 +543,7 @@ final class GameViewController: UIViewController {
 
         worldTitleLabel.textAlignment = .center
         levelTitleLabel.textAlignment = .center
+        levelTitleLabel.isHidden = false
 
         layoutConstraints = boardHeaderConstraints(
             topAnchor: guide.topAnchor,
@@ -463,17 +551,17 @@ final class GameViewController: UIViewController {
             trailingAnchor: guide.trailingAnchor,
             leadingInset: 20,
             trailingInset: -20,
-            topInset: 8
+            topInset: 4
         ) + [
             sheet.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             sheet.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             sheet.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             height,
 
-            boardSlot.topAnchor.constraint(equalTo: levelTitleLabel.bottomAnchor, constant: 14),
-            boardSlot.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 20),
-            boardSlot.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -16),
-            boardSlot.bottomAnchor.constraint(equalTo: sheet.topAnchor, constant: -16),
+            boardSlot.topAnchor.constraint(equalTo: levelTitleLabel.bottomAnchor, constant: 8),
+            boardSlot.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 16),
+            boardSlot.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -14),
+            boardSlot.bottomAnchor.constraint(equalTo: sheet.topAnchor, constant: -10),
 
             boardFrame.centerXAnchor.constraint(equalTo: boardSlot.centerXAnchor),
             boardFrame.centerYAnchor.constraint(equalTo: boardSlot.centerYAnchor),
@@ -486,25 +574,25 @@ final class GameViewController: UIViewController {
             sheetGrabber.topAnchor.constraint(equalTo: sheet.topAnchor),
             sheetGrabber.leadingAnchor.constraint(equalTo: sheet.leadingAnchor),
             sheetGrabber.trailingAnchor.constraint(equalTo: sheet.trailingAnchor),
-            sheetGrabber.heightAnchor.constraint(equalToConstant: 28),
+            sheetGrabber.heightAnchor.constraint(equalToConstant: 18),
 
             sheetHandle.centerXAnchor.constraint(equalTo: sheetGrabber.centerXAnchor),
             sheetHandle.centerYAnchor.constraint(equalTo: sheetGrabber.centerYAnchor),
-            sheetHandle.widthAnchor.constraint(equalToConstant: 44),
-            sheetHandle.heightAnchor.constraint(equalToConstant: 5),
+            sheetHandle.widthAnchor.constraint(equalToConstant: 40),
+            sheetHandle.heightAnchor.constraint(equalToConstant: 4),
 
-            limitsLabel.topAnchor.constraint(equalTo: sheetGrabber.bottomAnchor, constant: 4),
-            limitsLabel.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 20),
-            limitsLabel.trailingAnchor.constraint(equalTo: helpButton.leadingAnchor, constant: -10),
+            chromeRow.topAnchor.constraint(equalTo: sheetGrabber.bottomAnchor, constant: 2),
+            chromeRow.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 12),
+            chromeRow.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -12),
+            chromeRow.heightAnchor.constraint(equalToConstant: 32),
+            helpButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 84),
+            helpButton.heightAnchor.constraint(equalToConstant: 32),
+            clearProgramButton.heightAnchor.constraint(equalToConstant: 32),
+            clearProgramButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 96),
 
-            helpButton.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -16),
-            helpButton.centerYAnchor.constraint(equalTo: limitsLabel.centerYAnchor),
-            helpButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 92),
-            helpButton.heightAnchor.constraint(equalToConstant: 36),
-
-            editor.topAnchor.constraint(equalTo: limitsLabel.bottomAnchor, constant: 14),
-            editor.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 12),
-            editor.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -12),
+            editor.topAnchor.constraint(equalTo: chromeRow.bottomAnchor, constant: 14),
+            editor.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: 10),
+            editor.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -10),
             editor.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             // Sous la liste du programme (à droite de la palette), pas sous toute la largeur.
@@ -542,18 +630,20 @@ final class GameViewController: UIViewController {
         let bottomPad: CGFloat = 28
         worldTitleLabel.textAlignment = .left
         levelTitleLabel.textAlignment = .left
+        levelTitleLabel.isHidden = false
 
-        // Gauche = plateau (+ titres) ; droite = commandes. Ancré sur view pour coller à la charnière.
+        // Gauche = plateau (+ sous-titre) ; droite = commandes. Ancré sur view pour coller à la charnière.
         layoutConstraints = [
-            worldTitleLabel.topAnchor.constraint(equalTo: guide.topAnchor, constant: 12),
+            worldTitleLabel.topAnchor.constraint(equalTo: guide.topAnchor, constant: 8),
             worldTitleLabel.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: leftPad),
             worldTitleLabel.trailingAnchor.constraint(equalTo: view.leadingAnchor, constant: split.leftTrailing - 16),
+            worldTitleLabel.heightAnchor.constraint(equalToConstant: 0),
 
-            levelTitleLabel.topAnchor.constraint(equalTo: worldTitleLabel.bottomAnchor, constant: 6),
-            levelTitleLabel.leadingAnchor.constraint(equalTo: worldTitleLabel.leadingAnchor),
-            levelTitleLabel.trailingAnchor.constraint(equalTo: worldTitleLabel.trailingAnchor),
+            levelTitleLabel.topAnchor.constraint(equalTo: guide.topAnchor, constant: 8),
+            levelTitleLabel.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: leftPad),
+            levelTitleLabel.trailingAnchor.constraint(equalTo: view.leadingAnchor, constant: split.leftTrailing - 16),
 
-            boardSlot.topAnchor.constraint(equalTo: levelTitleLabel.bottomAnchor, constant: 16),
+            boardSlot.topAnchor.constraint(equalTo: levelTitleLabel.bottomAnchor, constant: 10),
             boardSlot.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: leftPad),
             boardSlot.trailingAnchor.constraint(equalTo: view.leadingAnchor, constant: split.leftTrailing - 8),
             boardSlot.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -bottomPad),
@@ -568,7 +658,7 @@ final class GameViewController: UIViewController {
             boardFrame.leadingAnchor.constraint(greaterThanOrEqualTo: boardSlot.leadingAnchor),
             boardFrame.trailingAnchor.constraint(lessThanOrEqualTo: boardSlot.trailingAnchor),
 
-            sheet.topAnchor.constraint(equalTo: guide.topAnchor, constant: 12),
+            sheet.topAnchor.constraint(equalTo: guide.topAnchor, constant: 8),
             sheet.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: split.rightLeading),
             sheet.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -12),
             sheet.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -bottomPad),
@@ -583,18 +673,18 @@ final class GameViewController: UIViewController {
             sheetHandle.widthAnchor.constraint(equalToConstant: 44),
             sheetHandle.heightAnchor.constraint(equalToConstant: 5),
 
-            limitsLabel.topAnchor.constraint(equalTo: sheet.topAnchor, constant: 16),
-            limitsLabel.leadingAnchor.constraint(equalTo: sheet.leadingAnchor, constant: 16),
-            limitsLabel.trailingAnchor.constraint(equalTo: helpButton.leadingAnchor, constant: -10),
+            chromeRow.topAnchor.constraint(equalTo: sheet.topAnchor, constant: 8),
+            chromeRow.leadingAnchor.constraint(equalTo: sheet.leadingAnchor, constant: 10),
+            chromeRow.trailingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: -10),
+            chromeRow.heightAnchor.constraint(equalToConstant: 32),
+            helpButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 84),
+            helpButton.heightAnchor.constraint(equalToConstant: 32),
+            clearProgramButton.heightAnchor.constraint(equalToConstant: 32),
+            clearProgramButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 96),
 
-            helpButton.trailingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: -14),
-            helpButton.centerYAnchor.constraint(equalTo: limitsLabel.centerYAnchor),
-            helpButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 92),
-            helpButton.heightAnchor.constraint(equalToConstant: 36),
-
-            editor.topAnchor.constraint(equalTo: limitsLabel.bottomAnchor, constant: 12),
-            editor.leadingAnchor.constraint(equalTo: sheet.leadingAnchor, constant: 10),
-            editor.trailingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: -10),
+            editor.topAnchor.constraint(equalTo: chromeRow.bottomAnchor, constant: 14),
+            editor.leadingAnchor.constraint(equalTo: sheet.leadingAnchor, constant: 8),
+            editor.trailingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: -8),
             editor.bottomAnchor.constraint(equalTo: sheet.bottomAnchor),
 
             runButton.leadingAnchor.constraint(
@@ -618,8 +708,7 @@ final class GameViewController: UIViewController {
         view.bringSubviewToFront(levelTitleLabel)
         view.bringSubviewToFront(sheet)
         view.bringSubviewToFront(sheetGrabber)
-        view.bringSubviewToFront(limitsLabel)
-        view.bringSubviewToFront(helpButton)
+        view.bringSubviewToFront(chromeRow)
         view.bringSubviewToFront(editor)
         view.bringSubviewToFront(runButton)
         view.bringSubviewToFront(speedToggle)
@@ -702,11 +791,22 @@ final class GameViewController: UIViewController {
     @objc private func showHelp() {
         helpAlert.host = self
         helpAlert.onBalanceChanged = { [weak self] in
-            self?.refreshBoltBarButton()
+            self?.refreshBoltBadge(animated: true)
         }
         helpAlert.present(level: level)
         helpAlert.isHidden = false
         view.bringSubviewToFront(helpAlert)
+    }
+
+    @objc private func clearAllCommands() {
+        editor.requestClearProgram()
+        refreshClearProgramButton()
+    }
+
+    private func refreshClearProgramButton() {
+        let enabled = editor.canClearProgram
+        clearProgramButton.isEnabled = enabled
+        clearProgramButton.alpha = enabled ? 1 : 0.45
     }
 
     @objc private func toggleSpeed() {
@@ -766,34 +866,31 @@ final class GameViewController: UIViewController {
         settings.accessibilityLabel = "Réglages"
         settings.tintColor = .white
         navigationItem.rightBarButtonItems = [settings]
-        refreshBoltBarButton()
     }
 
-    private func refreshBoltBarButton() {
+    private func refreshBoltBadge(animated: Bool = false) {
         let count = BoltWallet.shared.balance
-        let label = UILabel()
-        label.text = "\(count)"
-        label.font = AppTheme.font(16, .heavy, textStyle: .headline)
-        label.textColor = AppTheme.gold
-        let icon = UIImageView(image: GameArt.piece(.bolt))
-        icon.contentMode = .scaleAspectFit
-        icon.translatesAutoresizingMaskIntoConstraints = false
-        icon.widthAnchor.constraint(equalToConstant: 28).isActive = true
-        icon.heightAnchor.constraint(equalToConstant: 28).isActive = true
-        let trailingPad = UIView()
-        trailingPad.translatesAutoresizingMaskIntoConstraints = false
-        trailingPad.widthAnchor.constraint(equalToConstant: 8).isActive = true
-        let row = UIStackView(arrangedSubviews: [icon, label, trailingPad])
-        row.axis = .horizontal
-        row.alignment = .center
-        row.spacing = 4
-        row.isUserInteractionEnabled = false
-        let item = UIBarButtonItem(customView: row)
-        item.accessibilityLabel = "\(count) écrou\(count > 1 ? "s" : "")"
-        var buttons = navigationItem.rightBarButtonItems ?? []
-        buttons.removeAll { $0.accessibilityLabel?.contains("écrou") == true }
-        buttons.insert(item, at: 0)
-        navigationItem.rightBarButtonItems = buttons
+        let gained = count - displayedBoltCount
+        boltCountLabel.text = "\(count)"
+        boltBadge.accessibilityLabel = "\(count) écrou\(count > 1 ? "s" : "")"
+        let shouldPulse = animated && gained > 0 && !PlaySettings.prefersReducedMotion
+        displayedBoltCount = count
+        guard shouldPulse else { return }
+        boltBadge.layer.removeAnimation(forKey: "boltPulse")
+        let pop = CAKeyframeAnimation(keyPath: "transform.scale")
+        pop.values = [1, 1.12, 0.96, 1]
+        pop.keyTimes = [0, 0.35, 0.7, 1]
+        pop.duration = 0.42
+        boltBadge.layer.add(pop, forKey: "boltPulse")
+        UIView.animate(withDuration: 0.18, animations: {
+            self.boltBadge.backgroundColor = AppTheme.gold.withAlphaComponent(0.28)
+            self.boltBadge.layer.borderColor = UIColor.white.cgColor
+        }, completion: { _ in
+            UIView.animate(withDuration: 0.28) {
+                self.boltBadge.backgroundColor = UIColor(hex: 0x1A1440)
+                self.boltBadge.layer.borderColor = AppTheme.gold.cgColor
+            }
+        })
     }
 
     @objc private func showSensorySettings() {
@@ -932,7 +1029,7 @@ final class GameViewController: UIViewController {
         bonusRemainingCount = level.collectibles.count
         updateStatusIdle()
         updateControls()
-        refreshBoltBarButton()
+        refreshBoltBadge()
     }
 
     private func showResult() {
@@ -966,15 +1063,35 @@ final class GameViewController: UIViewController {
         if let campaign {
             CampaignStore.shared.record(score, at: campaign)
         }
-        let boltsGained = BoltWallet.shared.creditVictory(
-            levelID: level.id,
-            collected: engine.state.game.collectedThisAttempt
-        )
-        let exitTitle = campaign != nil ? "Carte du monde" : "Retour"
+        var boltsGained = 0
+        var showBoltRecap = false
+        if let daily {
+            switch daily.kind {
+            case .challenge:
+                boltsGained = DailyStore.shared.creditChallengeVictory(on: daily.civilDate)
+                showBoltRecap = true
+            case .bug:
+                if editor.hasModifiedFromBaseline {
+                    boltsGained = DailyStore.shared.creditBugVictory(on: daily.civilDate)
+                    showBoltRecap = true
+                }
+            }
+        } else {
+            boltsGained = BoltWallet.shared.creditVictory(
+                levelID: level.id,
+                collected: engine.state.game.collectedThisAttempt
+            )
+            showBoltRecap = boltsGained > 0 || bonusCollected
+        }
+        let exitTitle = daily != nil ? "Retour" : (campaign != nil ? "Carte du monde" : "Retour")
         var note = PlayerCopy.improvement(rating: rating, rules: rules, bonusCollected: bonusCollected)
-        if boltsGained > 0 {
+        if let daily, daily.kind == .bug, !editor.hasModifiedFromBaseline {
+            note = "Modifie une commande avant de rejouer pour gagner la récompense."
+        } else if boltsGained > 0 {
             let boltNote = boltsGained == 1 ? "+1 écrou !" : "+\(boltsGained) écrous !"
             note = note.isEmpty ? boltNote : "\(boltNote) \(note)"
+        } else if daily != nil {
+            note = note.isEmpty ? "Récompense déjà obtenue aujourd'hui." : "\(note) (déjà obtenu)"
         } else if bonusCollected {
             note = note.isEmpty
                 ? "Écrou déjà obtenu sur ce niveau."
@@ -988,11 +1105,11 @@ final class GameViewController: UIViewController {
             note: note,
             boltsGained: boltsGained,
             boltBalance: BoltWallet.shared.balance,
-            showBoltRecap: boltsGained > 0 || bonusCollected,
-            nextTitle: nextLevelTitle,
+            showBoltRecap: showBoltRecap,
+            nextTitle: daily == nil ? nextLevelTitle : nil,
             exitTitle: exitTitle
         )
-        refreshBoltBarButton()
+        refreshBoltBadge(animated: boltsGained > 0)
         errorAlert.isHidden = true
         commandIntro.isHidden = true
         helpAlert.isHidden = true
@@ -1003,6 +1120,13 @@ final class GameViewController: UIViewController {
         statusLabel.text = boltsGained > 0
             ? "Drapeau atteint. +\(boltsGained) écrou\(boltsGained > 1 ? "s" : "") !"
             : "Le drapeau est atteint."
+        if daily != nil {
+            // Laisse l'écran de victoire s'installer, puis pitch notifications (≤ 1× / jour).
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { [weak self] in
+                guard let self, self.view.window != nil, !self.overlay.isHidden else { return }
+                DailyReminderNotifications.promptAfterDailyVictory(from: self)
+            }
+        }
     }
 
     private func describe(_ outcome: StepOutcome) {
@@ -1090,6 +1214,7 @@ final class GameViewController: UIViewController {
                 : "Lance le programme du robot"
         }
         runButton.isEnabled = running || !editor.program.instructions.isEmpty
+        refreshClearProgramButton()
     }
 
     private static func hasCollisionFeedback(_ fault: ExecutionFault?) -> Bool {

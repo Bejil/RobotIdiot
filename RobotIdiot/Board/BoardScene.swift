@@ -93,9 +93,13 @@ final class BoardScene: SKScene {
 
     /// La bordure de murs n'est pas une tuile : le bord du 7×7 est la seule limite.
     /// Les niveaux du pack gardent chaque mur dessiné à sa place.
+    private var isHandcraftedPackLevel: Bool {
+        level.id.hasPrefix("RI-") || level.id.hasPrefix("DAILY-")
+    }
+
     private func playfield() -> (minX: Int, maxX: Int, minY: Int, maxY: Int) {
         let grid = level.grid
-        if level.id.hasPrefix("RI-") {
+        if isHandcraftedPackLevel {
             return (0, max(grid.width - 1, 0), 0, max(grid.height - 1, 0))
         }
         var minX = 0
@@ -327,7 +331,9 @@ final class BoardScene: SKScene {
                 }
             }
         }
-        if !level.id.hasPrefix("RI-") {
+        // Buissons décoratifs aux coins : uniquement pour les niveaux générés.
+        // Sur RI-/DAILY-, un vrai B bloque ; peindre un buisson sur de l'herbe trompe le joueur.
+        if !isHandcraftedPackLevel {
             paintCornerBushes()
         }
 

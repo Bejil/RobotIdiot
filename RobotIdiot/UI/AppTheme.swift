@@ -65,8 +65,8 @@ enum AppTheme {
 
     static func apply(to navigation: UINavigationController) {
         let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = cream
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = .clear
         appearance.shadowColor = .clear
         appearance.titleTextAttributes = [
             .foregroundColor: ink,
@@ -75,7 +75,9 @@ enum AppTheme {
         navigation.navigationBar.standardAppearance = appearance
         navigation.navigationBar.scrollEdgeAppearance = appearance
         navigation.navigationBar.compactAppearance = appearance
+        navigation.navigationBar.compactScrollEdgeAppearance = appearance
         navigation.navigationBar.tintColor = gold
+        navigation.navigationBar.isTranslucent = true
         navigation.navigationBar.barStyle = .black
     }
 

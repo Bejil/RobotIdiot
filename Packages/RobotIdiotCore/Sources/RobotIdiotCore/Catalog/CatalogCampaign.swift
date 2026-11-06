@@ -118,7 +118,7 @@ public enum CatalogCampaign {
             }
         }
 
-        let allowed = source.unlockedCommands.compactMap(commandType)
+        let allowed = source.unlockedCommands.compactMap(mapCommandType)
         let nesting = allowed.contains(.forever) || allowed.contains(.ifBlock) ? 4 : 1
         var notes = [source.family]
         if source.objective.requiresItemHeld {
@@ -192,6 +192,15 @@ public enum CatalogCampaign {
         Program(instructions: source.solution.program.map(instruction))
     }
 
+    /// Convertit un programme du pack (défi ou bug) en arbre jouable.
+    public static func program(from instructions: [CatalogInstruction]) -> Program {
+        Program(instructions: instructions.map(instruction))
+    }
+
+    public static func commandType(named name: String) -> CommandType? {
+        mapCommandType(name)
+    }
+
     private static func familyTitle(_ family: String) -> String {
         switch family {
         case "navigation", "navigation_backwards":
@@ -237,7 +246,7 @@ public enum CatalogCampaign {
         }
     }
 
-    private static func commandType(_ name: String) -> CommandType? {
+    private static func mapCommandType(_ name: String) -> CommandType? {
         switch name {
         case "AVANCE": return .moveForward
         case "RECULE": return .moveBackward

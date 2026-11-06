@@ -2,6 +2,8 @@ import UIKit
 import RobotIdiotCore
 
 final class SettingsViewController: UITableViewController {
+    private var backdrop: AmbientBackdropView!
+
     init() {
         super.init(style: .insetGrouped)
     }
@@ -13,13 +15,26 @@ final class SettingsViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Réglages"
-        tableView.backgroundColor = AppTheme.cream
+        tableView.backgroundColor = .clear
+        let ambient = AmbientBackdropView(frame: .zero)
+        ambient.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        tableView.backgroundView = ambient
+        backdrop = ambient
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        if let navigation = navigationController {
+            AppTheme.apply(to: navigation)
+        }
+        backdrop.start()
         tableView.reloadData()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        backdrop.stop()
     }
 
     override func numberOfSections(in tableView: UITableView) -> Int { 4 }
@@ -85,17 +100,18 @@ final class SettingsViewController: UITableViewController {
             return
         }
         guard indexPath.section == 3, indexPath.row == 1 else { return }
-        let alert = UIAlertController(
-            title: "Effacer la progression ?",
-            message: "La progression de la campagne sera oubliée.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "Annuler", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Effacer", style: .destructive) { [weak self] _ in
+        ChartedConfirmAlertView.present(
+            from: self,
+            ribbon: "Attention",
+            headline: "Effacer la progression ?",
+            detail: "La progression de la campagne sera oubliée.",
+            confirmTitle: "Effacer",
+            accent: .destructive,
+            confirmSystemImage: "trash"
+        ) { [weak self] in
             CampaignStore.shared.reset()
             self?.tableView.reloadSections(IndexSet(integer: 3), with: .automatic)
-        })
-        present(alert, animated: true)
+        }
     }
 
     private func switchCell(title: String, isOn: Bool, action: Selector) -> UITableViewCell {
