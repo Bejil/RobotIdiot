@@ -369,9 +369,9 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         button.addTarget(self, action: #selector(addCommand(_:)), for: .touchUpInside)
         button.widthAnchor.constraint(equalToConstant: 56).isActive = true
         button.heightAnchor.constraint(equalToConstant: 48).isActive = true
-        let ink: UIColor = command.category == .control ? .black : .white
+        let ink = CommandChrome.paletteInk(command)
         if var configuration = button.configuration {
-            let colors = commandBadgeColors(command)
+            let colors = CommandChrome.badgeColors(command)
             configuration.title = PlayerCopy.commandShortTitle(command)
             configuration.image = GameArt.fitted(GameArt.commandIcon(command), side: 22)
             configuration.imagePlacement = .top
@@ -1135,17 +1135,6 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     }
 }
 
-private func commandBadgeColors(_ command: CommandType) -> (background: UIColor, foreground: UIColor) {
-    switch command.category {
-    case .movement:
-        return (UIColor(hex: 0x2F9BFF), .white)
-    case .interaction:
-        return (UIColor(hex: 0x7A2CF7), .white)
-    case .control:
-        return (UIColor(hex: 0xFFD200), UIColor(hex: 0x1A1440))
-    }
-}
-
 private final class CommandBlockCell: UITableViewCell {
     static let reuseID = "CommandBlockCell"
 
@@ -1286,7 +1275,7 @@ private final class CommandBlockCell: UITableViewCell {
             titleLabel.text = PlayerCopy.commandTitle(instruction.command)
         }
         indexLabel.text = "\(position)"
-        let colors = commandBadgeColors(instruction.command)
+        let colors = CommandChrome.badgeColors(instruction.command)
         iconView.image = GameArt.commandIcon(instruction.command)
         iconView.tintColor = isFailed ? .white : colors.foreground
         stripe.backgroundColor = isFailed ? UIColor.white.withAlphaComponent(0.22) : colors.background

@@ -75,6 +75,7 @@ final class BoardScene: SKScene {
     private var playbackCompletion: (() -> Void)?
 
     private var artTextures: [String: SKTexture] = [:]
+    private var helpTrailCoordinates: [GridCoordinate] = []
 
     private func textured(_ piece: GameArt.BoardPiece, side: CGFloat) -> SKSpriteNode {
         let key = "\(level.worldNumber)-\(piece.rawValue)"
@@ -356,6 +357,28 @@ final class BoardScene: SKScene {
         if playbackCompletion == nil {
             startIdle()
         }
+        renderHelpTrail()
+    }
+
+    /// Traînée lumineuse pour un indice / une solution (discrète, sous le robot).
+    func showHelpTrail(coordinates: [GridCoordinate]) {
+        helpTrailCoordinates = Self.deduplicatedTrail(coordinates)
+        renderHelpTrail()
+    }
+
+    func clearHelpTrail() {
+        helpTrailCoordinates = []
+        childNode(withName: "help-trail")?.removeFromParent()
+    }
+
+    private static func deduplicatedTrail(_ coordinates: [GridCoordinate]) -> [GridCoordinate] {
+        var result: [GridCoordinate] = []
+        for coordinate in coordinates {
+            if result.last != coordinate {
+                result.append(coordinate)
+            }
+        }
+        return result
     }
 
     private func groundPiece(_ terrain: TerrainType?) -> GameArt.BoardPiece {
@@ -1364,5 +1387,118 @@ final class BoardScene: SKScene {
             .scale(to: 1.16, duration: 0.08),
             .scale(to: 1, duration: 0.14)
         ]), withKey: "pulse")
+    }
+
+    private func renderHelpTrail() {
+        childNode(withName: "help-trail")?.removeFromParent()
+        guard !helpTrailCoordinates.isEmpty, cellSize > 4 else { return }
+
+        let root = SKNode()
+        root.name = "help-trail"
+        root.zPosition = 1.15
+        root.alpha = 0
+
+        let points = helpTrailCoordinates.map(center(of:))
+        let warm = UIColor(hex: 0xFFE66D)
+        let soft = UIColor(hex: 0xFFF4B8)
+
+        if points.count >= 2 {
+            let path = CGMutablePath()
+            path.move(to: points[0])
+            for point in points.dropFirst() {
+                path.addLine(to: point)
+            }
+
+            let halo = SKShapeNode(path: path)
+            halo.strokeColor = warm.withAlphaComponent(0.28)
+            halo.lineWidth = cellSize * 0.38
+            halo.lineCap = .round
+            halo.lineJoin = .round
+            halo.glowWidth = cellSize * 0.14
+            halo.blendMode = .add
+            halo.zPosition = 0
+            root.addChild(halo)
+
+            let core = SKShapeNode(path: path)
+            core.strokeColor = soft.withAlphaComponent(0.42)
+            core.lineWidth = cellSize * 0.12
+            core.lineCap = .round
+            core.lineJoin = .round
+            core.blendMode = .add
+            core.zPosition = 1
+            root.addChild(core)
+        }
+
+        for (index, point) in points.enumerated() {
+            let isEnd = index == points.count - 1
+            let isStart = index == 0
+            let disc = SKSpriteNode(texture: Self.haloTexture)
+            let side = cellSize * (isEnd ? 0.78 : (isStart ? 0.62 : 0.48))
+            disc.size = CGSize(width: side, height: side)
+            disc.position = point
+            disc.color = warm
+            disc.colorBlendFactor = 1
+            disc.blendMode = .add
+            disc.alpha = isEnd ? 0.32 : 0.18
+            disc.zPosition = 2
+            root.addChild(disc)
+        }
+
+        if !PlaySettings.prefersReducedMotion {
+            let sparkles = makeHelpTrailEmitter()
+            sparkles.position = points[0]
+            sparkles.zPosition = 3
+            root.addChild(sparkles)
+            if points.count >= 2 {
+                var travel: [SKAction] = points.dropFirst().map {
+                    .move(to: $0, duration: 0.7)
+                }
+                travel.append(.wait(forDuration: 0.55))
+                travel.append(.move(to: points[0], duration: 0))
+                sparkles.run(.repeatForever(.sequence(travel)), withKey: "help-trail-travel")
+            }
+
+            let breathe = SKAction.sequence([
+                .fadeAlpha(to: 0.72, duration: 1.15),
+                .fadeAlpha(to: 1, duration: 1.15)
+            ])
+            root.run(.repeatForever(breathe), withKey: "help-trail-pulse")
+        }
+
+        addChild(root)
+        root.run(.fadeAlpha(to: 1, duration: PlaySettings.prefersReducedMotion ? 0.05 : 0.35))
+    }
+
+    private func makeHelpTrailEmitter() -> SKEmitterNode {
+        let factor = particleSizeFactor
+        let emitter = SKEmitterNode()
+        emitter.name = "help-trail-sparkles"
+        emitter.particleTexture = Self.sparkTexture
+        emitter.particleBlendMode = .add
+        emitter.particleBirthRate = 7
+        emitter.particleLifetime = 0.85
+        emitter.particleLifetimeRange = 0.2
+        emitter.particleSpeed = cellSize * 0.04
+        emitter.particleSpeedRange = cellSize * 0.02
+        emitter.emissionAngle = 0
+        emitter.emissionAngleRange = .pi * 2
+        emitter.particlePositionRange = CGVector(dx: tileSpan * 0.1, dy: tileSpan * 0.1)
+        emitter.particleScale = 0.22 * factor
+        emitter.particleScaleRange = emitter.particleScale * 0.25
+        emitter.particleScaleSequence = particleScaleSequence([0.35, 1, 0.2], times: [0, 0.4, 1])
+        emitter.particleColorBlendFactor = 1
+        emitter.particleColorSequence = SKKeyframeSequence(
+            keyframeValues: [
+                UIColor(hex: 0xFFF6C8),
+                UIColor(hex: 0xFFE14A),
+                UIColor(hex: 0xFFD200)
+            ],
+            times: [0, 0.55, 1]
+        )
+        emitter.particleAlphaSequence = SKKeyframeSequence(
+            keyframeValues: [0, 0.45, 0.2, 0],
+            times: [0, 0.2, 0.65, 1]
+        )
+        return emitter
     }
 }

@@ -8,6 +8,7 @@ final class CommandIntroAlertView: UIView {
     private var commands: [CommandType] = []
     private var index = 0
 
+    private let composition = UIView()
     private let robot = UIImageView()
     private let card = UIView()
     private let ribbon = UIView()
@@ -31,21 +32,15 @@ final class CommandIntroAlertView: UIView {
         card.layer.shadowOpacity = 0.18
         card.layer.shadowRadius = 18
         card.layer.shadowOffset = CGSize(width: 0, height: 8)
-        card.translatesAutoresizingMaskIntoConstraints = false
 
         robot.image = UIImage(named: "HomeHero")
         robot.contentMode = .scaleAspectFit
         robot.isUserInteractionEnabled = false
-        robot.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(robot)
-        addSubview(card)
 
         ribbon.backgroundColor = UIColor(hex: 0x7B3FF2)
         ribbon.layer.cornerRadius = 22
         ribbon.layer.cornerCurve = .continuous
         ribbon.layer.masksToBounds = true
-        ribbon.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(ribbon)
         ribbonTitle.text = "Nouvelle commande !"
         ribbonTitle.font = AppTheme.font(22, .heavy, textStyle: .title2)
         ribbonTitle.textColor = .white
@@ -60,12 +55,16 @@ final class CommandIntroAlertView: UIView {
         badge.layer.borderWidth = 4
         badge.layer.borderColor = UIColor.white.cgColor
         badge.layer.masksToBounds = true
-        badge.translatesAutoresizingMaskIntoConstraints = false
         badgeIcon.contentMode = .scaleAspectFit
         badgeIcon.tintColor = .white
         badgeIcon.translatesAutoresizingMaskIntoConstraints = false
         badge.addSubview(badgeIcon)
-        addSubview(badge)
+
+        addSubview(composition)
+        composition.addSubview(robot)
+        composition.addSubview(card)
+        composition.addSubview(ribbon)
+        composition.addSubview(badge)
 
         headlineLabel.font = AppTheme.font(18, .heavy, textStyle: .headline)
         headlineLabel.textColor = AppTheme.line
@@ -93,31 +92,18 @@ final class CommandIntroAlertView: UIView {
         message.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(message)
 
+        ChartedAlertPlacement.pinComposition(
+            in: self,
+            composition: composition,
+            card: card,
+            robot: robot,
+            ribbon: ribbon,
+            badge: badge
+        )
         NSLayoutConstraint.activate([
-            card.centerYAnchor.constraint(equalTo: centerYAnchor, constant: 36),
-            card.centerXAnchor.constraint(equalTo: centerXAnchor),
-            card.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 18),
-            card.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -18),
-            card.widthAnchor.constraint(equalTo: widthAnchor, constant: -36).prioritized(.init(750)),
-            card.widthAnchor.constraint(lessThanOrEqualToConstant: 440),
-
-            robot.centerXAnchor.constraint(equalTo: card.centerXAnchor),
-            robot.widthAnchor.constraint(equalTo: card.widthAnchor, multiplier: 0.78),
-            robot.heightAnchor.constraint(equalTo: robot.widthAnchor, multiplier: 1.25),
-            robot.bottomAnchor.constraint(equalTo: card.topAnchor, constant: 108),
-
-            ribbon.centerXAnchor.constraint(equalTo: card.centerXAnchor),
-            ribbon.topAnchor.constraint(equalTo: card.topAnchor, constant: -22),
-            ribbon.widthAnchor.constraint(equalTo: card.widthAnchor, constant: -48),
-            ribbon.heightAnchor.constraint(equalToConstant: 58),
             ribbonTitle.leadingAnchor.constraint(equalTo: ribbon.leadingAnchor, constant: 16),
             ribbonTitle.trailingAnchor.constraint(equalTo: ribbon.trailingAnchor, constant: -16),
             ribbonTitle.bottomAnchor.constraint(equalTo: ribbon.bottomAnchor, constant: -10),
-
-            badge.centerXAnchor.constraint(equalTo: ribbon.centerXAnchor),
-            badge.centerYAnchor.constraint(equalTo: ribbon.topAnchor, constant: 2),
-            badge.widthAnchor.constraint(equalToConstant: 48),
-            badge.heightAnchor.constraint(equalToConstant: 48),
             badgeIcon.centerXAnchor.constraint(equalTo: badge.centerXAnchor),
             badgeIcon.centerYAnchor.constraint(equalTo: badge.centerYAnchor),
             badgeIcon.widthAnchor.constraint(equalToConstant: 24),

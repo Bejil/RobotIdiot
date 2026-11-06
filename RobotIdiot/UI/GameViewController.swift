@@ -34,6 +34,7 @@ final class GameViewController: UIViewController {
     private let errorAlert = ExecutionAlertView()
     private let commandIntro = CommandIntroAlertView()
     private let helpAlert = HelpAlertView()
+    private let helpCommandsAlert = HelpCommandsAlertView()
 
     private let runButton = AppTheme.filledButton(title: "Exécuter", systemImage: "play.fill", prominent: true)
 
@@ -119,6 +120,7 @@ final class GameViewController: UIViewController {
         playbackToken += 1
         wantsContinuous = false
         boardScene.cancelPlayback()
+        detachFullscreenOverlays()
     }
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
@@ -342,7 +344,7 @@ final class GameViewController: UIViewController {
         overlay.isHidden = true
         overlay.onRetry = { [weak self] in
             self?.navigationController?.setNavigationBarHidden(false, animated: true)
-            self?.overlay.isHidden = true
+            self?.hideFullscreenOverlay(self?.overlay)
             self?.restoreRobot()
         }
         overlay.onExit = { [weak self] in
@@ -361,22 +363,33 @@ final class GameViewController: UIViewController {
         errorAlert.onEdit = { [weak self] in
             guard let self else { return }
             AdsService.shared.showErrorInterstitial(from: self) {
-                self.errorAlert.isHidden = true
+                self.hideFullscreenOverlay(self.errorAlert)
             }
         }
         commandIntro.isHidden = true
         commandIntro.onFinished = { [weak self] in
-            self?.commandIntro.isHidden = true
+            self?.hideFullscreenOverlay(self?.commandIntro)
         }
         helpAlert.isHidden = true
         helpAlert.onClose = { [weak self] in
-            self?.helpAlert.isHidden = true
+            self?.hideFullscreenOverlay(self?.helpAlert)
+        }
+        helpAlert.onReveal = { [weak self] kind in
+            self?.openHelpCommands(kind)
+        }
+        helpCommandsAlert.isHidden = true
+        helpCommandsAlert.onClose = { [weak self] in
+            self?.hideFullscreenOverlay(self?.helpCommandsAlert)
         }
     }
 
     private func installSubviews() {
-        [boardSlot, boardFrame, worldTitleLabel, levelTitleLabel, sheet, sheetGrabber, sheetHandle, chromeRow, editor, runButton, speedToggle, overlay, errorAlert, commandIntro, helpAlert].forEach {
+        [boardSlot, boardFrame, worldTitleLabel, levelTitleLabel, sheet, sheetGrabber, sheetHandle, chromeRow, editor, runButton, speedToggle].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
+        }
+        [overlay, errorAlert, commandIntro, helpAlert, helpCommandsAlert].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            $0.isHidden = true
         }
         boardSlot.isUserInteractionEnabled = false
         view.addSubview(boardSlot)
@@ -390,28 +403,24 @@ final class GameViewController: UIViewController {
         view.addSubview(editor)
         view.addSubview(runButton)
         view.addSubview(speedToggle)
-        view.addSubview(overlay)
-        view.addSubview(errorAlert)
-        view.addSubview(commandIntro)
-        view.addSubview(helpAlert)
-        NSLayoutConstraint.activate([
-            overlay.topAnchor.constraint(equalTo: view.topAnchor),
-            overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            overlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            errorAlert.topAnchor.constraint(equalTo: view.topAnchor),
-            errorAlert.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            errorAlert.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            errorAlert.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            commandIntro.topAnchor.constraint(equalTo: view.topAnchor),
-            commandIntro.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            commandIntro.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            commandIntro.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            helpAlert.topAnchor.constraint(equalTo: view.topAnchor),
-            helpAlert.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            helpAlert.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            helpAlert.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
+    }
+
+    private var fullscreenOverlays: [UIView] {
+        [overlay, errorAlert, commandIntro, helpAlert, helpCommandsAlert]
+    }
+
+    private func showFullscreenOverlay(_ alert: UIView) {
+        AlertOverlayHost.attach(alert, to: self)
+        alert.isHidden = false
+    }
+
+    private func hideFullscreenOverlay(_ alert: UIView?) {
+        guard let alert else { return }
+        alert.isHidden = true
+    }
+
+    private func detachFullscreenOverlays() {
+        fullscreenOverlays.forEach { AlertOverlayHost.detach($0) }
     }
 
     override func viewDidLayoutSubviews() {
@@ -712,10 +721,9 @@ final class GameViewController: UIViewController {
         view.bringSubviewToFront(editor)
         view.bringSubviewToFront(runButton)
         view.bringSubviewToFront(speedToggle)
-        view.bringSubviewToFront(overlay)
-        view.bringSubviewToFront(errorAlert)
-        view.bringSubviewToFront(commandIntro)
-        view.bringSubviewToFront(helpAlert)
+        for alert in fullscreenOverlays where !alert.isHidden {
+            alert.superview?.bringSubviewToFront(alert)
+        }
     }
 
     private func maxSheetHeight() -> CGFloat {
@@ -789,13 +797,20 @@ final class GameViewController: UIViewController {
     }
 
     @objc private func showHelp() {
+        hideFullscreenOverlay(helpCommandsAlert)
         helpAlert.host = self
         helpAlert.onBalanceChanged = { [weak self] in
             self?.refreshBoltBadge(animated: true)
         }
         helpAlert.present(level: level)
-        helpAlert.isHidden = false
-        view.bringSubviewToFront(helpAlert)
+        showFullscreenOverlay(helpAlert)
+    }
+
+    private func openHelpCommands(_ kind: HelpRevealKind) {
+        hideFullscreenOverlay(helpAlert)
+        helpCommandsAlert.present(kind: kind, level: level)
+        showFullscreenOverlay(helpCommandsAlert)
+        boardScene.showHelpTrail(coordinates: HelpCommandResolver.pathCoordinates(kind: kind, level: level))
     }
 
     @objc private func clearAllCommands() {
@@ -805,8 +820,9 @@ final class GameViewController: UIViewController {
 
     private func refreshClearProgramButton() {
         let enabled = editor.canClearProgram
+        clearProgramButton.isHidden = !enabled
         clearProgramButton.isEnabled = enabled
-        clearProgramButton.alpha = enabled ? 1 : 0.45
+        clearProgramButton.alpha = 1
     }
 
     @objc private func toggleSpeed() {
@@ -834,8 +850,7 @@ final class GameViewController: UIViewController {
         }
         guard !fresh.isEmpty else { return }
         commandIntro.present(commands: fresh)
-        commandIntro.isHidden = false
-        view.bringSubviewToFront(commandIntro)
+        showFullscreenOverlay(commandIntro)
     }
 
     /// Commandes déjà présentes dans un niveau de campagne plus ancien.
@@ -928,8 +943,10 @@ final class GameViewController: UIViewController {
         wantsContinuous = continuous
         editor.isLocked = true
         editor.setErrorMessage(nil)
-        helpAlert.isHidden = true
-        overlay.isHidden = true
+        boardScene.clearHelpTrail()
+        hideFullscreenOverlay(helpAlert)
+        hideFullscreenOverlay(helpCommandsAlert)
+        hideFullscreenOverlay(overlay)
         playbackToken += 1
         advance(token: playbackToken)
     }
@@ -994,11 +1011,11 @@ final class GameViewController: UIViewController {
 
     private func showExecutionAlert(fault: ExecutionFault?, game: GameState) {
         let copy = PlayerCopy.executionAlert(for: fault, game: game)
-        commandIntro.isHidden = true
+        hideFullscreenOverlay(commandIntro)
+        hideFullscreenOverlay(helpAlert)
+        hideFullscreenOverlay(helpCommandsAlert)
         errorAlert.present(headline: copy.headline, detail: copy.detail)
-        helpAlert.isHidden = true
-        errorAlert.isHidden = false
-        view.bringSubviewToFront(errorAlert)
+        showFullscreenOverlay(errorAlert)
         returnRobotToStart()
     }
 
@@ -1023,8 +1040,8 @@ final class GameViewController: UIViewController {
         editor.clearHighlight()
         editor.setErrorMessage(nil)
         editor.isLocked = false
-        overlay.isHidden = true
-        errorAlert.isHidden = true
+        hideFullscreenOverlay(overlay)
+        hideFullscreenOverlay(errorAlert)
         boardScene.show(engine.state.game)
         bonusRemainingCount = level.collectibles.count
         updateStatusIdle()
@@ -1110,12 +1127,12 @@ final class GameViewController: UIViewController {
             exitTitle: exitTitle
         )
         refreshBoltBadge(animated: boltsGained > 0)
-        errorAlert.isHidden = true
-        commandIntro.isHidden = true
-        helpAlert.isHidden = true
+        hideFullscreenOverlay(errorAlert)
+        hideFullscreenOverlay(commandIntro)
+        hideFullscreenOverlay(helpAlert)
+        hideFullscreenOverlay(helpCommandsAlert)
         navigationController?.setNavigationBarHidden(true, animated: true)
-        overlay.isHidden = false
-        view.bringSubviewToFront(overlay)
+        showFullscreenOverlay(overlay)
         updateControls()
         statusLabel.text = boltsGained > 0
             ? "Drapeau atteint. +\(boltsGained) écrou\(boltsGained > 1 ? "s" : "") !"
@@ -1333,12 +1350,19 @@ final class GameViewController: UIViewController {
     }
 }
 
-/// Alerte d'aide : indice et solution contre des écrous.
+enum HelpRevealKind {
+    case hint
+    case solution
+}
+
+/// Alerte boutique d'aide (achat / pub) — le contenu s'ouvre dans `HelpCommandsAlertView`.
 private final class HelpAlertView: UIView {
     var onClose: (() -> Void)?
     var onBalanceChanged: (() -> Void)?
+    var onReveal: ((HelpRevealKind) -> Void)?
     weak var host: UIViewController?
 
+    private let composition = UIView()
     private let robot = UIImageView()
     private let card = UIView()
     private let ribbon = UIView()
@@ -1348,8 +1372,10 @@ private final class HelpAlertView: UIView {
     private let headlineLabel = UILabel()
     private let detailLabel = UILabel()
     private let hintButton = UIButton(type: .system)
+    private let viewHintButton = UIButton(type: .system)
     private let adHintButton = UIButton(type: .system)
     private let solutionButton = UIButton(type: .system)
+    private let viewSolutionButton = UIButton(type: .system)
     private let closeButton = UIButton(type: .system)
     private var level: Level?
     private var unlockedHint = false
@@ -1366,21 +1392,15 @@ private final class HelpAlertView: UIView {
         card.layer.shadowOpacity = 0.18
         card.layer.shadowRadius = 18
         card.layer.shadowOffset = CGSize(width: 0, height: 8)
-        card.translatesAutoresizingMaskIntoConstraints = false
 
         robot.image = UIImage(named: "HomeHero")
         robot.contentMode = .scaleAspectFit
         robot.isUserInteractionEnabled = false
-        robot.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(robot)
-        addSubview(card)
 
         ribbon.backgroundColor = UIColor(hex: 0x7B3FF2)
         ribbon.layer.cornerRadius = 22
         ribbon.layer.cornerCurve = .continuous
         ribbon.layer.masksToBounds = true
-        ribbon.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(ribbon)
         ribbonTitle.text = "Aide"
         ribbonTitle.font = AppTheme.font(22, .heavy, textStyle: .title2)
         ribbonTitle.textColor = .white
@@ -1392,13 +1412,17 @@ private final class HelpAlertView: UIView {
         badge.layer.cornerRadius = 24
         badge.layer.borderWidth = 4
         badge.layer.borderColor = UIColor.white.cgColor
-        badge.translatesAutoresizingMaskIntoConstraints = false
         badgeIcon.image = UIImage(systemName: "questionmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 22, weight: .bold))
         badgeIcon.tintColor = .white
         badgeIcon.contentMode = .scaleAspectFit
         badgeIcon.translatesAutoresizingMaskIntoConstraints = false
         badge.addSubview(badgeIcon)
-        addSubview(badge)
+
+        addSubview(composition)
+        composition.addSubview(robot)
+        composition.addSubview(card)
+        composition.addSubview(ribbon)
+        composition.addSubview(badge)
 
         headlineLabel.font = AppTheme.font(18, .heavy, textStyle: .headline)
         headlineLabel.textColor = AppTheme.line
@@ -1419,6 +1443,14 @@ private final class HelpAlertView: UIView {
         hintButton.addTarget(self, action: #selector(buyHint), for: .touchUpInside)
 
         styleSpendButton(
+            viewHintButton,
+            title: "Voir l'indice",
+            fill: AppTheme.gold,
+            ink: .black
+        )
+        viewHintButton.addTarget(self, action: #selector(viewHint), for: .touchUpInside)
+
+        styleSpendButton(
             adHintButton,
             title: "Solution gratuite · pub",
             fill: UIColor(hex: 0x2E8B57),
@@ -1433,6 +1465,14 @@ private final class HelpAlertView: UIView {
             ink: .white
         )
         solutionButton.addTarget(self, action: #selector(buySolution), for: .touchUpInside)
+
+        styleSpendButton(
+            viewSolutionButton,
+            title: "Voir la solution",
+            fill: UIColor(hex: 0x3A4C96),
+            ink: .white
+        )
+        viewSolutionButton.addTarget(self, action: #selector(viewSolution), for: .touchUpInside)
 
         var configuration = UIButton.Configuration.filled()
         configuration.title = "Annuler"
@@ -1452,38 +1492,28 @@ private final class HelpAlertView: UIView {
         closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
 
         let message = UIStackView(arrangedSubviews: [
-            headlineLabel, detailLabel, hintButton, adHintButton, solutionButton, closeButton
+            headlineLabel, detailLabel,
+            hintButton, viewHintButton,
+            adHintButton, solutionButton, viewSolutionButton,
+            closeButton
         ])
         message.axis = .vertical
         message.spacing = 12
         message.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(message)
 
+        ChartedAlertPlacement.pinComposition(
+            in: self,
+            composition: composition,
+            card: card,
+            robot: robot,
+            ribbon: ribbon,
+            badge: badge
+        )
         NSLayoutConstraint.activate([
-            card.centerYAnchor.constraint(equalTo: centerYAnchor, constant: 36),
-            card.centerXAnchor.constraint(equalTo: centerXAnchor),
-            card.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 18),
-            card.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -18),
-            card.widthAnchor.constraint(equalTo: widthAnchor, constant: -36).prioritized(.init(750)),
-            card.widthAnchor.constraint(lessThanOrEqualToConstant: 440),
-
-            robot.centerXAnchor.constraint(equalTo: card.centerXAnchor),
-            robot.widthAnchor.constraint(equalTo: card.widthAnchor, multiplier: 0.78),
-            robot.heightAnchor.constraint(equalTo: robot.widthAnchor, multiplier: 1.25),
-            robot.bottomAnchor.constraint(equalTo: card.topAnchor, constant: 108),
-
-            ribbon.centerXAnchor.constraint(equalTo: card.centerXAnchor),
-            ribbon.topAnchor.constraint(equalTo: card.topAnchor, constant: -22),
-            ribbon.widthAnchor.constraint(equalTo: card.widthAnchor, constant: -48),
-            ribbon.heightAnchor.constraint(equalToConstant: 58),
             ribbonTitle.leadingAnchor.constraint(equalTo: ribbon.leadingAnchor, constant: 16),
             ribbonTitle.trailingAnchor.constraint(equalTo: ribbon.trailingAnchor, constant: -16),
             ribbonTitle.bottomAnchor.constraint(equalTo: ribbon.bottomAnchor, constant: -10),
-
-            badge.centerXAnchor.constraint(equalTo: ribbon.centerXAnchor),
-            badge.centerYAnchor.constraint(equalTo: ribbon.topAnchor, constant: 2),
-            badge.widthAnchor.constraint(equalToConstant: 48),
-            badge.heightAnchor.constraint(equalToConstant: 48),
             badgeIcon.centerXAnchor.constraint(equalTo: badge.centerXAnchor),
             badgeIcon.centerYAnchor.constraint(equalTo: badge.centerYAnchor),
             badgeIcon.widthAnchor.constraint(equalToConstant: 24),
@@ -1493,9 +1523,12 @@ private final class HelpAlertView: UIView {
             message.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
             message.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
             message.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
+
             hintButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+            viewHintButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
             adHintButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
             solutionButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+            viewSolutionButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
             closeButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 48)
         ])
     }
@@ -1511,26 +1544,22 @@ private final class HelpAlertView: UIView {
         unlockedSolution = storedSolution != nil
         unlockedHint = unlockedSolution || storedHint != nil
         headlineLabel.text = "Tu as besoin d'un coup de main ?"
-        if let storedSolution {
-            detailLabel.text = storedSolution
-        } else if let storedHint {
-            detailLabel.text = storedHint
-        } else {
-            detailLabel.text = "Indice et solution contre des écrous, ou regarde une pub pour la solution gratuite."
-        }
+        detailLabel.text = "Indice et solution contre des écrous, ou regarde une pub pour la solution gratuite."
         refreshEconomyChrome()
         accessibilityViewIsModal = true
         accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
     }
 
     private func refreshEconomyChrome() {
-        // Indice débloqué → masquer le bouton payant. Solution → masquer indice, solution et pub.
         hintButton.isHidden = unlockedHint
+        viewHintButton.isHidden = !unlockedHint || unlockedSolution
         solutionButton.isHidden = unlockedSolution
         adHintButton.isHidden = unlockedSolution
+        viewSolutionButton.isHidden = !unlockedSolution
         hintButton.configuration?.title = "Indice · \(RewardEconomy.hintCost) écrous"
         solutionButton.configuration?.title = "Solution · \(RewardEconomy.fullSolutionCost) écrous"
         adHintButton.configuration?.title = "Solution gratuite · pub"
+        closeButton.configuration?.title = unlockedHint || unlockedSolution ? "Fermer" : "Annuler"
     }
 
     private func styleSpendButton(_ button: UIButton, title: String, fill: UIColor, ink: UIColor) {
@@ -1562,11 +1591,9 @@ private final class HelpAlertView: UIView {
 
     @objc private func watchAdForSolution() {
         guard !unlockedSolution, let host else { return }
-        // Masquer l'alerte : AdMob refuse souvent de présenter au-dessus d'un overlay custom.
         isHidden = true
         AdsService.shared.showHelpRewarded(from: host, onReward: { [weak self] in
             guard let self else { return }
-            self.isHidden = false
             self.grantSolution()
         }, onUnavailable: { [weak self] in
             guard let self else { return }
@@ -1577,54 +1604,19 @@ private final class HelpAlertView: UIView {
 
     private func grantHint() {
         guard let level else { return }
-        if unlockedHint {
-            if let stored = HelpUnlockStore.shared.hint(for: level.id) {
-                detailLabel.text = stored
-            }
-            refreshEconomyChrome()
-            return
-        }
         unlockedHint = true
-        let text: String
-        if let commands = ActionSearch.shortest(level: level)?.commands, !commands.isEmpty {
-            text = PlayerCopy.openingHint(commands: commands)
-        } else if let catalog = CatalogCampaign.pack.levels.first(where: { $0.id == level.id }) {
-            let program = CatalogCampaign.referenceProgram(for: catalog)
-            let commands = program.instructions.map(\.command)
-            text = PlayerCopy.openingHint(commands: commands)
-        } else {
-            text = "Regarde le drapeau et avance case par case."
-        }
-        detailLabel.text = text
+        let text = HelpCommandResolver.hintAccessibilityText(for: level)
         HelpUnlockStore.shared.saveHint(text, for: level.id)
-        refreshEconomyChrome()
-        accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
+        onReveal?(.hint)
     }
 
     private func grantSolution() {
         guard let level else { return }
-        if unlockedSolution {
-            if let stored = HelpUnlockStore.shared.solution(for: level.id) {
-                detailLabel.text = stored
-            }
-            refreshEconomyChrome()
-            return
-        }
         unlockedSolution = true
         unlockedHint = true
-        let text: String
-        if let catalog = CatalogCampaign.pack.levels.first(where: { $0.id == level.id }) {
-            text = ProgramText.render(CatalogCampaign.referenceProgram(for: catalog)).source
-        } else if let commands = ActionSearch.shortest(level: level)?.commands {
-            let program = Program(instructions: commands.map { Instruction(command: $0) })
-            text = ProgramText.render(program).source
-        } else {
-            text = "Aucune solution de référence disponible."
-        }
-        detailLabel.text = text
+        let text = HelpCommandResolver.solutionAccessibilityText(for: level)
         HelpUnlockStore.shared.saveSolution(text, for: level.id)
-        refreshEconomyChrome()
-        accessibilityLabel = "\(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
+        onReveal?(.solution)
     }
 
     @objc private func buySolution() {
@@ -1639,7 +1631,359 @@ private final class HelpAlertView: UIView {
         }
     }
 
+    @objc private func viewHint() {
+        onReveal?(.hint)
+    }
+
+    @objc private func viewSolution() {
+        onReveal?(.solution)
+    }
+
     @objc private func close() {
         onClose?()
+    }
+}
+
+/// Alerte dédiée : pastilles d'indice / solution au style palette.
+private final class HelpCommandsAlertView: UIView {
+    var onClose: (() -> Void)?
+
+    private let composition = UIView()
+    private let robot = UIImageView()
+    private let card = UIView()
+    private let ribbon = UIView()
+    private let ribbonTitle = UILabel()
+    private let badge = UIView()
+    private let badgeIcon = UIImageView()
+    private let headlineLabel = UILabel()
+    private let detailLabel = UILabel()
+    private let commandsScroll = UIScrollView()
+    private let commandsStack = UIStackView()
+    private let closeButton = UIButton(type: .system)
+    private var commandsHeightConstraint: NSLayoutConstraint?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = UIColor(hex: 0x2A1458).withAlphaComponent(0.78)
+
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 28
+        card.layer.cornerCurve = .continuous
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.18
+        card.layer.shadowRadius = 18
+        card.layer.shadowOffset = CGSize(width: 0, height: 8)
+
+        robot.image = UIImage(named: "HomeHero")
+        robot.contentMode = .scaleAspectFit
+        robot.isUserInteractionEnabled = false
+
+        ribbon.backgroundColor = UIColor(hex: 0x7B3FF2)
+        ribbon.layer.cornerRadius = 22
+        ribbon.layer.cornerCurve = .continuous
+        ribbon.layer.masksToBounds = true
+        ribbonTitle.font = AppTheme.font(22, .heavy, textStyle: .title2)
+        ribbonTitle.textColor = .white
+        ribbonTitle.textAlignment = .center
+        ribbonTitle.translatesAutoresizingMaskIntoConstraints = false
+        ribbon.addSubview(ribbonTitle)
+
+        badge.backgroundColor = UIColor(hex: 0x7B3FF2)
+        badge.layer.cornerRadius = 24
+        badge.layer.borderWidth = 4
+        badge.layer.borderColor = UIColor.white.cgColor
+        badgeIcon.tintColor = .white
+        badgeIcon.contentMode = .scaleAspectFit
+        badgeIcon.translatesAutoresizingMaskIntoConstraints = false
+        badge.addSubview(badgeIcon)
+
+        addSubview(composition)
+        composition.addSubview(robot)
+        composition.addSubview(card)
+        composition.addSubview(ribbon)
+        composition.addSubview(badge)
+
+        headlineLabel.font = AppTheme.font(18, .heavy, textStyle: .headline)
+        headlineLabel.textColor = AppTheme.line
+        headlineLabel.textAlignment = .center
+        headlineLabel.numberOfLines = 0
+
+        detailLabel.font = AppTheme.font(16, .medium, textStyle: .body)
+        detailLabel.textColor = AppTheme.line
+        detailLabel.textAlignment = .center
+        detailLabel.numberOfLines = 0
+
+        commandsScroll.translatesAutoresizingMaskIntoConstraints = false
+        commandsScroll.showsVerticalScrollIndicator = true
+        commandsScroll.alwaysBounceVertical = false
+        commandsStack.axis = .vertical
+        commandsStack.spacing = 8
+        commandsStack.alignment = .fill
+        commandsStack.translatesAutoresizingMaskIntoConstraints = false
+        commandsScroll.addSubview(commandsStack)
+
+        var configuration = UIButton.Configuration.filled()
+        configuration.title = "Fermer"
+        configuration.image = UIImage(systemName: "xmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 15, weight: .bold))
+        configuration.imagePadding = 6
+        configuration.imagePlacement = .trailing
+        configuration.baseBackgroundColor = UIColor(hex: 0x7B3FF2)
+        configuration.baseForegroundColor = .white
+        configuration.cornerStyle = .capsule
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 8, bottom: 12, trailing: 8)
+        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var updated = incoming
+            updated.font = AppTheme.font(16, .bold, textStyle: .headline)
+            return updated
+        }
+        closeButton.configuration = configuration
+        closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
+
+        let message = UIStackView(arrangedSubviews: [
+            headlineLabel, detailLabel, commandsScroll, closeButton
+        ])
+        message.axis = .vertical
+        message.spacing = 12
+        message.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(message)
+
+        let height = commandsScroll.heightAnchor.constraint(equalToConstant: 48)
+        commandsHeightConstraint = height
+
+        ChartedAlertPlacement.pinComposition(
+            in: self,
+            composition: composition,
+            card: card,
+            robot: robot,
+            ribbon: ribbon,
+            badge: badge
+        )
+        NSLayoutConstraint.activate([
+            ribbonTitle.leadingAnchor.constraint(equalTo: ribbon.leadingAnchor, constant: 16),
+            ribbonTitle.trailingAnchor.constraint(equalTo: ribbon.trailingAnchor, constant: -16),
+            ribbonTitle.bottomAnchor.constraint(equalTo: ribbon.bottomAnchor, constant: -10),
+            badgeIcon.centerXAnchor.constraint(equalTo: badge.centerXAnchor),
+            badgeIcon.centerYAnchor.constraint(equalTo: badge.centerYAnchor),
+            badgeIcon.widthAnchor.constraint(equalToConstant: 24),
+            badgeIcon.heightAnchor.constraint(equalToConstant: 24),
+
+            message.topAnchor.constraint(equalTo: card.topAnchor, constant: 46),
+            message.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            message.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+            message.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
+
+            commandsStack.topAnchor.constraint(equalTo: commandsScroll.contentLayoutGuide.topAnchor),
+            commandsStack.leadingAnchor.constraint(equalTo: commandsScroll.contentLayoutGuide.leadingAnchor),
+            commandsStack.trailingAnchor.constraint(equalTo: commandsScroll.contentLayoutGuide.trailingAnchor),
+            commandsStack.bottomAnchor.constraint(equalTo: commandsScroll.contentLayoutGuide.bottomAnchor),
+            commandsStack.widthAnchor.constraint(equalTo: commandsScroll.frameLayoutGuide.widthAnchor),
+            height,
+            closeButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 48)
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    func present(kind: HelpRevealKind, level: Level) {
+        let symbol: String
+        let rows: [HelpCommandRow]
+        switch kind {
+        case .hint:
+            ribbonTitle.text = "Indice"
+            symbol = "lightbulb.fill"
+            headlineLabel.text = "Voici un coup de pouce"
+            detailLabel.text = "Commence par ces commandes :"
+            rows = HelpCommandResolver.hintRows(for: level)
+            if rows.isEmpty {
+                detailLabel.text = "Regarde le drapeau et avance case par case."
+            }
+        case .solution:
+            ribbonTitle.text = "Solution"
+            symbol = "checkmark.seal.fill"
+            headlineLabel.text = "Voici la solution"
+            detailLabel.text = "Reproduis ces commandes :"
+            rows = HelpCommandResolver.solutionRows(for: level)
+            if rows.isEmpty {
+                detailLabel.text = "Aucune solution de référence disponible."
+            }
+        }
+        badgeIcon.image = UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .bold))
+        renderCommandChips(rows)
+        accessibilityViewIsModal = true
+        accessibilityLabel = "\(ribbonTitle.text ?? ""). \(headlineLabel.text ?? ""). \(detailLabel.text ?? "")"
+    }
+
+    private func renderCommandChips(_ rows: [HelpCommandRow]) {
+        commandsStack.arrangedSubviews.forEach {
+            commandsStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        for row in rows {
+            commandsStack.addArrangedSubview(makeCommandChip(row))
+        }
+        layoutIfNeeded()
+        let width = commandsScroll.bounds.width > 1 ? commandsScroll.bounds.width : 300
+        let contentHeight = commandsStack.systemLayoutSizeFitting(
+            CGSize(width: width, height: 0),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        ).height
+        commandsHeightConstraint?.constant = rows.isEmpty ? 0 : min(max(contentHeight, 48), 260)
+        commandsScroll.isHidden = rows.isEmpty
+        commandsScroll.contentOffset = .zero
+    }
+
+    private func makeCommandChip(_ row: HelpCommandRow) -> UIView {
+        let colors = CommandChrome.badgeColors(row.command)
+        let ink = CommandChrome.paletteInk(row.command)
+
+        let chip = UIView()
+        chip.backgroundColor = colors.background
+        chip.layer.cornerRadius = 14
+        chip.layer.cornerCurve = .continuous
+
+        let icon = UIImageView(image: GameArt.fitted(GameArt.commandIcon(row.command), side: 22))
+        icon.tintColor = ink
+        icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
+
+        let title = UILabel()
+        if row.command == .ifBlock, let condition = row.condition {
+            title.text = "Si · \(PlayerCopy.conditionTitle(condition))"
+        } else {
+            title.text = PlayerCopy.commandTitle(row.command)
+        }
+        title.font = AppTheme.font(15, .heavy, textStyle: .subheadline)
+        title.textColor = ink
+        title.adjustsFontForContentSizeCategory = true
+        title.translatesAutoresizingMaskIntoConstraints = false
+
+        chip.addSubview(icon)
+        chip.addSubview(title)
+        NSLayoutConstraint.activate([
+            chip.heightAnchor.constraint(equalToConstant: 48),
+            icon.leadingAnchor.constraint(equalTo: chip.leadingAnchor, constant: 10),
+            icon.centerYAnchor.constraint(equalTo: chip.centerYAnchor),
+            icon.widthAnchor.constraint(equalToConstant: 22),
+            icon.heightAnchor.constraint(equalToConstant: 22),
+            title.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 8),
+            title.trailingAnchor.constraint(equalTo: chip.trailingAnchor, constant: -12),
+            title.centerYAnchor.constraint(equalTo: chip.centerYAnchor)
+        ])
+
+        guard row.depth > 0 else { return chip }
+        let wrapper = UIStackView(arrangedSubviews: [UIView(), chip])
+        wrapper.axis = .horizontal
+        wrapper.alignment = .fill
+        let spacer = wrapper.arrangedSubviews[0]
+        spacer.translatesAutoresizingMaskIntoConstraints = false
+        spacer.widthAnchor.constraint(equalToConstant: CGFloat(row.depth) * 18).isActive = true
+        spacer.setContentHuggingPriority(.required, for: .horizontal)
+        return wrapper
+    }
+
+    @objc private func close() {
+        onClose?()
+    }
+}
+
+private struct HelpCommandRow {
+    let command: CommandType
+    let depth: Int
+    let condition: ConditionType?
+}
+
+private enum HelpCommandResolver {
+    static func hintRows(for level: Level) -> [HelpCommandRow] {
+        let commands = openingCommands(for: level)
+        guard !commands.isEmpty else { return [] }
+        let count = commands.count <= 2 ? 1 : min(3, commands.count)
+        return commands.prefix(count).map { HelpCommandRow(command: $0, depth: 0, condition: nil) }
+    }
+
+    static func solutionRows(for level: Level) -> [HelpCommandRow] {
+        guard let program = referenceProgram(for: level), !program.instructions.isEmpty else { return [] }
+        return program.rows.map {
+            HelpCommandRow(
+                command: $0.instruction.command,
+                depth: $0.depth,
+                condition: $0.instruction.condition
+            )
+        }
+    }
+
+    static func pathCoordinates(kind: HelpRevealKind, level: Level) -> [GridCoordinate] {
+        switch kind {
+        case .hint:
+            return path(level: level, commands: hintRows(for: level).map(\.command))
+        case .solution:
+            guard let program = referenceProgram(for: level) else { return [] }
+            return path(level: level, program: program)
+        }
+    }
+
+    static func hintAccessibilityText(for level: Level) -> String {
+        if hintRows(for: level).isEmpty { return "Regarde le drapeau et avance case par case." }
+        return PlayerCopy.openingHint(commands: hintRows(for: level).map(\.command))
+    }
+
+    static func solutionAccessibilityText(for level: Level) -> String {
+        guard let program = referenceProgram(for: level) else {
+            return "Aucune solution de référence disponible."
+        }
+        return ProgramText.render(program).source
+    }
+
+    private static func openingCommands(for level: Level) -> [CommandType] {
+        if let shortest = ActionSearch.shortest(level: level)?.commands, !shortest.isEmpty {
+            return shortest
+        }
+        return referenceProgram(for: level)?.instructions.map(\.command) ?? []
+    }
+
+    private static func referenceProgram(for level: Level) -> Program? {
+        if let catalog = CatalogCampaign.pack.levels.first(where: { $0.id == level.id }) {
+            return CatalogCampaign.referenceProgram(for: catalog)
+        }
+        if let commands = ActionSearch.shortest(level: level)?.commands {
+            return Program(instructions: commands.map { Instruction(command: $0) })
+        }
+        return nil
+    }
+
+    private static func path(level: Level, commands: [CommandType]) -> [GridCoordinate] {
+        var game = GameState.initial(from: level)
+        var path = [game.robot.position]
+        for command in commands {
+            guard case .success(let applied) = WorldRules.apply(command: command, to: game, level: level) else {
+                break
+            }
+            game = applied.game
+            if path.last != game.robot.position {
+                path.append(game.robot.position)
+            }
+        }
+        return path
+    }
+
+    private static func path(level: Level, program: Program) -> [GridCoordinate] {
+        var engine = SimulationEngine(level: level, program: program)
+        var path = [engine.state.game.robot.position]
+        var steps = 0
+        while !engine.state.status.isTerminal, steps < 96 {
+            let outcome = engine.step()
+            steps += 1
+            switch outcome.event {
+            case .moved(_, let to, _, _), .enteredHazard(_, let to, _, _, _):
+                if path.last != to {
+                    path.append(to)
+                }
+            default:
+                break
+            }
+        }
+        return path
     }
 }

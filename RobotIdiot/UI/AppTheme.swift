@@ -238,3 +238,22 @@ struct BoardPalette {
         return copy
     }
 }
+
+/// Couleurs des pastilles de commande (palette éditeur + aide).
+enum CommandChrome {
+    static func badgeColors(_ command: CommandType) -> (background: UIColor, foreground: UIColor) {
+        switch command.category {
+        case .movement:
+            return (UIColor(hex: 0x2F9BFF), .white)
+        case .interaction:
+            return (UIColor(hex: 0x7A2CF7), .white)
+        case .control:
+            return (UIColor(hex: 0xFFD200), UIColor(hex: 0x1A1440))
+        }
+    }
+
+    /// Encre palette : noir pour le contrôle, blanc sinon.
+    static func paletteInk(_ command: CommandType) -> UIColor {
+        command.category == .control ? .black : .white
+    }
+}

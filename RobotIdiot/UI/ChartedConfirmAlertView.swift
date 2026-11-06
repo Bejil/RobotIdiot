@@ -1,5 +1,103 @@
 import UIKit
 
+/// Hôte plein écran pour les alertes chartées (fenêtre = au-dessus de la navigation bar).
+enum AlertOverlayHost {
+    static func view(for controller: UIViewController) -> UIView {
+        if let window = controller.view.window {
+            return window
+        }
+        if let window = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow) {
+            return window
+        }
+        if let navigation = controller.navigationController {
+            return navigation.view
+        }
+        if let tab = controller.tabBarController {
+            return tab.view
+        }
+        if controller.view is UIScrollView, let parent = controller.parent {
+            return parent.view
+        }
+        return controller.view
+    }
+
+    static func attach(_ overlay: UIView, to controller: UIViewController) {
+        let host = view(for: controller)
+        if overlay.superview !== host {
+            overlay.removeFromSuperview()
+            overlay.translatesAutoresizingMaskIntoConstraints = false
+            host.addSubview(overlay)
+            NSLayoutConstraint.activate([
+                overlay.topAnchor.constraint(equalTo: host.topAnchor),
+                overlay.leadingAnchor.constraint(equalTo: host.leadingAnchor),
+                overlay.trailingAnchor.constraint(equalTo: host.trailingAnchor),
+                overlay.bottomAnchor.constraint(equalTo: host.bottomAnchor)
+            ])
+        }
+        host.bringSubviewToFront(overlay)
+    }
+
+    static func detach(_ overlay: UIView) {
+        overlay.isHidden = true
+        overlay.removeFromSuperview()
+    }
+}
+
+/// Centre le duo robot + carte (et non la carte seule, qui remontait tout le bloc).
+enum ChartedAlertPlacement {
+    static func pinComposition(
+        in overlay: UIView,
+        composition: UIView,
+        card: UIView,
+        robot: UIView,
+        ribbon: UIView,
+        badge: UIView
+    ) {
+        composition.translatesAutoresizingMaskIntoConstraints = false
+        robot.translatesAutoresizingMaskIntoConstraints = false
+        card.translatesAutoresizingMaskIntoConstraints = false
+        ribbon.translatesAutoresizingMaskIntoConstraints = false
+        badge.translatesAutoresizingMaskIntoConstraints = false
+
+        let centerY = composition.centerYAnchor.constraint(equalTo: overlay.centerYAnchor)
+        centerY.priority = .defaultHigh
+
+        NSLayoutConstraint.activate([
+            composition.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+            centerY,
+            composition.leadingAnchor.constraint(greaterThanOrEqualTo: overlay.leadingAnchor, constant: 18),
+            composition.trailingAnchor.constraint(lessThanOrEqualTo: overlay.trailingAnchor, constant: -18),
+            composition.widthAnchor.constraint(equalTo: overlay.widthAnchor, constant: -36).prioritized(.init(750)),
+            composition.widthAnchor.constraint(lessThanOrEqualToConstant: 440),
+            composition.topAnchor.constraint(greaterThanOrEqualTo: overlay.safeAreaLayoutGuide.topAnchor, constant: 8),
+            composition.bottomAnchor.constraint(lessThanOrEqualTo: overlay.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+
+            robot.topAnchor.constraint(equalTo: composition.topAnchor),
+            robot.centerXAnchor.constraint(equalTo: composition.centerXAnchor),
+            robot.widthAnchor.constraint(equalTo: composition.widthAnchor, multiplier: 0.62),
+            robot.heightAnchor.constraint(equalTo: robot.widthAnchor, multiplier: 1.25),
+            robot.bottomAnchor.constraint(equalTo: card.topAnchor, constant: 96),
+
+            card.leadingAnchor.constraint(equalTo: composition.leadingAnchor),
+            card.trailingAnchor.constraint(equalTo: composition.trailingAnchor),
+            card.bottomAnchor.constraint(equalTo: composition.bottomAnchor),
+
+            ribbon.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+            ribbon.topAnchor.constraint(equalTo: card.topAnchor, constant: -22),
+            ribbon.widthAnchor.constraint(equalTo: card.widthAnchor, constant: -48),
+            ribbon.heightAnchor.constraint(equalToConstant: 58),
+
+            badge.centerXAnchor.constraint(equalTo: ribbon.centerXAnchor),
+            badge.centerYAnchor.constraint(equalTo: ribbon.topAnchor, constant: 2),
+            badge.widthAnchor.constraint(equalToConstant: 48),
+            badge.heightAnchor.constraint(equalToConstant: 48)
+        ])
+    }
+}
+
 /// Confirmation chartée (même langage que l'alerte d'exécution).
 final class ChartedConfirmAlertView: UIView {
     enum Accent {
@@ -45,6 +143,7 @@ final class ChartedConfirmAlertView: UIView {
     private var onCancel: (() -> Void)?
     private var onConfirm: (() -> Void)?
 
+    private let composition = UIView()
     private let robot = UIImageView()
     private let card = UIView()
     private let ribbon = UIView()
@@ -69,19 +168,13 @@ final class ChartedConfirmAlertView: UIView {
         card.layer.shadowOpacity = 0.18
         card.layer.shadowRadius = 18
         card.layer.shadowOffset = CGSize(width: 0, height: 8)
-        card.translatesAutoresizingMaskIntoConstraints = false
 
         robot.contentMode = .scaleAspectFit
         robot.isUserInteractionEnabled = false
-        robot.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(robot)
-        addSubview(card)
 
         ribbon.layer.cornerRadius = 22
         ribbon.layer.cornerCurve = .continuous
         ribbon.layer.masksToBounds = true
-        ribbon.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(ribbon)
         ribbonTitle.font = AppTheme.font(22, .heavy, textStyle: .title2)
         ribbonTitle.textColor = .white
         ribbonTitle.textAlignment = .center
@@ -97,8 +190,13 @@ final class ChartedConfirmAlertView: UIView {
         badge.layer.borderWidth = 4
         badge.layer.borderColor = UIColor.white.cgColor
         badge.layer.masksToBounds = true
-        badge.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(badge)
+
+        composition.isUserInteractionEnabled = true
+        addSubview(composition)
+        composition.addSubview(robot)
+        composition.addSubview(card)
+        composition.addSubview(ribbon)
+        composition.addSubview(badge)
 
         headlineLabel.font = AppTheme.font(18, .heavy, textStyle: .headline)
         headlineLabel.textColor = AppTheme.line
@@ -133,31 +231,18 @@ final class ChartedConfirmAlertView: UIView {
         column.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(column)
 
+        ChartedAlertPlacement.pinComposition(
+            in: self,
+            composition: composition,
+            card: card,
+            robot: robot,
+            ribbon: ribbon,
+            badge: badge
+        )
         NSLayoutConstraint.activate([
-            card.centerYAnchor.constraint(equalTo: centerYAnchor, constant: 36),
-            card.centerXAnchor.constraint(equalTo: centerXAnchor),
-            card.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 18),
-            card.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -18),
-            card.widthAnchor.constraint(equalTo: widthAnchor, constant: -36).prioritized(.init(750)),
-            card.widthAnchor.constraint(lessThanOrEqualToConstant: 440),
-
-            robot.centerXAnchor.constraint(equalTo: card.centerXAnchor),
-            robot.widthAnchor.constraint(equalTo: card.widthAnchor, multiplier: 0.78),
-            robot.heightAnchor.constraint(equalTo: robot.widthAnchor, multiplier: 1.25),
-            robot.bottomAnchor.constraint(equalTo: card.topAnchor, constant: 108),
-
-            ribbon.centerXAnchor.constraint(equalTo: card.centerXAnchor),
-            ribbon.topAnchor.constraint(equalTo: card.topAnchor, constant: -22),
-            ribbon.widthAnchor.constraint(equalTo: card.widthAnchor, constant: -48),
-            ribbon.heightAnchor.constraint(equalToConstant: 58),
             ribbonTitle.leadingAnchor.constraint(equalTo: ribbon.leadingAnchor, constant: 16),
             ribbonTitle.trailingAnchor.constraint(equalTo: ribbon.trailingAnchor, constant: -16),
             ribbonTitle.bottomAnchor.constraint(equalTo: ribbon.bottomAnchor, constant: -10),
-
-            badge.centerXAnchor.constraint(equalTo: ribbon.centerXAnchor),
-            badge.centerYAnchor.constraint(equalTo: ribbon.topAnchor, constant: 2),
-            badge.widthAnchor.constraint(equalToConstant: 48),
-            badge.heightAnchor.constraint(equalToConstant: 48),
 
             column.topAnchor.constraint(equalTo: card.topAnchor, constant: 46),
             column.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
@@ -226,7 +311,7 @@ final class ChartedConfirmAlertView: UIView {
         onConfirm: @escaping () -> Void
     ) -> ChartedConfirmAlertView {
         present(
-            on: fullscreenHost(for: controller),
+            on: AlertOverlayHost.view(for: controller),
             ribbon: ribbon,
             headline: headline,
             detail: detail,
@@ -258,24 +343,6 @@ final class ChartedConfirmAlertView: UIView {
             confirmSystemImage: "exclamationmark.circle",
             onConfirm: {}
         )
-    }
-
-    /// Évite d'ancrer l'alerte sur une UITableView / UIScrollView (centrage faussé).
-    private static func fullscreenHost(for controller: UIViewController) -> UIView {
-        if let navigation = controller.navigationController {
-            return navigation.view
-        }
-        if let tab = controller.tabBarController {
-            return tab.view
-        }
-        if let window = controller.view.window {
-            return window
-        }
-        // UITableViewController.view == tableView : remonter au parent si possible.
-        if controller.view is UIScrollView, let parent = controller.parent {
-            return parent.view
-        }
-        return controller.view
     }
 
     private func configure(

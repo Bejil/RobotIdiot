@@ -19,6 +19,8 @@ final class Soundscape {
     private let heavyHaptic = UIImpactFeedbackGenerator(style: .heavy)
     private let selectionHaptic = UISelectionFeedbackGenerator()
     private let noticeHaptic = UINotificationFeedbackGenerator()
+    /// Évite les doubles sons quand UIKit envoie plusieurs `sendAction` pour un même tap (ex. UIBarButtonItem).
+    private var lastUISoundAt: CFTimeInterval = 0
 
     private init() {
         format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
@@ -85,10 +87,17 @@ final class Soundscape {
         guard event != nil else { return }
         if sender is UITextField || sender is UITextView { return }
         if sender is UISegmentedControl {
-            play("toggle")
+            playDebouncedUISound("toggle")
         } else if sender is UIControl || sender is UIBarButtonItem {
-            play("ui")
+            playDebouncedUISound("ui")
         }
+    }
+
+    private func playDebouncedUISound(_ name: String) {
+        let now = CACurrentMediaTime()
+        guard now - lastUISoundAt > 0.12 else { return }
+        lastUISoundAt = now
+        play(name)
     }
 
     func play(_ name: String, forceHaptic: Bool = false) {
