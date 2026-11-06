@@ -31,6 +31,7 @@ final class ResultOverlayView: UIView {
     private var usesWideLayout = false
     private var playing = false
     private var driftedWidth: CGFloat = -1
+    private var celebrationStars = 1
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -107,6 +108,7 @@ final class ResultOverlayView: UIView {
         }
         accessibilityLabel = label
         UIAccessibility.post(notification: .screenChanged, argument: ribbon)
+        celebrationStars = max(1, rating.count)
         playing = true
         refreshLayoutIfNeeded()
         animateArrival()
@@ -404,13 +406,15 @@ final class ResultOverlayView: UIView {
             }
         }
         confetti.alpha = 0
-        confetti.transform = CGAffineTransform(scaleX: 0.7, y: 0.7)
-        UIView.animate(withDuration: 0.5, delay: 0.2, options: [.allowUserInteraction, .curveEaseOut]) {
+        confetti.transform = CGAffineTransform(scaleX: 0.55, y: 0.55)
+        UIView.animate(withDuration: 0.55, delay: 0.16, usingSpringWithDamping: 0.7, initialSpringVelocity: 0.7) {
             self.confetti.alpha = 1
-            self.confetti.transform = .identity
+            self.confetti.transform = CGAffineTransform(scaleX: 1.08, y: 1.08)
         } completion: { _ in
-            UIView.animate(withDuration: 1.6, delay: 0, options: [.repeat, .autoreverse, .allowUserInteraction, .curveEaseInOut]) {
-                self.confetti.transform = CGAffineTransform(scaleX: 1.06, y: 1.06).rotated(by: 0.04)
+            let sway: CGFloat = self.celebrationStars >= 3 ? 0.07 : 0.045
+            let pop: CGFloat = self.celebrationStars >= 3 ? 1.12 : 1.06
+            UIView.animate(withDuration: 1.35, delay: 0, options: [.repeat, .autoreverse, .allowUserInteraction, .curveEaseInOut]) {
+                self.confetti.transform = CGAffineTransform(scaleX: pop, y: pop).rotated(by: sway)
             }
         }
         robot.alpha = 0
@@ -419,9 +423,7 @@ final class ResultOverlayView: UIView {
             self.robot.alpha = 1
             self.robot.transform = .identity
         } completion: { _ in
-            UIView.animate(withDuration: 0.85, delay: 0, options: [.repeat, .autoreverse, .allowUserInteraction, .curveEaseInOut]) {
-                self.robot.transform = CGAffineTransform(translationX: 0, y: -12)
-            }
+            self.playRobotVictoryDance()
         }
         detailsCard.alpha = 0
         detailsCard.transform = CGAffineTransform(translationX: 0, y: 18)
@@ -435,6 +437,36 @@ final class ResultOverlayView: UIView {
             UIView.animate(withDuration: 0.45, delay: 0.28 + Double(index) * 0.06, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.4) {
                 button.alpha = 1
                 button.transform = .identity
+            }
+        }
+    }
+
+    private func playRobotVictoryDance() {
+        let hops = celebrationStars >= 3 ? 3 : 2
+        let lift: CGFloat = celebrationStars >= 3 ? -22 : -14
+        let twist: CGFloat = celebrationStars >= 3 ? 0.12 : 0.07
+        UIView.animateKeyframes(withDuration: 0.9 + Double(hops) * 0.12, delay: 0, options: [.allowUserInteraction]) {
+            for index in 0..<hops {
+                let start = Double(index) / Double(hops)
+                let mid = start + 0.45 / Double(hops)
+                UIView.addKeyframe(withRelativeStartTime: start, relativeDuration: 0.22) {
+                    self.robot.transform = CGAffineTransform(translationX: 0, y: lift)
+                        .rotated(by: index.isMultiple(of: 2) ? twist : -twist)
+                        .scaledBy(x: 1.06, y: 0.94)
+                }
+                UIView.addKeyframe(withRelativeStartTime: mid, relativeDuration: 0.22) {
+                    self.robot.transform = CGAffineTransform(translationX: 0, y: lift * 0.25)
+                        .rotated(by: index.isMultiple(of: 2) ? -twist : twist)
+                        .scaledBy(x: 0.96, y: 1.05)
+                }
+            }
+            UIView.addKeyframe(withRelativeStartTime: 0.82, relativeDuration: 0.18) {
+                self.robot.transform = .identity
+            }
+        } completion: { _ in
+            UIView.animate(withDuration: 0.9, delay: 0, options: [.repeat, .autoreverse, .allowUserInteraction, .curveEaseInOut]) {
+                self.robot.transform = CGAffineTransform(translationX: 0, y: -10)
+                    .rotated(by: self.celebrationStars >= 3 ? 0.03 : 0)
             }
         }
     }

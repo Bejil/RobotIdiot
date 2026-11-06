@@ -104,7 +104,10 @@ enum PlayerCopy {
 
     static func executionAlert(for fault: ExecutionFault?, game: GameState) -> (headline: String, detail: String) {
         guard let fault else {
-            return ("Drapeau non atteint :", "le programme est terminé, mais le drapeau n'a pas été atteint.")
+            return (
+                "Presque…",
+                "Programme fini, drapeau toujours au loin. « J'ai suivi le plan. Le plan, lui, m'a lâché. »"
+            )
         }
         switch fault {
         case .pathBlocked(_, _, let forward, let attempted):
@@ -129,40 +132,100 @@ enum PlayerCopy {
                 }
             }
             if forward {
-                return ("Déplacement impossible :", "le robot est bloqué par \(obstacle).")
+                return (
+                    "Aïe, mur !",
+                    "Bloqué par \(obstacle). « Je suis solide… mais pas à ce point. »"
+                )
             }
-            return ("Déplacement impossible :", "le robot ne peut pas reculer, il est bloqué par \(obstacle).")
+            return (
+                "Reculons… ou pas",
+                "Impossible de reculer : \(obstacle). « Marche arrière non garantie. »"
+            )
         case .hazard(_, _, let terrain, _):
             switch terrain {
             case .spikes:
-                return ("Robot détruit :", "le robot a marché sur des pics.")
+                return (
+                    "Ouille les pics !",
+                    "Tu as marché sur des pics. « Note pour plus tard : les pointes, c'est non. »"
+                )
             case .water:
-                return ("Robot perdu :", "le robot a coulé dans l'eau.")
+                return (
+                    "Plouf !",
+                    "Direction l'eau. « Je savais nager… en théorie. »"
+                )
             case .lava:
-                return ("Robot perdu :", "le robot a coulé dans la lave.")
+                return (
+                    "Trop chaud !",
+                    "La lave a gagné ce round. « Je préfère les prises USB. »"
+                )
             default:
-                return ("Robot perdu :", "le robot a marché sur un danger.")
+                return (
+                    "Zone interdite",
+                    "Danger touché. « On dit que j'apprends vite. Prouvons-le. »"
+                )
             }
         case .commandUnavailable:
-            return ("Commande impossible :", "cette commande n'est pas disponible dans ce niveau.")
+            return (
+                "Pas cette commande",
+                "Elle n'est pas débloquée ici. « Même moi, j'ai des limites. »"
+            )
         case .nothingToPickUp:
-            return ("Ramassage impossible :", "il n'y a rien à ramasser ici.")
+            return (
+                "Les mains vides",
+                "Rien à ramasser. « Je cueille du vent, maintenant ? »"
+            )
         case .nothingToUse:
-            return ("Utilisation impossible :", "le robot n'a rien dans les mains.")
+            return (
+                "Rien en stock",
+                "Pas d'objet à utiliser. « Les poches sont en mode minimaliste. »"
+            )
         case .incompatibleUse:
-            return ("Utilisation impossible :", "cet objet ne marche pas ici.")
+            return (
+                "Mauvais outil",
+                "Ça ne marche pas ici. « Clé dans le trou… sauf que non. »"
+            )
         case .nothingToPush:
-            return ("Poussée impossible :", "il n'y a rien à pousser devant le robot.")
+            return (
+                "Poussée dans le vide",
+                "Rien devant à pousser. « Je pousse l'air. L'air résiste mal. »"
+            )
         case .pushBlocked:
-            return ("Poussée impossible :", "la caisse ne peut pas aller plus loin.")
+            return (
+                "Caisse coincée",
+                "Elle ne peut pas aller plus loin. « Même les caisses ont leurs limites. »"
+            )
         case .nothingToActivate:
-            return ("Activation impossible :", "il n'y a pas d'interrupteur à activer.")
+            return (
+                "Rien à activer",
+                "Pas d'interrupteur ici. « J'ai appuyé sur… l'imaginaire. »"
+            )
         case .missingCondition:
-            return ("Condition manquante :", "ce Si n'a pas de condition.")
+            return (
+                "Si… quoi ?",
+                "Ce Si n'a pas de condition. « Même moi, j'ai besoin d'un pourquoi. »"
+            )
         case .cycle:
-            return ("Boucle détectée :", "le robot recommence exactement les mêmes gestes.")
+            return (
+                "Déjà-vu",
+                "Les mêmes gestes en boucle. « On tourne en rond, littéralement. »"
+            )
         case .safetyStop:
-            return ("Arrêt de sécurité :", "le robot a été arrêté par sécurité.")
+            return (
+                "Pause sécurité",
+                "Arrêt automatique. « Mieux vaut freiner que fondre. »"
+            )
+        }
+    }
+
+    /// Petite vanne du robot selon le score d'étoiles.
+    static func victoryQuip(rating: StarRating) -> String {
+        switch rating.count {
+        case 3:
+            return "Triple étoile ! « Je brille plus que ma batterie. »"
+        case 2:
+            return "Deux étoiles. « Presque parfait… et déjà trop fier. »"
+        default:
+            return "Drapeau capturé ! « La suite peut attendre une microseconde. »"
         }
     }
 
@@ -326,19 +389,22 @@ enum PlayerCopy {
     }
 
     static func improvement(rating: StarRating, rules: ScoringRules, bonusCollected: Bool = false) -> String {
+        let tip: String
         if let steps = rules.efficientLimit(bonusCollected: bonusCollected), rules.compactProgramMaxBlocks == nil {
             if rating.efficientExecution {
-                return bonusCollected
+                tip = bonusCollected
                     ? "Minimum d'actions avec l'écrou."
                     : "Tu as atteint le minimum d'actions."
+            } else {
+                let word = steps > 1 ? "actions" : "action"
+                tip = "Trois étoiles : au plus \(steps) \(word)."
             }
-            let word = steps > 1 ? "actions" : "action"
-            return "Trois étoiles : au plus \(steps) \(word)."
+        } else if rating.count == 3 {
+            tip = "Tu as atteint la solution de référence."
+        } else {
+            tip = rules.referenceNote + " Tu peux encore simplifier ton programme."
         }
-        if rating.count == 3 {
-            return "Tu as atteint la solution de référence."
-        }
-        return rules.referenceNote + " Tu peux encore simplifier ton programme."
+        return "\(victoryQuip(rating: rating)) \(tip)"
     }
 
     /// Les premières commandes d'une solution optimale, sans donner toute la suite.

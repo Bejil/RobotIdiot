@@ -138,6 +138,21 @@ final class ExecutionAlertView: UIView {
             self.badge.alpha = 1
             self.robot.transform = .identity
             self.card.transform = .identity
+        } completion: { _ in
+            UIView.animateKeyframes(withDuration: 0.55, delay: 0.05, options: [.allowUserInteraction]) {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.25) {
+                    self.robot.transform = CGAffineTransform(translationX: -8, y: 0).rotated(by: -0.08)
+                }
+                UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.25) {
+                    self.robot.transform = CGAffineTransform(translationX: 8, y: 0).rotated(by: 0.08)
+                }
+                UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.25) {
+                    self.robot.transform = CGAffineTransform(translationX: -4, y: 2)
+                }
+                UIView.addKeyframe(withRelativeStartTime: 0.75, relativeDuration: 0.25) {
+                    self.robot.transform = .identity
+                }
+            }
         }
     }
 
