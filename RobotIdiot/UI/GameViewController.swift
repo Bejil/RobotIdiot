@@ -1154,28 +1154,29 @@ final class GameViewController: UIViewController {
             bonusRemainingCount = remaining
             if justCollected {
                 statusLabel.text = "Écrou récupéré !"
+                Soundscape.shared.play("collect")
             } else {
                 statusLabel.text = forward ? "Le robot avance." : "Le robot recule."
+                if !wantsContinuous { Soundscape.shared.play("move") }
             }
-            if !wantsContinuous && !justCollected { Soundscape.shared.play("move") }
         case .turned(_, let direction, _):
             statusLabel.text = "Le robot regarde vers \(PlayerCopy.directionPhrase(direction))."
             if !wantsContinuous { Soundscape.shared.play("turn") }
         case .collectedBonus:
             statusLabel.text = "Écrou récupéré !"
-            Soundscape.shared.play("success")
+            Soundscape.shared.play("collect")
         case .pickedUp:
             statusLabel.text = "Le robot ramasse la clé."
-            Soundscape.shared.play("tap")
+            Soundscape.shared.play("pickup")
         case .used:
             statusLabel.text = "La porte s'ouvre."
-            Soundscape.shared.play("tap")
+            Soundscape.shared.play("open")
         case .pushed:
             statusLabel.text = "La caisse avance d'une case."
-            Soundscape.shared.play("tap")
+            Soundscape.shared.play("push")
         case .activated(_, _, let isActive):
             statusLabel.text = isActive ? "L'interrupteur s'active." : "L'interrupteur s'éteint."
-            Soundscape.shared.play("tap")
+            Soundscape.shared.play("activate")
         case .enteredLoop:
             statusLabel.text = "Le robot entre dans Répète."
         case .testedCondition(_, let condition, let passed):

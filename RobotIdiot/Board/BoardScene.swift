@@ -857,7 +857,6 @@ final class BoardScene: SKScene {
             ])
             node.run(.sequence([pop, .removeFromParent()]))
         }
-        Soundscape.shared.play("success")
     }
 
     private func makeObject(_ object: PlacedObject, at coordinate: GridCoordinate) -> SKNode {
