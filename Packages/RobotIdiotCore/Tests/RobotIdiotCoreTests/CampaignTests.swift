@@ -110,4 +110,32 @@ final class CampaignTests: XCTestCase {
         let decoded = try JSONDecoder().decode(CampaignProgress.self, from: data)
         XCTAssertEqual(decoded, progress)
     }
+
+    func testPerfectWorldRequiresThreeStarsOnEveryLevel() {
+        var progress = CampaignProgress(campaignSeed: 3)
+        let layout = CampaignLayout(standardLevelCount: 2, includesFinale: false)
+        XCTAssertFalse(CampaignRules.isPerfectWorld(1, progress: progress, layout: layout))
+
+        CampaignRules.record(
+            LevelScore(stars: 3, blockCount: 2, executedInstructions: 4),
+            at: LevelAddress(world: 1, level: 1),
+            in: &progress
+        )
+        XCTAssertFalse(CampaignRules.isPerfectWorld(1, progress: progress, layout: layout))
+
+        CampaignRules.record(
+            LevelScore(stars: 2, blockCount: 3, executedInstructions: 5),
+            at: LevelAddress(world: 1, level: 2),
+            in: &progress
+        )
+        XCTAssertFalse(CampaignRules.isPerfectWorld(1, progress: progress, layout: layout))
+
+        CampaignRules.record(
+            LevelScore(stars: 3, blockCount: 2, executedInstructions: 4),
+            at: LevelAddress(world: 1, level: 2),
+            in: &progress
+        )
+        XCTAssertTrue(CampaignRules.isPerfectWorld(1, progress: progress, layout: layout))
+        XCTAssertFalse(CampaignRules.isPerfectWorld(2, progress: progress, layout: layout))
+    }
 }

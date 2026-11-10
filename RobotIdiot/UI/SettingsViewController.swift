@@ -37,13 +37,14 @@ final class SettingsViewController: UITableViewController {
         backdrop.stop()
     }
 
-    override func numberOfSections(in tableView: UITableView) -> Int { 4 }
+    override func numberOfSections(in tableView: UITableView) -> Int { 5 }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
         case 0: return 3
         case 1: return 1
-        case 2: return AdsConsentManager.shared.isPrivacyOptionsRequired ? 1 : 0
+        case 2: return 1
+        case 3: return AdsConsentManager.shared.isPrivacyOptionsRequired ? 1 : 0
         default: return 2
         }
     }
@@ -51,14 +52,22 @@ final class SettingsViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
         case 0: return "Son"
-        case 1: return "Tutoriel"
-        case 2: return AdsConsentManager.shared.isPrivacyOptionsRequired ? "Confidentialité" : nil
+        case 1: return "Affichage"
+        case 2: return "Tutoriel"
+        case 3: return AdsConsentManager.shared.isPrivacyOptionsRequired ? "Confidentialité" : nil
         default: return "Progression"
         }
     }
 
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        section == 3 ? "Effacer oublie la progression de la campagne." : nil
+        switch section {
+        case 1:
+            return "Place la liste des commandes à gauche."
+        case 4:
+            return "Effacer oublie la progression de la campagne."
+        default:
+            return nil
+        }
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -70,10 +79,12 @@ final class SettingsViewController: UITableViewController {
         case (0, 2):
             return switchCell(title: "Vibrations", isOn: PlaySettings.haptics, action: #selector(hapticsChanged(_:)))
         case (1, 0):
-            return textCell(title: "Revoir le tutoriel", color: AppTheme.tealDark, accessory: .disclosureIndicator)
+            return switchCell(title: "Mode gaucher", isOn: PlaySettings.leftHandedMode, action: #selector(leftHandedChanged(_:)))
         case (2, 0):
-            return textCell(title: "Options de confidentialité", color: AppTheme.tealDark, accessory: .disclosureIndicator)
+            return textCell(title: "Revoir le tutoriel", color: AppTheme.tealDark, accessory: .disclosureIndicator)
         case (3, 0):
+            return textCell(title: "Options de confidentialité", color: AppTheme.tealDark, accessory: .disclosureIndicator)
+        case (4, 0):
             return textCell(title: worldSummary(), color: AppTheme.ink, accessory: .none)
         default:
             return textCell(title: "Effacer la progression", color: AppTheme.coral, accessory: .none)
@@ -81,25 +92,25 @@ final class SettingsViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
-        indexPath.section == 1
-            || indexPath.section == 2
-            || (indexPath.section == 3 && indexPath.row == 1)
+        indexPath.section == 2
+            || indexPath.section == 3
+            || (indexPath.section == 4 && indexPath.row == 1)
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         Soundscape.shared.play("select")
-        if indexPath.section == 1 {
+        if indexPath.section == 2 {
             present(TutorialViewController(), animated: true)
             return
         }
-        if indexPath.section == 2 {
+        if indexPath.section == 3 {
             AdsConsentManager.shared.presentPrivacyOptions(from: self) { [weak self] _ in
                 self?.tableView.reloadData()
             }
             return
         }
-        guard indexPath.section == 3, indexPath.row == 1 else { return }
+        guard indexPath.section == 4, indexPath.row == 1 else { return }
         ChartedConfirmAlertView.present(
             from: self,
             ribbon: "Attention",
@@ -110,7 +121,7 @@ final class SettingsViewController: UITableViewController {
             confirmSystemImage: "trash"
         ) { [weak self] in
             CampaignStore.shared.reset()
-            self?.tableView.reloadSections(IndexSet(integer: 3), with: .automatic)
+            self?.tableView.reloadSections(IndexSet(integer: 4), with: .automatic)
         }
     }
 
@@ -159,6 +170,7 @@ final class SettingsViewController: UITableViewController {
     @objc private func soundChanged(_ sender: UISwitch) { PlaySettings.sound = sender.isOn }
     @objc private func musicChanged(_ sender: UISwitch) { PlaySettings.music = sender.isOn }
     @objc private func hapticsChanged(_ sender: UISwitch) { PlaySettings.haptics = sender.isOn }
+    @objc private func leftHandedChanged(_ sender: UISwitch) { PlaySettings.leftHandedMode = sender.isOn }
 }
 
 /// Son, musique et vibrations, présenté depuis le bouton réglages du niveau.
@@ -178,7 +190,8 @@ final class SensorySettingsController: UIViewController, UIPopoverPresentationCo
             title,
             settingRow(symbol: "speaker.wave.2.fill", tint: 0x7B3FF2, title: "Son", isOn: PlaySettings.sound, action: #selector(soundChanged(_:))),
             settingRow(symbol: "music.note", tint: 0x3EC6FF, title: "Musique", isOn: PlaySettings.music, action: #selector(musicChanged(_:))),
-            settingRow(symbol: "iphone.radiowaves.left.and.right", tint: 0xFFB020, title: "Vibrations", isOn: PlaySettings.haptics, action: #selector(hapticsChanged(_:)))
+            settingRow(symbol: "iphone.radiowaves.left.and.right", tint: 0xFFB020, title: "Vibrations", isOn: PlaySettings.haptics, action: #selector(hapticsChanged(_:))),
+            settingRow(symbol: "hand.raised.fill", tint: 0x34C759, title: "Mode gaucher", isOn: PlaySettings.leftHandedMode, action: #selector(leftHandedChanged(_:)))
         ])
         stack.axis = .vertical
         stack.spacing = 8
@@ -191,7 +204,7 @@ final class SensorySettingsController: UIViewController, UIPopoverPresentationCo
             stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -14),
             stack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16)
         ])
-        preferredContentSize = CGSize(width: 292, height: 262)
+        preferredContentSize = CGSize(width: 292, height: 326)
     }
 
     func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle {
@@ -252,4 +265,5 @@ final class SensorySettingsController: UIViewController, UIPopoverPresentationCo
     @objc private func soundChanged(_ sender: PaletteSwitch) { PlaySettings.sound = sender.isOn }
     @objc private func musicChanged(_ sender: PaletteSwitch) { PlaySettings.music = sender.isOn }
     @objc private func hapticsChanged(_ sender: PaletteSwitch) { PlaySettings.haptics = sender.isOn }
+    @objc private func leftHandedChanged(_ sender: PaletteSwitch) { PlaySettings.leftHandedMode = sender.isOn }
 }

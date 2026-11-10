@@ -195,6 +195,22 @@ final class HomeViewController: UIViewController {
         } else {
             playIntro()
         }
+#if DEBUG
+        if let raw = ProcessInfo.processInfo.environment["ROBOTIDIOT_AUTO_LEVEL"],
+           navigationController?.viewControllers.count == 1,
+           presentedViewController == nil {
+            let parts = raw.split(separator: ":").compactMap { Int($0) }
+            let address = LevelAddress(world: parts.first ?? 8, level: parts.dropFirst().first ?? 1)
+            if let level = CatalogCampaign.level(at: address) {
+                PlaySettings.tutorialSeen = true
+                navigationController?.pushViewController(
+                    GameViewController(level: level, campaign: address),
+                    animated: false
+                )
+                return
+            }
+        }
+#endif
         if !PlaySettings.tutorialSeen,
            presentedViewController == nil,
            navigationController?.viewControllers.count == 1,

@@ -651,12 +651,11 @@ final class BoardScene: SKScene {
             .scaleX(to: 1, y: 1, duration: 0.1)
         ])
         let dance = SKAction.sequence([
-            .rotate(byAngle: 0.18, duration: 0.08),
-            .rotate(byAngle: -0.36, duration: 0.1),
-            .rotate(byAngle: 0.28, duration: 0.09),
-            .rotate(byAngle: -0.1, duration: 0.08)
+            .scaleX(to: 1.08, y: 0.94, duration: 0.08),
+            .scaleX(to: 0.94, y: 1.08, duration: 0.1),
+            .scaleX(to: 1.05, y: 0.97, duration: 0.09),
+            .scaleX(to: 1, y: 1, duration: 0.08)
         ])
-        let spin = SKAction.rotate(byAngle: .pi * 2, duration: 0.42)
 
         let radius = cellSize * 1.45
         let burstOrigin = CGPoint(
@@ -693,7 +692,6 @@ final class BoardScene: SKScene {
 
         robotNode.run(.sequence([
             .group([.repeat(hop, count: 3), squash, dance]),
-            spin,
             .group([.repeat(hop, count: 1), dance]),
             .wait(forDuration: 0.18)
         ])) { [weak self] in

@@ -54,7 +54,7 @@ public struct CatalogCollectible: Codable, Equatable, Sendable {
         type = try container.decode(String.self, forKey: .type)
         x = try container.decode(Int.self, forKey: .x)
         y = try container.decode(Int.self, forKey: .y)
-        amount = try container.decodeIfPresent(Int.self, forKey: .amount) ?? 2
+        amount = try container.decodeIfPresent(Int.self, forKey: .amount) ?? RewardEconomy.defaultAwardAmount
         optional = try container.decodeIfPresent(Bool.self, forKey: .optional) ?? true
         pickup = try container.decodeIfPresent(String.self, forKey: .pickup) ?? "auto_on_enter"
         layer = try container.decodeIfPresent(String.self, forKey: .layer)
@@ -126,5 +126,8 @@ public enum RewardEconomy: Sendable {
     public static let hintCost = 3
     public static let adFreeRetryCost = 1
     public static let fullSolutionCost = 6
-    public static let defaultAwardAmount = 2
+    /// Écrou ramassé sur le plateau (une fois par collectible).
+    public static let defaultAwardAmount = 1
+    /// Bonus unique si tous les niveaux d'un monde sont à 3 étoiles.
+    public static let perfectWorldBonusBolts = 5
 }

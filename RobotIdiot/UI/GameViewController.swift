@@ -33,8 +33,11 @@ final class GameViewController: UIViewController {
     private let overlay = ResultOverlayView()
     private let errorAlert = ExecutionAlertView()
     private let commandIntro = CommandIntroAlertView()
+    private let storyBeat = StoryBeatAlertView()
     private let helpAlert = HelpAlertView()
     private let helpCommandsAlert = HelpCommandsAlertView()
+    private var pendingStoryEpilogue = false
+    private var afterStoryAction: (() -> Void)?
 
     private let runButton = AppTheme.filledButton(title: "Exécuter", systemImage: "play.fill", prominent: true)
 
@@ -49,7 +52,10 @@ final class GameViewController: UIViewController {
     private var sheetDragStartHeight: CGFloat = 0
     private var hasLaidOutSheet = false
     private var usesSideBySideLayout = false
+    private var usesPhoneSplitLayout = false
+    private var usesPadLandscapeColumns = false
     private var lastSideBySideSplit: (leftTrailing: CGFloat, rightLeading: CGFloat)?
+    private var usesDetachedPaletteLayout: Bool { usesPhoneSplitLayout || usesPadLandscapeColumns }
     private var bonusRemainingCount = 0
     private var backdrop: AmbientBackdropView!
 
@@ -110,7 +116,7 @@ final class GameViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        presentCommandIntroIfNeeded()
+        presentPendingNarrativeIfNeeded()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -348,7 +354,7 @@ final class GameViewController: UIViewController {
             self?.restoreRobot()
         }
         overlay.onExit = { [weak self] in
-            self?.navigationController?.popViewController(animated: true)
+            self?.leaveAfterVictory()
         }
         overlay.onNext = { [weak self] in
             guard let self else { return }
@@ -370,6 +376,10 @@ final class GameViewController: UIViewController {
         commandIntro.onFinished = { [weak self] in
             self?.hideFullscreenOverlay(self?.commandIntro)
         }
+        storyBeat.isHidden = true
+        storyBeat.onFinished = { [weak self] in
+            self?.finishStoryBeat()
+        }
         helpAlert.isHidden = true
         helpAlert.onClose = { [weak self] in
             self?.hideFullscreenOverlay(self?.helpAlert)
@@ -387,7 +397,7 @@ final class GameViewController: UIViewController {
         [boardSlot, boardFrame, worldTitleLabel, levelTitleLabel, sheet, sheetGrabber, sheetHandle, chromeRow, editor, runButton, speedToggle].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
-        [overlay, errorAlert, commandIntro, helpAlert, helpCommandsAlert].forEach {
+        [overlay, errorAlert, commandIntro, storyBeat, helpAlert, helpCommandsAlert].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             $0.isHidden = true
         }
@@ -406,7 +416,7 @@ final class GameViewController: UIViewController {
     }
 
     private var fullscreenOverlays: [UIView] {
-        [overlay, errorAlert, commandIntro, helpAlert, helpCommandsAlert]
+        [overlay, errorAlert, commandIntro, storyBeat, helpAlert, helpCommandsAlert]
     }
 
     private func showFullscreenOverlay(_ alert: UIView) {
@@ -426,7 +436,9 @@ final class GameViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         guard view.bounds.height > 1 else { return }
-        let sideBySide = shouldUseSideBySideLayout()
+        let padLandscape = shouldUsePadLandscapeColumns()
+        let phoneSplit = !padLandscape && shouldUsePhoneSplitLayout()
+        let sideBySide = !padLandscape && !phoneSplit && shouldUseSideBySideLayout()
         let splitChanged: Bool = {
             guard sideBySide else { return false }
             let split = sideBySideSplitX()
@@ -434,9 +446,12 @@ final class GameViewController: UIViewController {
             return abs(last.leftTrailing - split.leftTrailing) > 0.5
                 || abs(last.rightLeading - split.rightLeading) > 0.5
         }()
-        if sideBySide != usesSideBySideLayout || splitChanged {
+        if padLandscape != usesPadLandscapeColumns
+            || phoneSplit != usesPhoneSplitLayout
+            || sideBySide != usesSideBySideLayout
+            || splitChanged {
             applyLayout()
-        } else if !usesSideBySideLayout {
+        } else if !usesSideBySideLayout && !usesPhoneSplitLayout && !usesPadLandscapeColumns {
             if !hasLaidOutSheet {
                 hasLaidOutSheet = true
                 sheetHeight = collapsedSheetHeightBaseline()
@@ -449,7 +464,13 @@ final class GameViewController: UIViewController {
         }
         // Espace sous le fond gris : petit écart + boutons + marge basse + home indicator.
         // (Le stack ajoute déjà 8 pt au-dessus du spacer.)
-        editor.reserveBottomActions(height: 52 + 8 + 6 + view.safeAreaInsets.bottom)
+        let bottomReserve: CGFloat = usesDetachedPaletteLayout
+            ? 52 + 8 + 6
+            : 52 + 8 + 6 + view.safeAreaInsets.bottom
+        editor.reserveBottomActions(height: bottomReserve)
+        if usesDetachedPaletteLayout {
+            editor.refreshDetachedPaletteLayout()
+        }
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -464,16 +485,41 @@ final class GameViewController: UIViewController {
         let isActive: Bool
     }
 
-    /// Duo (charnière verticale) ou écran assez large → un panneau par moitié.
+    private var isLandscapeOrientation: Bool {
+        view.bounds.width > view.bounds.height + 1
+    }
+
+    /// iPad / Duo paysage : plateau | programme | commandes sur une ligne.
+    private func shouldUsePadLandscapeColumns() -> Bool {
+        guard isLandscapeOrientation else { return false }
+        switch traitCollection.userInterfaceIdiom {
+        case .pad:
+            return true
+        case .phone:
+            // Duo (charnière) ou écran très large ouvert à plat.
+            return verticalFold() != nil || view.bounds.width >= 900
+        default:
+            return false
+        }
+    }
+
+    /// Colonne commandes détachée (iPhone + iPad portrait). Duo portrait : side-by-side.
+    private func shouldUsePhoneSplitLayout() -> Bool {
+        if shouldUsePadLandscapeColumns() { return false }
+        if verticalFold() != nil { return false }
+        switch traitCollection.userInterfaceIdiom {
+        case .phone, .pad:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Duo portrait (charnière verticale) → un panneau par moitié.
     private func shouldUseSideBySideLayout() -> Bool {
-        let size = view.bounds.size
-        guard size.width > 1, size.height > 1 else { return false }
-        // Duo (charnière verticale) : toujours un panneau par écran.
-        if verticalFold() != nil { return true }
-        // iPad / iPhone portrait : même UI empilée que sur iPhone.
-        if size.height >= size.width { return false }
-        // Paysage assez large : plateau | commandes.
-        return size.width >= 600
+        if shouldUsePadLandscapeColumns() || shouldUsePhoneSplitLayout() { return false }
+        guard view.bounds.width > 1, view.bounds.height > 1 else { return false }
+        return verticalFold() != nil
     }
 
     /// Charnière verticale (pli livre). Inclut la région inactive (Duo à plat, largeur 0).
@@ -525,16 +571,350 @@ final class GameViewController: UIViewController {
 
     private func applyLayout() {
         NSLayoutConstraint.deactivate(layoutConstraints)
-        usesSideBySideLayout = shouldUseSideBySideLayout()
-        if usesSideBySideLayout {
+        usesPadLandscapeColumns = shouldUsePadLandscapeColumns()
+        usesPhoneSplitLayout = !usesPadLandscapeColumns && shouldUsePhoneSplitLayout()
+        usesSideBySideLayout = !usesPadLandscapeColumns && !usesPhoneSplitLayout && shouldUseSideBySideLayout()
+        if usesPadLandscapeColumns {
+            lastSideBySideSplit = nil
+            refreshChromeCompactness(compact: false)
+            applyPadLandscapeColumnsLayout()
+        } else if usesPhoneSplitLayout {
+            lastSideBySideSplit = nil
+            refreshChromeCompactness(compact: traitCollection.userInterfaceIdiom != .pad)
+            applyPhoneSplitLayout()
+        } else if usesSideBySideLayout {
             lastSideBySideSplit = sideBySideSplitX()
+            editor.setPaletteDetached(false)
+            refreshChromeCompactness(compact: false)
             applySideBySideLayout()
         } else {
             lastSideBySideSplit = nil
+            editor.setPaletteDetached(false)
+            refreshChromeCompactness(compact: false)
             applyStackedLayout()
         }
-        editor.reserveBottomActions(height: 52 + 8 + 6 + view.safeAreaInsets.bottom)
+        let bottomReserve: CGFloat = usesDetachedPaletteLayout
+            ? 52 + 8 + 6
+            : 52 + 8 + 6 + view.safeAreaInsets.bottom
+        editor.reserveBottomActions(height: bottomReserve)
         bringGameChromeToFront()
+    }
+
+    /// Hauteur palette = N × côté carré + (N−1) × espacement → largeur = côté du bouton.
+    private func squarePaletteWidthConstraint(for palette: UIView) -> NSLayoutConstraint {
+        let count = CGFloat(BlockEditorView.maxPaletteCommandCount)
+        let gaps = CGFloat(max(BlockEditorView.maxPaletteCommandCount - 1, 0)) * BlockEditorView.paletteFillSpacing
+        return palette.heightAnchor.constraint(equalTo: palette.widthAnchor, multiplier: count, constant: gaps)
+    }
+
+    /// Plateau + programme d'un côté, commandes de l'autre (droite par défaut, gauche en mode gaucher).
+    private func applyPhoneSplitLayout() {
+        let guide = view.safeAreaLayoutGuide
+        sheetHeightConstraint = nil
+        editor.setPaletteDetached(true)
+        editor.setPaletteFillsHeight(true)
+
+        let palette = editor.detachedPaletteView
+        if palette.superview !== view {
+            view.addSubview(palette)
+        }
+        palette.translatesAutoresizingMaskIntoConstraints = false
+
+        let isPad = traitCollection.userInterfaceIdiom == .pad
+        sheet.layer.cornerRadius = isPad ? 24 : 22
+        sheet.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        sheetGrabber.isHidden = true
+        sheetHandle.isHidden = true
+        sheetGrabber.isUserInteractionEnabled = false
+
+        worldTitleLabel.textAlignment = .center
+        levelTitleLabel.textAlignment = .center
+        levelTitleLabel.isHidden = true
+
+        let edgePad: CGFloat = isPad ? 28 : 20
+        let columnGap: CGFloat = isPad ? 22 : 18
+        let verticalPad: CGFloat = isPad ? 14 : 10
+        let boardProgramRatio: CGFloat = isPad ? 0.56 : 0.48
+        let commandsOnRight = !PlaySettings.leftHandedMode
+
+        let contentLeading: NSLayoutXAxisAnchor
+        let contentLeadingConstant: CGFloat
+        let contentTrailing: NSLayoutXAxisAnchor
+        let contentTrailingConstant: CGFloat
+        let paletteSideConstraints: [NSLayoutConstraint]
+        if commandsOnRight {
+            contentLeading = guide.leadingAnchor
+            contentLeadingConstant = edgePad
+            contentTrailing = palette.leadingAnchor
+            contentTrailingConstant = -columnGap
+            paletteSideConstraints = [
+                palette.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -edgePad)
+            ]
+        } else {
+            contentLeading = palette.trailingAnchor
+            contentLeadingConstant = columnGap
+            contentTrailing = guide.trailingAnchor
+            contentTrailingConstant = -edgePad
+            paletteSideConstraints = [
+                palette.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: edgePad)
+            ]
+        }
+
+        // iPad portrait : largeur palette = côté des boutons carrés.
+        let paletteWidthConstraints: [NSLayoutConstraint] = isPad
+            ? [squarePaletteWidthConstraint(for: palette)]
+            : [palette.widthAnchor.constraint(equalToConstant: 64)]
+
+        var boardAndSheetConstraints: [NSLayoutConstraint]
+        if isPad {
+            // Plateau carré max ; programme calé sur la même largeur.
+            boardAndSheetConstraints = [
+                boardFrame.topAnchor.constraint(equalTo: boardSlot.topAnchor),
+                boardFrame.centerXAnchor.constraint(equalTo: boardSlot.centerXAnchor),
+                boardFrame.widthAnchor.constraint(equalTo: boardFrame.heightAnchor),
+                boardFrame.widthAnchor.constraint(lessThanOrEqualTo: boardSlot.widthAnchor),
+                boardFrame.heightAnchor.constraint(lessThanOrEqualTo: boardSlot.heightAnchor),
+                boardFrame.heightAnchor.constraint(equalTo: boardSlot.heightAnchor).prioritized(UILayoutPriority(750)),
+
+                sheet.topAnchor.constraint(equalTo: boardFrame.bottomAnchor, constant: 10),
+                sheet.centerXAnchor.constraint(equalTo: boardFrame.centerXAnchor),
+                sheet.widthAnchor.constraint(equalTo: boardFrame.widthAnchor),
+                sheet.bottomAnchor.constraint(equalTo: palette.bottomAnchor),
+                sheet.leadingAnchor.constraint(greaterThanOrEqualTo: contentLeading, constant: contentLeadingConstant),
+                sheet.trailingAnchor.constraint(lessThanOrEqualTo: contentTrailing, constant: contentTrailingConstant)
+            ]
+        } else {
+            boardAndSheetConstraints = [
+                boardFrame.topAnchor.constraint(equalTo: boardSlot.topAnchor),
+                boardFrame.centerXAnchor.constraint(equalTo: boardSlot.centerXAnchor),
+                boardFrame.widthAnchor.constraint(equalTo: boardFrame.heightAnchor),
+                boardFrame.widthAnchor.constraint(lessThanOrEqualTo: boardSlot.widthAnchor),
+                boardFrame.heightAnchor.constraint(lessThanOrEqualTo: boardSlot.heightAnchor),
+                boardFrame.widthAnchor.constraint(equalTo: boardSlot.widthAnchor).prioritized(UILayoutPriority(750)),
+                boardFrame.heightAnchor.constraint(equalTo: boardSlot.heightAnchor).prioritized(UILayoutPriority(750)),
+
+                sheet.topAnchor.constraint(equalTo: boardFrame.bottomAnchor, constant: 10),
+                sheet.leadingAnchor.constraint(equalTo: contentLeading, constant: contentLeadingConstant),
+                sheet.trailingAnchor.constraint(equalTo: contentTrailing, constant: contentTrailingConstant),
+                sheet.bottomAnchor.constraint(equalTo: palette.bottomAnchor)
+            ]
+        }
+
+        layoutConstraints = paletteSideConstraints + paletteWidthConstraints + boardAndSheetConstraints + [
+            palette.bottomAnchor.constraint(equalTo: guide.bottomAnchor, constant: -verticalPad),
+
+            worldTitleLabel.topAnchor.constraint(equalTo: guide.topAnchor, constant: verticalPad),
+            worldTitleLabel.leadingAnchor.constraint(equalTo: contentLeading, constant: contentLeadingConstant),
+            worldTitleLabel.trailingAnchor.constraint(equalTo: contentTrailing, constant: contentTrailingConstant),
+            worldTitleLabel.heightAnchor.constraint(equalToConstant: 0),
+
+            levelTitleLabel.topAnchor.constraint(equalTo: guide.topAnchor, constant: verticalPad),
+            levelTitleLabel.leadingAnchor.constraint(equalTo: contentLeading, constant: contentLeadingConstant),
+            levelTitleLabel.trailingAnchor.constraint(equalTo: contentTrailing, constant: contentTrailingConstant),
+            levelTitleLabel.heightAnchor.constraint(equalToConstant: 0),
+
+            boardSlot.topAnchor.constraint(equalTo: guide.topAnchor, constant: verticalPad),
+            boardSlot.leadingAnchor.constraint(equalTo: contentLeading, constant: contentLeadingConstant),
+            boardSlot.trailingAnchor.constraint(equalTo: contentTrailing, constant: contentTrailingConstant),
+            boardSlot.heightAnchor.constraint(equalTo: guide.heightAnchor, multiplier: boardProgramRatio),
+
+            palette.topAnchor.constraint(equalTo: boardFrame.topAnchor),
+
+            sheetGrabber.topAnchor.constraint(equalTo: sheet.topAnchor),
+            sheetGrabber.leadingAnchor.constraint(equalTo: sheet.leadingAnchor),
+            sheetGrabber.trailingAnchor.constraint(equalTo: sheet.trailingAnchor),
+            sheetGrabber.heightAnchor.constraint(equalToConstant: 0),
+            sheetHandle.centerXAnchor.constraint(equalTo: sheetGrabber.centerXAnchor),
+            sheetHandle.centerYAnchor.constraint(equalTo: sheetGrabber.centerYAnchor),
+            sheetHandle.widthAnchor.constraint(equalToConstant: 40),
+            sheetHandle.heightAnchor.constraint(equalToConstant: 4),
+
+            chromeRow.topAnchor.constraint(equalTo: sheet.topAnchor, constant: 8),
+            chromeRow.leadingAnchor.constraint(equalTo: sheet.leadingAnchor, constant: isPad ? 10 : 8),
+            chromeRow.trailingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: isPad ? -10 : -8),
+            chromeRow.heightAnchor.constraint(equalToConstant: 32),
+            helpButton.heightAnchor.constraint(equalToConstant: 32),
+            clearProgramButton.heightAnchor.constraint(equalToConstant: 32),
+
+            editor.topAnchor.constraint(equalTo: chromeRow.bottomAnchor, constant: isPad ? 12 : 8),
+            editor.leadingAnchor.constraint(equalTo: sheet.leadingAnchor, constant: isPad ? 10 : 8),
+            editor.trailingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: isPad ? -10 : -8),
+            editor.bottomAnchor.constraint(equalTo: sheet.bottomAnchor),
+
+            runButton.leadingAnchor.constraint(equalTo: editor.leadingAnchor),
+            runButton.bottomAnchor.constraint(equalTo: sheet.bottomAnchor, constant: isPad ? -14 : -10),
+            runButton.heightAnchor.constraint(equalToConstant: isPad ? 52 : 48),
+
+            speedToggle.leadingAnchor.constraint(equalTo: runButton.trailingAnchor, constant: 8),
+            speedToggle.trailingAnchor.constraint(equalTo: editor.trailingAnchor),
+            speedToggle.centerYAnchor.constraint(equalTo: runButton.centerYAnchor),
+            speedToggle.widthAnchor.constraint(equalToConstant: isPad ? 72 : 56),
+            speedToggle.heightAnchor.constraint(equalTo: runButton.heightAnchor)
+        ]
+        if isPad {
+            layoutConstraints += [
+                helpButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 84),
+                clearProgramButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 96)
+            ]
+        } else {
+            layoutConstraints += [
+                helpButton.widthAnchor.constraint(equalToConstant: 36),
+                clearProgramButton.widthAnchor.constraint(equalToConstant: 36)
+            ]
+        }
+        NSLayoutConstraint.activate(layoutConstraints)
+        view.layoutIfNeeded()
+        editor.refreshDetachedPaletteLayout()
+    }
+
+    /// iPad paysage : plateau | programme | commandes (inversé en mode gaucher).
+    private func applyPadLandscapeColumnsLayout() {
+        let guide = view.safeAreaLayoutGuide
+        sheetHeightConstraint = nil
+        editor.setPaletteDetached(true)
+        editor.setPaletteFillsHeight(true)
+
+        let palette = editor.detachedPaletteView
+        if palette.superview !== view {
+            view.addSubview(palette)
+        }
+        palette.translatesAutoresizingMaskIntoConstraints = false
+
+        sheet.layer.cornerRadius = 24
+        sheet.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        sheetGrabber.isHidden = true
+        sheetHandle.isHidden = true
+        sheetGrabber.isUserInteractionEnabled = false
+
+        worldTitleLabel.textAlignment = .center
+        levelTitleLabel.textAlignment = .center
+        levelTitleLabel.isHidden = true
+
+        let edgePad: CGFloat = 24
+        let columnGap: CGFloat = 18
+        let verticalPad: CGFloat = 12
+        let commandsOnRight = !PlaySettings.leftHandedMode
+
+        let columnConstraints: [NSLayoutConstraint]
+        if commandsOnRight {
+            // Plateau | programme | commandes
+            columnConstraints = [
+                boardSlot.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: edgePad),
+                sheet.leadingAnchor.constraint(equalTo: boardSlot.trailingAnchor, constant: columnGap),
+                palette.leadingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: columnGap),
+                palette.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -edgePad),
+                boardSlot.widthAnchor.constraint(equalTo: sheet.widthAnchor)
+            ]
+        } else {
+            // Commandes | programme | plateau
+            columnConstraints = [
+                palette.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: edgePad),
+                sheet.leadingAnchor.constraint(equalTo: palette.trailingAnchor, constant: columnGap),
+                boardSlot.leadingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: columnGap),
+                boardSlot.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -edgePad),
+                boardSlot.widthAnchor.constraint(equalTo: sheet.widthAnchor)
+            ]
+        }
+
+        layoutConstraints = columnConstraints + [
+            squarePaletteWidthConstraint(for: palette),
+
+            palette.topAnchor.constraint(equalTo: guide.topAnchor, constant: verticalPad),
+            palette.bottomAnchor.constraint(equalTo: guide.bottomAnchor, constant: -verticalPad),
+
+            worldTitleLabel.topAnchor.constraint(equalTo: guide.topAnchor, constant: verticalPad),
+            worldTitleLabel.leadingAnchor.constraint(equalTo: boardSlot.leadingAnchor),
+            worldTitleLabel.trailingAnchor.constraint(equalTo: boardSlot.trailingAnchor),
+            worldTitleLabel.heightAnchor.constraint(equalToConstant: 0),
+
+            levelTitleLabel.topAnchor.constraint(equalTo: guide.topAnchor, constant: verticalPad),
+            levelTitleLabel.leadingAnchor.constraint(equalTo: boardSlot.leadingAnchor),
+            levelTitleLabel.trailingAnchor.constraint(equalTo: boardSlot.trailingAnchor),
+            levelTitleLabel.heightAnchor.constraint(equalToConstant: 0),
+
+            boardSlot.topAnchor.constraint(equalTo: guide.topAnchor, constant: verticalPad),
+            boardSlot.bottomAnchor.constraint(equalTo: guide.bottomAnchor, constant: -verticalPad),
+
+            boardFrame.centerXAnchor.constraint(equalTo: boardSlot.centerXAnchor),
+            boardFrame.centerYAnchor.constraint(equalTo: boardSlot.centerYAnchor),
+            boardFrame.widthAnchor.constraint(equalTo: boardFrame.heightAnchor),
+            boardFrame.widthAnchor.constraint(lessThanOrEqualTo: boardSlot.widthAnchor),
+            boardFrame.heightAnchor.constraint(lessThanOrEqualTo: boardSlot.heightAnchor),
+            boardFrame.widthAnchor.constraint(equalTo: boardSlot.widthAnchor).prioritized(UILayoutPriority(750)),
+            boardFrame.heightAnchor.constraint(equalTo: boardSlot.heightAnchor).prioritized(UILayoutPriority(750)),
+
+            sheet.topAnchor.constraint(equalTo: guide.topAnchor, constant: verticalPad),
+            sheet.bottomAnchor.constraint(equalTo: guide.bottomAnchor, constant: -verticalPad),
+
+            sheetGrabber.topAnchor.constraint(equalTo: sheet.topAnchor),
+            sheetGrabber.leadingAnchor.constraint(equalTo: sheet.leadingAnchor),
+            sheetGrabber.trailingAnchor.constraint(equalTo: sheet.trailingAnchor),
+            sheetGrabber.heightAnchor.constraint(equalToConstant: 0),
+            sheetHandle.centerXAnchor.constraint(equalTo: sheetGrabber.centerXAnchor),
+            sheetHandle.centerYAnchor.constraint(equalTo: sheetGrabber.centerYAnchor),
+            sheetHandle.widthAnchor.constraint(equalToConstant: 40),
+            sheetHandle.heightAnchor.constraint(equalToConstant: 4),
+
+            chromeRow.topAnchor.constraint(equalTo: sheet.topAnchor, constant: 8),
+            chromeRow.leadingAnchor.constraint(equalTo: sheet.leadingAnchor, constant: 10),
+            chromeRow.trailingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: -10),
+            chromeRow.heightAnchor.constraint(equalToConstant: 32),
+            helpButton.heightAnchor.constraint(equalToConstant: 32),
+            helpButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 84),
+            clearProgramButton.heightAnchor.constraint(equalToConstant: 32),
+            clearProgramButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 96),
+
+            editor.topAnchor.constraint(equalTo: chromeRow.bottomAnchor, constant: 12),
+            editor.leadingAnchor.constraint(equalTo: sheet.leadingAnchor, constant: 10),
+            editor.trailingAnchor.constraint(equalTo: sheet.trailingAnchor, constant: -10),
+            editor.bottomAnchor.constraint(equalTo: sheet.bottomAnchor),
+
+            runButton.leadingAnchor.constraint(equalTo: editor.leadingAnchor),
+            runButton.bottomAnchor.constraint(equalTo: sheet.bottomAnchor, constant: -14),
+            runButton.heightAnchor.constraint(equalToConstant: 52),
+
+            speedToggle.leadingAnchor.constraint(equalTo: runButton.trailingAnchor, constant: 8),
+            speedToggle.trailingAnchor.constraint(equalTo: editor.trailingAnchor),
+            speedToggle.centerYAnchor.constraint(equalTo: runButton.centerYAnchor),
+            speedToggle.widthAnchor.constraint(equalToConstant: 72),
+            speedToggle.heightAnchor.constraint(equalTo: runButton.heightAnchor)
+        ]
+        NSLayoutConstraint.activate(layoutConstraints)
+        view.layoutIfNeeded()
+        editor.refreshDetachedPaletteLayout()
+    }
+
+    private func refreshChromeCompactness(compact: Bool) {
+        if var help = helpButton.configuration {
+            help.title = compact ? nil : "Aide"
+            help.imagePadding = compact ? 0 : 5
+            help.contentInsets = NSDirectionalEdgeInsets(
+                top: 6,
+                leading: compact ? 8 : 10,
+                bottom: 6,
+                trailing: compact ? 8 : 10
+            )
+            helpButton.configuration = help
+            helpButton.accessibilityLabel = "Aide"
+        }
+        if var clear = clearProgramButton.configuration {
+            clear.title = compact ? nil : "Effacer"
+            clear.imagePadding = compact ? 0 : 5
+            clear.contentInsets = NSDirectionalEdgeInsets(
+                top: 6,
+                leading: compact ? 8 : 10,
+                bottom: 6,
+                trailing: compact ? 8 : 10
+            )
+            clearProgramButton.configuration = clear
+            clearProgramButton.accessibilityLabel = "Effacer toutes les commandes"
+        }
     }
 
     private func applyStackedLayout() {
@@ -719,6 +1099,9 @@ final class GameViewController: UIViewController {
         view.bringSubviewToFront(sheetGrabber)
         view.bringSubviewToFront(chromeRow)
         view.bringSubviewToFront(editor)
+        if usesDetachedPaletteLayout {
+            view.bringSubviewToFront(editor.detachedPaletteView)
+        }
         view.bringSubviewToFront(runButton)
         view.bringSubviewToFront(speedToggle)
         for alert in fullscreenOverlays where !alert.isHidden {
@@ -838,10 +1221,28 @@ final class GameViewController: UIViewController {
             refreshSpeedToggle()
         }
         boardScene.applyMotionPreference()
+        if usesDetachedPaletteLayout {
+            applyLayout()
+        }
+    }
+
+    private func presentPendingNarrativeIfNeeded() {
+        guard presentedViewController == nil else { return }
+        guard overlay.isHidden, errorAlert.isHidden, storyBeat.isHidden, commandIntro.isHidden else { return }
+        if let campaign,
+           let chapter = RobotStory.enteringWorld(campaign.world),
+           !PlaySettings.hasSeenStory(chapter.id) {
+            afterStoryAction = { [weak self] in
+                self?.presentCommandIntroIfNeeded()
+            }
+            presentStory(chapter)
+            return
+        }
+        presentCommandIntroIfNeeded()
     }
 
     private func presentCommandIntroIfNeeded() {
-        guard presentedViewController == nil, commandIntro.isHidden else { return }
+        guard presentedViewController == nil, commandIntro.isHidden, storyBeat.isHidden else { return }
         let taught = commandsTaughtBeforeThisLevel()
         var seen = Set<CommandType>()
         let fresh = level.allowedCommands.filter { command in
@@ -851,6 +1252,33 @@ final class GameViewController: UIViewController {
         guard !fresh.isEmpty else { return }
         commandIntro.present(commands: fresh)
         showFullscreenOverlay(commandIntro)
+    }
+
+    private func presentStory(_ chapter: RobotStory.Chapter) {
+        storyBeat.present(chapter)
+        showFullscreenOverlay(storyBeat)
+        Soundscape.shared.play("ui")
+    }
+
+    private func finishStoryBeat() {
+        hideFullscreenOverlay(storyBeat)
+        let action = afterStoryAction
+        afterStoryAction = nil
+        action?()
+    }
+
+    private func leaveAfterVictory() {
+        navigationController?.setNavigationBarHidden(false, animated: true)
+        hideFullscreenOverlay(overlay)
+        if pendingStoryEpilogue, !PlaySettings.hasSeenStory(RobotStory.epilogueID) {
+            pendingStoryEpilogue = false
+            afterStoryAction = { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            }
+            presentStory(RobotStory.epilogue)
+            return
+        }
+        navigationController?.popViewController(animated: true)
     }
 
     /// Commandes déjà présentes dans un niveau de campagne plus ancien.
@@ -1079,8 +1507,14 @@ final class GameViewController: UIViewController {
         )
         if let campaign {
             CampaignStore.shared.record(score, at: campaign)
+            let finishedCampaignArc = campaign.world == CatalogCampaign.worldCount
+                && campaign.level == CatalogCampaign.levelsPerWorld
+            pendingStoryEpilogue = finishedCampaignArc && !PlaySettings.hasSeenStory(RobotStory.epilogueID)
+        } else {
+            pendingStoryEpilogue = false
         }
         var boltsGained = 0
+        var worldBonusBolts = 0
         var showBoltRecap = false
         if let daily {
             switch daily.kind {
@@ -1094,16 +1528,29 @@ final class GameViewController: UIViewController {
                 }
             }
         } else {
+            // Les étoiles ne rapportent plus d'écrous : seul le collectible de plateau compte ici.
             boltsGained = BoltWallet.shared.creditVictory(
                 levelID: level.id,
                 collected: engine.state.game.collectedThisAttempt
             )
+            if let campaign,
+               CampaignRules.isPerfectWorld(
+                   campaign.world,
+                   progress: CampaignStore.shared.progress(),
+                   layout: CatalogCampaign.layout
+               ) {
+                worldBonusBolts = BoltWallet.shared.creditPerfectWorld(campaign.world)
+                boltsGained += worldBonusBolts
+            }
             showBoltRecap = boltsGained > 0 || bonusCollected
         }
         let exitTitle = daily != nil ? "Retour" : (campaign != nil ? "Carte du monde" : "Retour")
         var note = PlayerCopy.improvement(rating: rating, rules: rules, bonusCollected: bonusCollected)
         if let daily, daily.kind == .bug, !editor.hasModifiedFromBaseline {
             note = "Modifie une commande avant de rejouer pour gagner la récompense."
+        } else if worldBonusBolts > 0 {
+            let worldNote = "Monde parfait ! +\(worldBonusBolts) écrous."
+            note = note.isEmpty ? worldNote : "\(worldNote) \(note)"
         } else if boltsGained > 0 {
             let boltNote = boltsGained == 1 ? "+1 écrou !" : "+\(boltsGained) écrous !"
             note = note.isEmpty ? boltNote : "\(boltNote) \(note)"
@@ -1129,6 +1576,7 @@ final class GameViewController: UIViewController {
         refreshBoltBadge(animated: boltsGained > 0)
         hideFullscreenOverlay(errorAlert)
         hideFullscreenOverlay(commandIntro)
+        hideFullscreenOverlay(storyBeat)
         hideFullscreenOverlay(helpAlert)
         hideFullscreenOverlay(helpCommandsAlert)
         navigationController?.setNavigationBarHidden(true, animated: true)
@@ -1306,22 +1754,42 @@ final class GameViewController: UIViewController {
 
     private func openNextCampaignLevel() {
         guard let campaign, !isOpeningNext else { return }
-        isOpeningNext = true
         let address = CampaignRules.nextAddress(after: campaign, layout: CatalogCampaign.layout)
-        guard CatalogCampaign.level(at: address) != nil else { return }
-        CampaignStore.shared.materialize(address) { [weak self] level in
-            guard let self, let navigation = self.navigationController else { return }
-            var stack = navigation.viewControllers
-            guard stack.last === self else { return }
-            stack.removeLast()
-            if address.world != campaign.world,
-               let index = stack.lastIndex(where: { $0 is WorldLevelsViewController }) {
-                stack.remove(at: index)
-                stack.append(WorldLevelsViewController(world: address.world))
-            }
-            stack.append(GameViewController(level: level, campaign: address))
-            navigation.setViewControllers(stack, animated: true)
+        guard CatalogCampaign.level(at: address) != nil else {
+            // Pas de niveau suivant pour l'instant : l'épilogue (si besoin) puis retour carte.
+            leaveAfterVictory()
+            return
         }
+        let crossingWorld = address.world != campaign.world
+        let proceed: () -> Void = { [weak self] in
+            guard let self else { return }
+            self.isOpeningNext = true
+            self.navigationController?.setNavigationBarHidden(false, animated: true)
+            self.hideFullscreenOverlay(self.overlay)
+            CampaignStore.shared.materialize(address) { [weak self] level in
+                guard let self, let navigation = self.navigationController else { return }
+                var stack = navigation.viewControllers
+                guard stack.last === self else { return }
+                stack.removeLast()
+                if crossingWorld,
+                   let index = stack.lastIndex(where: { $0 is WorldLevelsViewController }) {
+                    stack.remove(at: index)
+                    stack.append(WorldLevelsViewController(world: address.world))
+                }
+                stack.append(GameViewController(level: level, campaign: address))
+                navigation.setViewControllers(stack, animated: true)
+            }
+        }
+        if crossingWorld,
+           let chapter = RobotStory.enteringWorld(address.world),
+           !PlaySettings.hasSeenStory(chapter.id) {
+            navigationController?.setNavigationBarHidden(false, animated: true)
+            hideFullscreenOverlay(overlay)
+            afterStoryAction = proceed
+            presentStory(chapter)
+            return
+        }
+        proceed()
     }
 
     private func openAnotherGeneratedLevel() {

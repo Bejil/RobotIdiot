@@ -126,7 +126,7 @@ final class RewardV7Tests: XCTestCase {
         }
     }
 
-    func testBonusOverlaysGrassAndAwardsTwoBolts() throws {
+    func testBonusOverlaysGrassAndAwardsOneBolt() throws {
         let pack = try LevelPackLoader.loadBundled()
         for source in pack.levels {
             guard let item = source.rewards?.collectibles.first else { continue }
@@ -142,6 +142,8 @@ final class RewardV7Tests: XCTestCase {
         XCTAssertEqual(RewardEconomy.hintCost, 3)
         XCTAssertEqual(RewardEconomy.adFreeRetryCost, 1)
         XCTAssertEqual(RewardEconomy.fullSolutionCost, 6)
+        XCTAssertEqual(RewardEconomy.defaultAwardAmount, 1)
+        XCTAssertEqual(RewardEconomy.perfectWorldBonusBolts, 5)
     }
 }
 

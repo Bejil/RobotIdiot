@@ -67,6 +67,7 @@ final class CampaignStore {
             archive = CampaignStore.freshArchive()
             persistLocked()
             PlaySettings.resetIntroducedCommands()
+            PlaySettings.resetSeenStories()
         }
     }
 
@@ -139,6 +140,7 @@ final class CampaignStore {
         persistLocked()
         lock.unlock()
         PlaySettings.resetIntroducedCommands()
+        PlaySettings.resetSeenStories()
         // Les écrous déjà gagnés restent : seule la progression de campagne est effacée.
         // (Une mise à jour de formule recrée le store ; le portefeuille est indépendant.)
     }

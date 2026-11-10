@@ -58,6 +58,30 @@ final class BoltWallet {
         balance += amount
     }
 
+    static func perfectWorldKey(_ world: Int) -> String {
+        "worldPerfect|\(world)"
+    }
+
+    func hasCreditedPerfectWorld(_ world: Int) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return credited.contains(Self.perfectWorldKey(world))
+    }
+
+    /// Bonus unique : tous les niveaux du monde à 3 étoiles.
+    @discardableResult
+    func creditPerfectWorld(_ world: Int) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        let key = Self.perfectWorldKey(world)
+        guard world >= 1, !credited.contains(key) else { return 0 }
+        let amount = RewardEconomy.perfectWorldBonusBolts
+        guard amount > 0 else { return 0 }
+        credited.insert(key)
+        balance += amount
+        return amount
+    }
+
     @discardableResult
     func spend(_ amount: Int) -> Bool {
         lock.lock()
