@@ -54,6 +54,11 @@ public enum ConditionType: String, Codable, Hashable, Sendable, CaseIterable {
     case doorClosed = "PORTE_FERMEE"
     case switchActivated = "INTERRUPTEUR_ACTIVE"
     case carryingItem = "TRANSPORTE_OBJET"
+    case onCircle = "SI_SUR_CERCLE"
+    case onDiamond = "SI_SUR_LOSANGE"
+    case keyAhead = "SI_CLE_DEVANT"
+    case lockAhead = "SI_CADENAS_DEVANT"
+    case crateAhead = "SI_CAISSE_DEVANT"
 }
 
 public struct Instruction: Codable, Hashable, Sendable, Identifiable {

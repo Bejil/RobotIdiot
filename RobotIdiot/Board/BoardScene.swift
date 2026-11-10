@@ -385,6 +385,10 @@ final class BoardScene: SKScene {
         switch terrain {
         case .floor, .none:
             return .grassA
+        case .markerCircle:
+            return .markerCircle
+        case .markerDiamond:
+            return .markerDiamond
         case .bush:
             return .bush
         case .cracked:

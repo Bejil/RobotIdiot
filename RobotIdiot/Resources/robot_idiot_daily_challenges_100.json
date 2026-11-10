@@ -16958,7 +16958,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "loop_plus_existing",
+      "family": "conditions_intro",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -16968,7 +16968,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "mechanics": [
         {
@@ -17073,12 +17073,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -17143,10 +17141,9 @@
         "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
         "validated": true,
         "requiredCommandUsage": [
-          "ACTIVE",
-          "REPETE"
+          "ACTIVE"
         ],
-        "loopIterationsBeforeVictory": 2,
+        "loopIterationsBeforeVictory": null,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 0,
@@ -17184,7 +17181,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "REPETE",
+      "newCommand": "SI",
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -17275,7 +17272,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "loop_plus_existing",
+      "family": "conditions_intro",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -17285,7 +17282,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "mechanics": [
         {
@@ -17421,12 +17418,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -17499,10 +17494,9 @@
         "requiredCommandUsage": [
           "ACTIVE",
           "RAMASSE",
-          "REPETE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
+        "loopIterationsBeforeVictory": null,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 1,
@@ -17542,7 +17536,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "REPETE",
+      "newCommand": "SI",
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -17656,7 +17650,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "loop_plus_existing",
+      "family": "conditions_intro",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -17666,7 +17660,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "mechanics": [
         {
@@ -17799,12 +17793,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -17874,10 +17866,9 @@
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
-          "POUSSE",
-          "REPETE"
+          "POUSSE"
         ],
-        "loopIterationsBeforeVictory": 2,
+        "loopIterationsBeforeVictory": null,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 0,
@@ -17918,7 +17909,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "REPETE",
+      "newCommand": "SI",
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -18027,7 +18018,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "loop_plus_existing",
+      "family": "conditions_intro",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -18037,7 +18028,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "mechanics": [
         {
@@ -18202,12 +18193,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -18287,10 +18276,9 @@
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
+        "loopIterationsBeforeVictory": null,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -18332,7 +18320,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "REPETE",
+      "newCommand": "SI",
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -18436,7 +18424,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "loop_plus_existing",
+      "family": "conditions_intro",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -18446,7 +18434,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "mechanics": [
         {
@@ -18620,12 +18608,10 @@
             "command": "UTILISE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -18711,10 +18697,9 @@
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
+        "loopIterationsBeforeVictory": null,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -18756,7 +18741,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "REPETE",
+      "newCommand": "SI",
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -18870,7 +18855,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "loop_plus_existing",
+      "family": "conditions_intro",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -18880,7 +18865,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "mechanics": [
         {
@@ -19057,12 +19042,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -19150,10 +19133,9 @@
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
+        "loopIterationsBeforeVictory": null,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -19195,7 +19177,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "REPETE",
+      "newCommand": "SI",
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -19304,7 +19286,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "loop_plus_existing",
+      "family": "conditions_intro",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -19314,7 +19296,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "mechanics": [
         {
@@ -19499,12 +19481,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -19594,10 +19574,9 @@
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
+        "loopIterationsBeforeVictory": null,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -19640,7 +19619,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "REPETE",
+      "newCommand": "SI",
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -19744,7 +19723,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "loop_plus_existing",
+      "family": "conditions_intro",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -19754,7 +19733,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "mechanics": [
         {
@@ -19939,12 +19918,10 @@
             "command": "UTILISE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -20034,10 +20011,9 @@
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
+        "loopIterationsBeforeVictory": null,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -20080,7 +20056,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "REPETE",
+      "newCommand": "SI",
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -20194,7 +20170,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "loop_plus_existing",
+      "family": "conditions_intro",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -20204,7 +20180,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "mechanics": [
         {
@@ -20395,12 +20371,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -20494,10 +20468,9 @@
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
+        "loopIterationsBeforeVictory": null,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -20540,7 +20513,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "REPETE",
+      "newCommand": "SI",
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -20649,7 +20622,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "loop_plus_existing",
+      "family": "conditions_intro",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -20659,7 +20632,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "mechanics": [
         {
@@ -20847,12 +20820,13 @@
             "command": "UTILISE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -20946,10 +20920,9 @@
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 3,
+        "loopIterationsBeforeVictory": null,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -20992,7 +20965,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "REPETE",
+      "newCommand": "SI",
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",

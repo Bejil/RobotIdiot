@@ -9926,7 +9926,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "boardRef": "DAILY-061",
       "mode": "find_and_replace_one_wrong_command",
@@ -10007,12 +10007,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "referenceProgram": [
@@ -10092,12 +10090,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "visibleErrorMarker": false,
@@ -10135,7 +10131,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "boardRef": "DAILY-062",
       "mode": "find_and_replace_one_wrong_command",
@@ -10225,12 +10221,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "referenceProgram": [
@@ -10319,12 +10313,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "visibleErrorMarker": false,
@@ -10362,7 +10354,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "boardRef": "DAILY-063",
       "mode": "find_and_replace_one_wrong_command",
@@ -10449,12 +10441,10 @@
           "command": "TOURNE_GAUCHE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "referenceProgram": [
@@ -10540,12 +10530,10 @@
           "command": "TOURNE_GAUCHE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "visibleErrorMarker": false,
@@ -10583,7 +10571,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "boardRef": "DAILY-064",
       "mode": "find_and_replace_one_wrong_command",
@@ -10682,12 +10670,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "referenceProgram": [
@@ -10785,12 +10771,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "visibleErrorMarker": false,
@@ -10828,7 +10812,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "boardRef": "DAILY-065",
       "mode": "find_and_replace_one_wrong_command",
@@ -10936,12 +10920,10 @@
           "command": "UTILISE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "referenceProgram": [
@@ -11048,12 +11030,10 @@
           "command": "UTILISE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "visibleErrorMarker": false,
@@ -11091,7 +11071,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "boardRef": "DAILY-066",
       "mode": "find_and_replace_one_wrong_command",
@@ -11202,12 +11182,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "referenceProgram": [
@@ -11317,12 +11295,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "visibleErrorMarker": false,
@@ -11360,7 +11336,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "boardRef": "DAILY-067",
       "mode": "find_and_replace_one_wrong_command",
@@ -11474,12 +11450,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "referenceProgram": [
@@ -11592,12 +11566,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "visibleErrorMarker": false,
@@ -11635,7 +11607,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "boardRef": "DAILY-068",
       "mode": "find_and_replace_one_wrong_command",
@@ -11749,12 +11721,10 @@
           "command": "UTILISE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "referenceProgram": [
@@ -11867,12 +11837,10 @@
           "command": "UTILISE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "visibleErrorMarker": false,
@@ -11910,7 +11878,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "boardRef": "DAILY-069",
       "mode": "find_and_replace_one_wrong_command",
@@ -12030,12 +11998,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "referenceProgram": [
@@ -12154,12 +12120,10 @@
           "command": "TOURNE_DROITE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "visibleErrorMarker": false,
@@ -12197,7 +12161,7 @@
         "UTILISE",
         "POUSSE",
         "ACTIVE",
-        "REPETE"
+        "SI"
       ],
       "boardRef": "DAILY-070",
       "mode": "find_and_replace_one_wrong_command",
@@ -12314,12 +12278,13 @@
           "command": "UTILISE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "referenceProgram": [
@@ -12435,12 +12400,13 @@
           "command": "UTILISE"
         },
         {
-          "command": "REPETE",
-          "body": [
-            {
-              "command": "AVANCE"
-            }
-          ]
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
+        },
+        {
+          "command": "AVANCE"
         }
       ],
       "visibleErrorMarker": false,

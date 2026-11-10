@@ -238,73 +238,73 @@
     },
     {
       "id": "RI-061",
-      "optimal": 27,
-      "searchedStates": 112
+      "optimal": 20,
+      "searchedStates": 105
     },
     {
       "id": "RI-062",
-      "optimal": 30,
-      "searchedStates": 304
+      "optimal": 20,
+      "searchedStates": 119
     },
     {
       "id": "RI-063",
-      "optimal": 29,
-      "searchedStates": 168
+      "optimal": 20,
+      "searchedStates": 119
     },
     {
       "id": "RI-065",
-      "optimal": 36,
-      "searchedStates": 1269
+      "optimal": 20,
+      "searchedStates": 426
     },
     {
       "id": "RI-066",
-      "optimal": 37,
-      "searchedStates": 1804
+      "optimal": 14,
+      "searchedStates": 239
     },
     {
       "id": "RI-068",
-      "optimal": 38,
-      "searchedStates": 7159
+      "optimal": 31,
+      "searchedStates": 223
     },
     {
       "id": "RI-069",
-      "optimal": 40,
-      "searchedStates": 1933
+      "optimal": 31,
+      "searchedStates": 233
     },
     {
       "id": "RI-071",
-      "optimal": 30,
-      "searchedStates": 125
-    },
-    {
-      "id": "RI-072",
-      "optimal": 36,
-      "searchedStates": 380
+      "optimal": 23,
+      "searchedStates": 61
     },
     {
       "id": "RI-073",
-      "optimal": 38,
-      "searchedStates": 578
+      "optimal": 25,
+      "searchedStates": 148
+    },
+    {
+      "id": "RI-074",
+      "optimal": 36,
+      "searchedStates": 119
     },
     {
       "id": "RI-075",
-      "optimal": 38,
-      "searchedStates": 567
+      "optimal": 32,
+      "searchedStates": 503
     },
     {
       "id": "RI-076",
-      "optimal": 38,
-      "searchedStates": 2419
+      "optimal": 47,
+      "searchedStates": 616
     },
     {
       "id": "RI-078",
-      "optimal": 41,
-      "searchedStates": 4415
+      "optimal": 44,
+      "searchedStates": 439
     },
     {
       "id": "RI-079",
-      "optimal": 44,
-      "searchedStates": 730
+      "optimal": 38,
+      "searchedStates": 389
     },
     {
       "id": "RI-081",
@@ -635,13 +635,13 @@
       "world": 7,
       "worldLevel": 4,
       "bonus": [
-        1,
-        6
+        6,
+        4
       ],
-      "directOptimal": 33,
-      "withBonusOptimal": 35,
-      "extra": 2,
-      "degree": 1,
+      "directOptimal": 20,
+      "withBonusOptimal": 24,
+      "extra": 4,
+      "degree": 2,
       "backtrack": true
     },
     {
@@ -649,13 +649,13 @@
       "world": 7,
       "worldLevel": 7,
       "bonus": [
-        5,
+        6,
         0
       ],
-      "directOptimal": 38,
-      "withBonusOptimal": 40,
-      "extra": 2,
-      "degree": 1,
+      "directOptimal": 25,
+      "withBonusOptimal": 35,
+      "extra": 10,
+      "degree": 2,
       "backtrack": true
     },
     {
@@ -663,27 +663,27 @@
       "world": 7,
       "worldLevel": 10,
       "bonus": [
-        6,
-        5
+        0,
+        1
       ],
-      "directOptimal": 40,
-      "withBonusOptimal": 42,
+      "directOptimal": 28,
+      "withBonusOptimal": 30,
       "extra": 2,
       "degree": 2,
       "backtrack": true
     },
     {
-      "id": "RI-074",
+      "id": "RI-072",
       "world": 8,
-      "worldLevel": 4,
+      "worldLevel": 2,
       "bonus": [
-        0,
-        1
+        1,
+        6
       ],
-      "directOptimal": 38,
-      "withBonusOptimal": 40,
-      "extra": 2,
-      "degree": 1,
+      "directOptimal": 17,
+      "withBonusOptimal": 21,
+      "extra": 4,
+      "degree": 2,
       "backtrack": true
     },
     {
@@ -691,13 +691,13 @@
       "world": 8,
       "worldLevel": 7,
       "bonus": [
-        1,
-        0
+        2,
+        4
       ],
-      "directOptimal": 41,
-      "withBonusOptimal": 43,
+      "directOptimal": 31,
+      "withBonusOptimal": 33,
       "extra": 2,
-      "degree": 1,
+      "degree": 2,
       "backtrack": true
     },
     {
@@ -706,12 +706,12 @@
       "worldLevel": 10,
       "bonus": [
         0,
-        1
+        4
       ],
-      "directOptimal": 40,
-      "withBonusOptimal": 42,
-      "extra": 2,
-      "degree": 1,
+      "directOptimal": 38,
+      "withBonusOptimal": 44,
+      "extra": 6,
+      "degree": 2,
       "backtrack": true
     },
     {

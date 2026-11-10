@@ -1,0 +1,803 @@
+[
+ {
+  "id": "RI-061",
+  "title": "Le mur qui parle",
+  "world": 7,
+  "worldLevel": 1,
+  "concept": "SI_OBSTACLE_DEVANT : tourner quand un obstacle bloque la case devant",
+  "optimalActions": 20,
+  "withBonusOptimal": null,
+  "referenceBlocks": 24,
+  "maxBlocks": null,
+  "minBlocksWithoutLoop": 20,
+  "loopIterations": 0,
+  "distinctCommandsInLoop": [],
+  "conditionsInLoop": [],
+  "conditionsUsed": [
+   "SI_OBSTACLE_DEVANT"
+  ],
+  "conditionBranches": {
+   "SI_OBSTACLE_DEVANT": {
+    "true": 4,
+    "false": 0
+   }
+  },
+  "conditionsAlwaysTrue": [
+   "SI_OBSTACLE_DEVANT"
+  ]
+ },
+ {
+  "id": "RI-062",
+  "title": "Sur le cercle",
+  "world": 7,
+  "worldLevel": 2,
+  "concept": "SI_SUR_CERCLE : le robot lit la case sous ses roues et tourne à gauche",
+  "optimalActions": 20,
+  "withBonusOptimal": null,
+  "referenceBlocks": 25,
+  "maxBlocks": null,
+  "minBlocksWithoutLoop": 20,
+  "loopIterations": 0,
+  "distinctCommandsInLoop": [],
+  "conditionsInLoop": [],
+  "conditionsUsed": [
+   "SI_OBSTACLE_DEVANT",
+   "SI_SUR_CERCLE"
+  ],
+  "conditionBranches": {
+   "SI_OBSTACLE_DEVANT": {
+    "true": 1,
+    "false": 0
+   },
+   "SI_SUR_CERCLE": {
+    "true": 4,
+    "false": 0
+   }
+  },
+  "conditionsAlwaysTrue": [
+   "SI_OBSTACLE_DEVANT",
+   "SI_SUR_CERCLE"
+  ]
+ },
+ {
+  "id": "RI-063",
+  "title": "Sur le losange",
+  "world": 7,
+  "worldLevel": 3,
+  "concept": "SI_SUR_LOSANGE : tourner à droite sur la balise losange",
+  "optimalActions": 20,
+  "withBonusOptimal": null,
+  "referenceBlocks": 24,
+  "maxBlocks": null,
+  "minBlocksWithoutLoop": 20,
+  "loopIterations": 0,
+  "distinctCommandsInLoop": [],
+  "conditionsInLoop": [],
+  "conditionsUsed": [
+   "SI_OBSTACLE_DEVANT",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionBranches": {
+   "SI_OBSTACLE_DEVANT": {
+    "true": 2,
+    "false": 0
+   },
+   "SI_SUR_LOSANGE": {
+    "true": 2,
+    "false": 0
+   }
+  },
+  "conditionsAlwaysTrue": [
+   "SI_OBSTACLE_DEVANT",
+   "SI_SUR_LOSANGE"
+  ]
+ },
+ {
+  "id": "RI-064",
+  "title": "Cercles et losanges",
+  "world": 7,
+  "worldLevel": 4,
+  "concept": "SI_SUR_CERCLE / SI_SUR_LOSANGE : le robot lit la case sous ses roues",
+  "optimalActions": 20,
+  "withBonusOptimal": 24,
+  "referenceBlocks": 26,
+  "maxBlocks": null,
+  "minBlocksWithoutLoop": 20,
+  "loopIterations": 0,
+  "distinctCommandsInLoop": [],
+  "conditionsInLoop": [],
+  "conditionsUsed": [
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionBranches": {
+   "SI_SUR_CERCLE": {
+    "true": 2,
+    "false": 0
+   },
+   "SI_SUR_LOSANGE": {
+    "true": 4,
+    "false": 0
+   }
+  },
+  "conditionsAlwaysTrue": [
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ]
+ },
+ {
+  "id": "RI-065",
+  "title": "Caisses en travers",
+  "world": 7,
+  "worldLevel": 5,
+  "concept": "SI_CAISSE_DEVANT { POUSSE } : dégager le couloir dans une impasse",
+  "optimalActions": 20,
+  "withBonusOptimal": null,
+  "referenceBlocks": 28,
+  "maxBlocks": null,
+  "minBlocksWithoutLoop": 20,
+  "loopIterations": 0,
+  "distinctCommandsInLoop": [],
+  "conditionsInLoop": [],
+  "conditionsUsed": [
+   "SI_CAISSE_DEVANT",
+   "SI_OBSTACLE_DEVANT"
+  ],
+  "conditionBranches": {
+   "SI_CAISSE_DEVANT": {
+    "true": 4,
+    "false": 0
+   },
+   "SI_OBSTACLE_DEVANT": {
+    "true": 4,
+    "false": 0
+   }
+  },
+  "conditionsAlwaysTrue": [
+   "SI_CAISSE_DEVANT",
+   "SI_OBSTACLE_DEVANT"
+  ]
+ },
+ {
+  "id": "RI-066",
+  "title": "Clé en vue",
+  "world": 7,
+  "worldLevel": 6,
+  "concept": "SI_CLE_DEVANT { AVANCE, RAMASSE } puis SI_CADENAS_DEVANT { UTILISE }",
+  "optimalActions": 14,
+  "withBonusOptimal": null,
+  "referenceBlocks": 17,
+  "maxBlocks": null,
+  "minBlocksWithoutLoop": 14,
+  "loopIterations": 0,
+  "distinctCommandsInLoop": [],
+  "conditionsInLoop": [],
+  "conditionsUsed": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_OBSTACLE_DEVANT"
+  ],
+  "conditionBranches": {
+   "SI_CADENAS_DEVANT": {
+    "true": 1,
+    "false": 0
+   },
+   "SI_CLE_DEVANT": {
+    "true": 1,
+    "false": 0
+   },
+   "SI_OBSTACLE_DEVANT": {
+    "true": 1,
+    "false": 0
+   }
+  },
+  "conditionsAlwaysTrue": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_OBSTACLE_DEVANT"
+  ]
+ },
+ {
+  "id": "RI-067",
+  "title": "La plaque au fond",
+  "world": 7,
+  "worldLevel": 7,
+  "concept": "Un SI qui contient plusieurs instructions ; plaque et porte liées",
+  "optimalActions": 25,
+  "withBonusOptimal": 35,
+  "referenceBlocks": 30,
+  "maxBlocks": null,
+  "minBlocksWithoutLoop": 25,
+  "loopIterations": 0,
+  "distinctCommandsInLoop": [],
+  "conditionsInLoop": [],
+  "conditionsUsed": [
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionBranches": {
+   "SI_SUR_CERCLE": {
+    "true": 3,
+    "false": 0
+   },
+   "SI_SUR_LOSANGE": {
+    "true": 2,
+    "false": 0
+   }
+  },
+  "conditionsAlwaysTrue": [
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ]
+ },
+ {
+  "id": "RI-068",
+  "title": "Conditions gigognes",
+  "world": 7,
+  "worldLevel": 8,
+  "concept": "SI imbriqués : SI_SUR_CERCLE { TOURNE_GAUCHE ; SI_CLE_DEVANT { … } }",
+  "optimalActions": 31,
+  "withBonusOptimal": null,
+  "referenceBlocks": 42,
+  "maxBlocks": null,
+  "minBlocksWithoutLoop": 31,
+  "loopIterations": 0,
+  "distinctCommandsInLoop": [],
+  "conditionsInLoop": [],
+  "conditionsUsed": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionBranches": {
+   "SI_CADENAS_DEVANT": {
+    "true": 1,
+    "false": 0
+   },
+   "SI_CLE_DEVANT": {
+    "true": 1,
+    "false": 0
+   },
+   "SI_SUR_CERCLE": {
+    "true": 4,
+    "false": 0
+   },
+   "SI_SUR_LOSANGE": {
+    "true": 5,
+    "false": 0
+   }
+  },
+  "conditionsAlwaysTrue": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "siFreeSolutionWithinMaxBlocks": false,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-069",
+  "title": "Labyrinthe annoté",
+  "world": 7,
+  "worldLevel": 9,
+  "concept": "Balises, clés et cadenas : enchaîner les bonnes conditions",
+  "optimalActions": 31,
+  "withBonusOptimal": null,
+  "referenceBlocks": 42,
+  "maxBlocks": null,
+  "minBlocksWithoutLoop": 31,
+  "loopIterations": 0,
+  "distinctCommandsInLoop": [],
+  "conditionsInLoop": [],
+  "conditionsUsed": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionBranches": {
+   "SI_CADENAS_DEVANT": {
+    "true": 1,
+    "false": 0
+   },
+   "SI_CLE_DEVANT": {
+    "true": 1,
+    "false": 0
+   },
+   "SI_SUR_CERCLE": {
+    "true": 3,
+    "false": 0
+   },
+   "SI_SUR_LOSANGE": {
+    "true": 6,
+    "false": 0
+   }
+  },
+  "conditionsAlwaysTrue": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "siFreeSolutionWithinMaxBlocks": false,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-070",
+  "title": "Grand final conditionnel",
+  "world": 7,
+  "worldLevel": 10,
+  "concept": "Synthèse : plaque, balises, clé, cadenas — sans boucle",
+  "optimalActions": 28,
+  "withBonusOptimal": 30,
+  "referenceBlocks": 35,
+  "maxBlocks": null,
+  "minBlocksWithoutLoop": 28,
+  "loopIterations": 0,
+  "distinctCommandsInLoop": [],
+  "conditionsInLoop": [],
+  "conditionsUsed": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_OBSTACLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionBranches": {
+   "SI_CADENAS_DEVANT": {
+    "true": 1,
+    "false": 0
+   },
+   "SI_CLE_DEVANT": {
+    "true": 1,
+    "false": 0
+   },
+   "SI_OBSTACLE_DEVANT": {
+    "true": 1,
+    "false": 0
+   },
+   "SI_SUR_CERCLE": {
+    "true": 2,
+    "false": 0
+   },
+   "SI_SUR_LOSANGE": {
+    "true": 2,
+    "false": 0
+   }
+  },
+  "conditionsAlwaysTrue": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_OBSTACLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "siFreeSolutionWithinMaxBlocks": false,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-071",
+  "title": "L'escalier",
+  "world": 8,
+  "worldLevel": 1,
+  "concept": "REPETE { AVANCE, TOURNE_DROITE, AVANCE, TOURNE_GAUCHE } : un motif, douze marches",
+  "optimalActions": 23,
+  "withBonusOptimal": null,
+  "referenceBlocks": 5,
+  "maxBlocks": 8,
+  "minBlocksWithoutLoop": 23,
+  "loopIterations": 6,
+  "distinctCommandsInLoop": [
+   "AVANCE",
+   "TOURNE_DROITE",
+   "TOURNE_GAUCHE"
+  ],
+  "conditionsInLoop": [],
+  "conditionsUsed": [],
+  "conditionBranches": null,
+  "conditionsAlwaysTrue": [],
+  "siFreeSolutionWithinMaxBlocks": true,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-072",
+  "title": "Grandes marches",
+  "world": 8,
+  "worldLevel": 2,
+  "concept": "Boucle de six commandes ; l'écrou se prend avant d'entrer dans la boucle",
+  "optimalActions": 17,
+  "withBonusOptimal": 21,
+  "referenceBlocks": 7,
+  "maxBlocks": 12,
+  "minBlocksWithoutLoop": 17,
+  "loopIterations": 3,
+  "distinctCommandsInLoop": [
+   "AVANCE",
+   "TOURNE_DROITE",
+   "TOURNE_GAUCHE"
+  ],
+  "conditionsInLoop": [],
+  "conditionsUsed": [],
+  "conditionBranches": null,
+  "conditionsAlwaysTrue": [],
+  "siFreeSolutionWithinMaxBlocks": true,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-073",
+  "title": "Escalier verrouillé",
+  "world": 8,
+  "worldLevel": 3,
+  "concept": "Motif avec RAMASSE et UTILISE ; REPETE s'arrête en plein tour sur le drapeau",
+  "optimalActions": 25,
+  "withBonusOptimal": null,
+  "referenceBlocks": 7,
+  "maxBlocks": 10,
+  "minBlocksWithoutLoop": 25,
+  "loopIterations": 5,
+  "distinctCommandsInLoop": [
+   "AVANCE",
+   "RAMASSE",
+   "TOURNE_DROITE",
+   "TOURNE_GAUCHE",
+   "UTILISE"
+  ],
+  "conditionsInLoop": [],
+  "conditionsUsed": [],
+  "conditionBranches": null,
+  "conditionsAlwaysTrue": [],
+  "siFreeSolutionWithinMaxBlocks": true,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-074",
+  "title": "La spirale",
+  "world": 8,
+  "worldLevel": 4,
+  "concept": "REPETE { SI_OBSTACLE_DEVANT { TOURNE_DROITE } ; AVANCE } : 4 blocs pour 36 actions",
+  "optimalActions": 36,
+  "withBonusOptimal": null,
+  "referenceBlocks": 4,
+  "maxBlocks": 6,
+  "minBlocksWithoutLoop": 36,
+  "loopIterations": 30,
+  "distinctCommandsInLoop": [
+   "AVANCE",
+   "TOURNE_DROITE"
+  ],
+  "conditionsInLoop": [
+   "SI_OBSTACLE_DEVANT"
+  ],
+  "conditionsUsed": [
+   "SI_OBSTACLE_DEVANT"
+  ],
+  "conditionBranches": {
+   "SI_OBSTACLE_DEVANT": {
+    "true": 6,
+    "false": 24
+   }
+  },
+  "conditionsAlwaysTrue": [],
+  "siFreeSolutionWithinMaxBlocks": false,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-075",
+  "title": "Déménagement",
+  "world": 8,
+  "worldLevel": 5,
+  "concept": "Boucle : balises, SI_CAISSE_DEVANT { POUSSE }, sinon avancer si la case est libre",
+  "optimalActions": 32,
+  "withBonusOptimal": null,
+  "referenceBlocks": 9,
+  "maxBlocks": 11,
+  "minBlocksWithoutLoop": 32,
+  "loopIterations": 22,
+  "distinctCommandsInLoop": [
+   "AVANCE",
+   "POUSSE",
+   "TOURNE_DROITE",
+   "TOURNE_GAUCHE"
+  ],
+  "conditionsInLoop": [
+   "CASE_DEVANT_LIBRE",
+   "SI_CAISSE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionsUsed": [
+   "CASE_DEVANT_LIBRE",
+   "SI_CAISSE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionBranches": {
+   "CASE_DEVANT_LIBRE": {
+    "true": 16,
+    "false": 6
+   },
+   "SI_CAISSE_DEVANT": {
+    "true": 6,
+    "false": 16
+   },
+   "SI_SUR_CERCLE": {
+    "true": 3,
+    "false": 19
+   },
+   "SI_SUR_LOSANGE": {
+    "true": 7,
+    "false": 15
+   }
+  },
+  "conditionsAlwaysTrue": [],
+  "siFreeSolutionWithinMaxBlocks": false,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-076",
+  "title": "Alcôves",
+  "world": 8,
+  "worldLevel": 6,
+  "concept": "SI_CLE_DEVANT { AVANCE, RAMASSE, RECULE } dans la boucle, puis cadenas",
+  "optimalActions": 47,
+  "withBonusOptimal": null,
+  "referenceBlocks": 12,
+  "maxBlocks": 14,
+  "minBlocksWithoutLoop": 47,
+  "loopIterations": 22,
+  "distinctCommandsInLoop": [
+   "AVANCE",
+   "RAMASSE",
+   "RECULE",
+   "TOURNE_DROITE",
+   "TOURNE_GAUCHE",
+   "UTILISE"
+  ],
+  "conditionsInLoop": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionsUsed": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionBranches": {
+   "SI_CADENAS_DEVANT": {
+    "true": 4,
+    "false": 18
+   },
+   "SI_CLE_DEVANT": {
+    "true": 4,
+    "false": 18
+   },
+   "SI_SUR_CERCLE": {
+    "true": 3,
+    "false": 19
+   },
+   "SI_SUR_LOSANGE": {
+    "true": 6,
+    "false": 16
+   }
+  },
+  "conditionsAlwaysTrue": [],
+  "siFreeSolutionWithinMaxBlocks": false,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-077",
+  "title": "Main droite",
+  "world": 8,
+  "worldLevel": 7,
+  "concept": "Cercles pour la gauche, SI_OBSTACLE_DEVANT pour la droite ; l'écrou est derrière le départ",
+  "optimalActions": 31,
+  "withBonusOptimal": 33,
+  "referenceBlocks": 6,
+  "maxBlocks": 10,
+  "minBlocksWithoutLoop": 31,
+  "loopIterations": 21,
+  "distinctCommandsInLoop": [
+   "AVANCE",
+   "TOURNE_DROITE",
+   "TOURNE_GAUCHE"
+  ],
+  "conditionsInLoop": [
+   "SI_OBSTACLE_DEVANT",
+   "SI_SUR_CERCLE"
+  ],
+  "conditionsUsed": [
+   "SI_OBSTACLE_DEVANT",
+   "SI_SUR_CERCLE"
+  ],
+  "conditionBranches": {
+   "SI_OBSTACLE_DEVANT": {
+    "true": 6,
+    "false": 15
+   },
+   "SI_SUR_CERCLE": {
+    "true": 4,
+    "false": 17
+   }
+  },
+  "conditionsAlwaysTrue": [],
+  "siFreeSolutionWithinMaxBlocks": false,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-078",
+  "title": "Porte de service",
+  "world": 8,
+  "worldLevel": 8,
+  "concept": "Préfixe (plaque) puis boucle à balises qui ramasse et déverrouille",
+  "optimalActions": 44,
+  "withBonusOptimal": null,
+  "referenceBlocks": 21,
+  "maxBlocks": 23,
+  "minBlocksWithoutLoop": 44,
+  "loopIterations": 18,
+  "distinctCommandsInLoop": [
+   "AVANCE",
+   "RAMASSE",
+   "RECULE",
+   "TOURNE_DROITE",
+   "TOURNE_GAUCHE",
+   "UTILISE"
+  ],
+  "conditionsInLoop": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionsUsed": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionBranches": {
+   "SI_CADENAS_DEVANT": {
+    "true": 2,
+    "false": 16
+   },
+   "SI_CLE_DEVANT": {
+    "true": 2,
+    "false": 16
+   },
+   "SI_SUR_CERCLE": {
+    "true": 3,
+    "false": 15
+   },
+   "SI_SUR_LOSANGE": {
+    "true": 6,
+    "false": 12
+   }
+  },
+  "conditionsAlwaysTrue": [],
+  "siFreeSolutionWithinMaxBlocks": false,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-079",
+  "title": "Obstacle ou cadenas ?",
+  "world": 8,
+  "worldLevel": 9,
+  "concept": "SI_OBSTACLE_DEVANT { SI_CADENAS_DEVANT { UTILISE } ; SI_OBSTACLE_DEVANT { TOURNE_DROITE } }",
+  "optimalActions": 38,
+  "withBonusOptimal": null,
+  "referenceBlocks": 12,
+  "maxBlocks": 14,
+  "minBlocksWithoutLoop": 38,
+  "loopIterations": 19,
+  "distinctCommandsInLoop": [
+   "AVANCE",
+   "RAMASSE",
+   "TOURNE_DROITE",
+   "TOURNE_GAUCHE",
+   "UTILISE"
+  ],
+  "conditionsInLoop": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_OBSTACLE_DEVANT",
+   "SI_SUR_CERCLE"
+  ],
+  "conditionsUsed": [
+   "SI_CADENAS_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_OBSTACLE_DEVANT",
+   "SI_SUR_CERCLE"
+  ],
+  "conditionBranches": {
+   "SI_CADENAS_DEVANT": {
+    "true": 3,
+    "false": 6
+   },
+   "SI_CLE_DEVANT": {
+    "true": 3,
+    "false": 16
+   },
+   "SI_OBSTACLE_DEVANT": {
+    "true": 15,
+    "false": 13
+   },
+   "SI_SUR_CERCLE": {
+    "true": 4,
+    "false": 15
+   }
+  },
+  "conditionsAlwaysTrue": [],
+  "siFreeSolutionWithinMaxBlocks": false,
+  "siFreeSearchExhaustive": true
+ },
+ {
+  "id": "RI-080",
+  "title": "Le grand circuit",
+  "world": 8,
+  "worldLevel": 10,
+  "concept": "Préfixe court puis une boucle qui combine balises, clés, cadenas et caisse",
+  "optimalActions": 38,
+  "withBonusOptimal": 44,
+  "referenceBlocks": 18,
+  "maxBlocks": 26,
+  "minBlocksWithoutLoop": 38,
+  "loopIterations": 19,
+  "distinctCommandsInLoop": [
+   "AVANCE",
+   "POUSSE",
+   "RAMASSE",
+   "RECULE",
+   "TOURNE_DROITE",
+   "TOURNE_GAUCHE",
+   "UTILISE"
+  ],
+  "conditionsInLoop": [
+   "CASE_DEVANT_LIBRE",
+   "SI_CADENAS_DEVANT",
+   "SI_CAISSE_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionsUsed": [
+   "CASE_DEVANT_LIBRE",
+   "SI_CADENAS_DEVANT",
+   "SI_CAISSE_DEVANT",
+   "SI_CLE_DEVANT",
+   "SI_SUR_CERCLE",
+   "SI_SUR_LOSANGE"
+  ],
+  "conditionBranches": {
+   "CASE_DEVANT_LIBRE": {
+    "true": 17,
+    "false": 2
+   },
+   "SI_CADENAS_DEVANT": {
+    "true": 2,
+    "false": 17
+   },
+   "SI_CAISSE_DEVANT": {
+    "true": 2,
+    "false": 17
+   },
+   "SI_CLE_DEVANT": {
+    "true": 2,
+    "false": 17
+   },
+   "SI_SUR_CERCLE": {
+    "true": 5,
+    "false": 14
+   },
+   "SI_SUR_LOSANGE": {
+    "true": 3,
+    "false": 16
+   }
+  },
+  "conditionsAlwaysTrue": []
+ }
+]
