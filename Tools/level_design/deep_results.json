@@ -1,0 +1,130 @@
+{
+ "RI-068": {
+  "maxBlocks": 8,
+  "siFreeSolutionFound": false,
+  "exhaustive": true,
+  "program": null,
+  "bodiesChecked": 946,
+  "seconds": 0.0
+ },
+ "RI-071": {
+  "maxBlocks": 8,
+  "siFreeSolutionFound": true,
+  "exhaustive": true,
+  "program": {
+   "prefixLength": 0,
+   "body": [
+    "AVANCE",
+    "TOURNE_GAUCHE",
+    "RECULE",
+    "TOURNE_DROITE"
+   ]
+  },
+  "bodiesChecked": 37,
+  "seconds": 0.0
+ },
+ "RI-072": {
+  "maxBlocks": 12,
+  "siFreeSolutionFound": true,
+  "exhaustive": true,
+  "program": {
+   "prefixLength": 0,
+   "body": [
+    "AVANCE",
+    "AVANCE",
+    "TOURNE_GAUCHE",
+    "RECULE",
+    "TOURNE_GAUCHE",
+    "TOURNE_GAUCHE",
+    "AVANCE",
+    "TOURNE_GAUCHE"
+   ]
+  },
+  "bodiesChecked": 58,
+  "seconds": 0.0
+ },
+ "RI-073": {
+  "maxBlocks": 10,
+  "siFreeSolutionFound": true,
+  "exhaustive": true,
+  "program": {
+   "prefixLength": 0,
+   "body": [
+    "AVANCE",
+    "TOURNE_GAUCHE",
+    "TOURNE_GAUCHE",
+    "RAMASSE",
+    "TOURNE_GAUCHE",
+    "UTILISE",
+    "AVANCE",
+    "TOURNE_GAUCHE"
+   ]
+  },
+  "bodiesChecked": 34,
+  "seconds": 0.0
+ },
+ "RI-074": {
+  "maxBlocks": 6,
+  "siFreeSolutionFound": false,
+  "exhaustive": true,
+  "program": null,
+  "bodiesChecked": 216,
+  "seconds": 0.0
+ },
+ "RI-077": {
+  "maxBlocks": 10,
+  "siFreeSolutionFound": false,
+  "exhaustive": true,
+  "program": null,
+  "bodiesChecked": 2796,
+  "seconds": 0.1
+ },
+ "RI-069": {
+  "maxBlocks": 13,
+  "siFreeSolutionFound": false,
+  "exhaustive": true,
+  "program": null,
+  "bodiesChecked": 14662,
+  "seconds": 0.6
+ },
+ "RI-070": {
+  "maxBlocks": 16,
+  "siFreeSolutionFound": false,
+  "exhaustive": true,
+  "program": null,
+  "bodiesChecked": 166545,
+  "seconds": 8.4
+ },
+ "RI-075": {
+  "maxBlocks": 11,
+  "siFreeSolutionFound": false,
+  "exhaustive": true,
+  "program": null,
+  "bodiesChecked": 4461,
+  "seconds": 0.1
+ },
+ "RI-076": {
+  "maxBlocks": 14,
+  "siFreeSolutionFound": false,
+  "exhaustive": true,
+  "program": null,
+  "bodiesChecked": 44380,
+  "seconds": 1.8
+ },
+ "RI-078": {
+  "maxBlocks": 23,
+  "siFreeSolutionFound": false,
+  "exhaustive": true,
+  "program": null,
+  "bodiesChecked": 4113445,
+  "seconds": 291.8
+ },
+ "RI-079": {
+  "maxBlocks": 14,
+  "siFreeSolutionFound": false,
+  "exhaustive": true,
+  "program": null,
+  "bodiesChecked": 42758,
+  "seconds": 1.7
+ }
+}

@@ -370,7 +370,7 @@ public enum LevelPackLoader {
 }
 
 public enum LevelPackChecker {
-    public static let symbols: Set<Character> = Set("gBRLTPOWF^>v<KUADC0123456789")
+    public static let symbols: Set<Character> = Set("gBRLTPOWF^>v<KUADCcl0123456789")
     public static let orientations = ["N": "^", "E": ">", "S": "v", "W": "<"]
     public static let knownCommands: Set<String> = [
         "AVANCE", "RECULE", "TOURNE_GAUCHE", "TOURNE_DROITE",
@@ -563,11 +563,19 @@ public enum LevelPackChecker {
         (0..<7).contains(x) && (0..<7).contains(y)
     }
 
+    private static let allowedSIConditions: Set<String> = [
+        "CASE_DEVANT_LIBRE", "SI_CASE_DEVANT_LIBRE",
+        "OBSTACLE_DEVANT", "SI_OBSTACLE_DEVANT",
+        "SI_SUR_CERCLE", "SI_SUR_LOSANGE",
+        "SI_CLE_DEVANT", "SI_CADENAS_DEVANT", "SI_CAISSE_DEVANT",
+        "OBJET_PRESENT", "PORTE_FERMEE", "INTERRUPTEUR_ACTIVE", "TRANSPORTE_OBJET"
+    ]
+
     private static func reportProgram(_ program: [CatalogInstruction], into issues: inout [LevelPackIssue], levelID: String) {
         for instruction in program {
             switch instruction {
             case .si(let condition, let body):
-                if condition != "CASE_DEVANT_LIBRE", condition != "OBSTACLE_DEVANT" {
+                if !allowedSIConditions.contains(condition) {
                     issues.append(LevelPackIssue(
                         levelID: levelID,
                         rule: "condition SI",

@@ -190,13 +190,27 @@ public enum CatalogInterpreter {
                 frames.append(Frame(instructions: body, position: 0, loop: true))
             case .si(let condition, let body):
                 let (dx, dy) = headings[machine.direction]
-                let aheadSafe = safe(machine.x + dx, machine.y + dy)
+                let aheadX = machine.x + dx
+                let aheadY = machine.y + dy
+                let ahead = CellPoint(x: aheadX, y: aheadY)
+                let aheadSafe = safe(aheadX, aheadY)
+                let hereTile = tile(machine.x, machine.y)
                 let passes: Bool
                 switch condition {
-                case "CASE_DEVANT_LIBRE":
+                case "CASE_DEVANT_LIBRE", "SI_CASE_DEVANT_LIBRE":
                     passes = aheadSafe
-                case "OBSTACLE_DEVANT":
+                case "OBSTACLE_DEVANT", "SI_OBSTACLE_DEVANT":
                     passes = !aheadSafe
+                case "SI_SUR_CERCLE":
+                    passes = hereTile == "c"
+                case "SI_SUR_LOSANGE":
+                    passes = hereTile == "l"
+                case "SI_CLE_DEVANT":
+                    passes = keys.contains(ahead) && machine.remainingKeys.contains(ahead)
+                case "SI_CADENAS_DEVANT":
+                    passes = locks.contains(ahead) && !machine.openLocks.contains(ahead)
+                case "SI_CAISSE_DEVANT":
+                    passes = machine.crates.contains(ahead)
                 default:
                     return CatalogRun(actions: actions, result: .unsupportedCondition(condition))
                 }

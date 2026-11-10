@@ -99,6 +99,11 @@ enum PlayerCopy {
         case .doorClosed: return "porte fermée"
         case .switchActivated: return "interrupteur activé"
         case .carryingItem: return "transporte un objet"
+        case .onCircle: return "sur un cercle"
+        case .onDiamond: return "sur un losange"
+        case .keyAhead: return "clé devant"
+        case .lockAhead: return "cadenas devant"
+        case .crateAhead: return "caisse devant"
         }
     }
 

@@ -233,7 +233,21 @@ public enum CatalogCampaign {
         case "P": return .spikes
         case "O": return .stone
         case "W": return .water
+        case "c": return .markerCircle
+        case "l": return .markerDiamond
         default: return .floor
+        }
+    }
+
+    /// Normalise les libellés du pack (préfixe `SI_`) vers `ConditionType`.
+    public static func mapCondition(_ raw: String) -> ConditionType? {
+        switch raw {
+        case "OBSTACLE_DEVANT", "SI_OBSTACLE_DEVANT":
+            return .obstacleAhead
+        case "CASE_DEVANT_LIBRE", "SI_CASE_DEVANT_LIBRE":
+            return .cellAheadFree
+        default:
+            return ConditionType(rawValue: raw)
         }
     }
 
@@ -277,7 +291,7 @@ public enum CatalogCampaign {
         case .si(let condition, let body):
             return Instruction(
                 command: .ifBlock,
-                condition: ConditionType(rawValue: condition) ?? .cellAheadFree,
+                condition: mapCondition(condition) ?? .cellAheadFree,
                 children: body.map(instruction)
             )
         }

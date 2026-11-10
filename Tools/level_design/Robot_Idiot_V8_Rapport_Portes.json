@@ -1,0 +1,17 @@
+{
+  "source": "robot_idiot_100_levels_v7.json",
+  "output": "robot_idiot_100_levels_v8_doors.json",
+  "replacementTile": {
+    "char": "O",
+    "type": "BoardStone"
+  },
+  "levelsAudited": 100,
+  "doorsFound": 68,
+  "platesFound": 68,
+  "linkedDoors": 68,
+  "replacedDoors": [],
+  "levelsModified": [],
+  "orphanPlates": [],
+  "staleLinksRemoved": [],
+  "requiresSolutionRevalidation": false
+}

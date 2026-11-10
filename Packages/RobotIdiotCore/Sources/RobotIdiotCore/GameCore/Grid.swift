@@ -10,11 +10,15 @@ public enum TerrainType: String, Codable, Hashable, Sendable {
     case spikes
     case stone
     case water
+    /// Balise traversable (cercle) pour les conditions `SI_SUR_CERCLE`.
+    case markerCircle
+    /// Balise traversable (losange) pour les conditions `SI_SUR_LOSANGE`.
+    case markerDiamond
 
     /// Mur, buisson et autres obstacles solides : le robot reste sur sa case.
     public var blocksMovement: Bool {
         switch self {
-        case .floor, .spikes, .lava, .water:
+        case .floor, .spikes, .lava, .water, .markerCircle, .markerDiamond:
             return false
         case .wall, .bush, .cracked, .shutter, .stone:
             return true

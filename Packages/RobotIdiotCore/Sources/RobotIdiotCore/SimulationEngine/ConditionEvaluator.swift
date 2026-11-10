@@ -18,6 +18,18 @@ public enum ConditionEvaluator {
             return (here + ahead).contains { $0.kind == MechanismKind.plate && $0.isActive }
         case .carryingItem:
             return !game.robot.inventory.isEmpty
+        case .onCircle:
+            return game.grid.cell(at: game.robot.position)?.terrain == .markerCircle
+        case .onDiamond:
+            return game.grid.cell(at: game.robot.position)?.terrain == .markerDiamond
+        case .keyAhead:
+            return cellAhead(game)?.objects.contains { $0.kind == ObjectKind.key } == true
+        case .lockAhead:
+            // Cadenas `U` : porte sans linkId. Les portes à plaque gardent un `link`.
+            guard let door = mechanismAhead(game, kind: MechanismKind.door) else { return false }
+            return !door.isActive && door.link == nil
+        case .crateAhead:
+            return cellAhead(game)?.containsCrate == true
         }
     }
 
