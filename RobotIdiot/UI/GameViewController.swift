@@ -33,8 +33,11 @@ final class GameViewController: UIViewController {
     private let overlay = ResultOverlayView()
     private let errorAlert = ExecutionAlertView()
     private let commandIntro = CommandIntroAlertView()
+    private let storyBeat = StoryBeatAlertView()
     private let helpAlert = HelpAlertView()
     private let helpCommandsAlert = HelpCommandsAlertView()
+    private var pendingStoryEpilogue = false
+    private var afterStoryAction: (() -> Void)?
 
     private let runButton = AppTheme.filledButton(title: "Exécuter", systemImage: "play.fill", prominent: true)
 
@@ -110,7 +113,7 @@ final class GameViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        presentCommandIntroIfNeeded()
+        presentPendingNarrativeIfNeeded()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -348,7 +351,7 @@ final class GameViewController: UIViewController {
             self?.restoreRobot()
         }
         overlay.onExit = { [weak self] in
-            self?.navigationController?.popViewController(animated: true)
+            self?.leaveAfterVictory()
         }
         overlay.onNext = { [weak self] in
             guard let self else { return }
@@ -370,6 +373,10 @@ final class GameViewController: UIViewController {
         commandIntro.onFinished = { [weak self] in
             self?.hideFullscreenOverlay(self?.commandIntro)
         }
+        storyBeat.isHidden = true
+        storyBeat.onFinished = { [weak self] in
+            self?.finishStoryBeat()
+        }
         helpAlert.isHidden = true
         helpAlert.onClose = { [weak self] in
             self?.hideFullscreenOverlay(self?.helpAlert)
@@ -387,7 +394,7 @@ final class GameViewController: UIViewController {
         [boardSlot, boardFrame, worldTitleLabel, levelTitleLabel, sheet, sheetGrabber, sheetHandle, chromeRow, editor, runButton, speedToggle].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
-        [overlay, errorAlert, commandIntro, helpAlert, helpCommandsAlert].forEach {
+        [overlay, errorAlert, commandIntro, storyBeat, helpAlert, helpCommandsAlert].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             $0.isHidden = true
         }
@@ -406,7 +413,7 @@ final class GameViewController: UIViewController {
     }
 
     private var fullscreenOverlays: [UIView] {
-        [overlay, errorAlert, commandIntro, helpAlert, helpCommandsAlert]
+        [overlay, errorAlert, commandIntro, storyBeat, helpAlert, helpCommandsAlert]
     }
 
     private func showFullscreenOverlay(_ alert: UIView) {
@@ -840,8 +847,23 @@ final class GameViewController: UIViewController {
         boardScene.applyMotionPreference()
     }
 
+    private func presentPendingNarrativeIfNeeded() {
+        guard presentedViewController == nil else { return }
+        guard overlay.isHidden, errorAlert.isHidden, storyBeat.isHidden, commandIntro.isHidden else { return }
+        if let campaign,
+           let chapter = RobotStory.enteringWorld(campaign.world),
+           !PlaySettings.hasSeenStory(chapter.id) {
+            afterStoryAction = { [weak self] in
+                self?.presentCommandIntroIfNeeded()
+            }
+            presentStory(chapter)
+            return
+        }
+        presentCommandIntroIfNeeded()
+    }
+
     private func presentCommandIntroIfNeeded() {
-        guard presentedViewController == nil, commandIntro.isHidden else { return }
+        guard presentedViewController == nil, commandIntro.isHidden, storyBeat.isHidden else { return }
         let taught = commandsTaughtBeforeThisLevel()
         var seen = Set<CommandType>()
         let fresh = level.allowedCommands.filter { command in
@@ -851,6 +873,33 @@ final class GameViewController: UIViewController {
         guard !fresh.isEmpty else { return }
         commandIntro.present(commands: fresh)
         showFullscreenOverlay(commandIntro)
+    }
+
+    private func presentStory(_ chapter: RobotStory.Chapter) {
+        storyBeat.present(chapter)
+        showFullscreenOverlay(storyBeat)
+        Soundscape.shared.play("ui")
+    }
+
+    private func finishStoryBeat() {
+        hideFullscreenOverlay(storyBeat)
+        let action = afterStoryAction
+        afterStoryAction = nil
+        action?()
+    }
+
+    private func leaveAfterVictory() {
+        navigationController?.setNavigationBarHidden(false, animated: true)
+        hideFullscreenOverlay(overlay)
+        if pendingStoryEpilogue, !PlaySettings.hasSeenStory(RobotStory.epilogueID) {
+            pendingStoryEpilogue = false
+            afterStoryAction = { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            }
+            presentStory(RobotStory.epilogue)
+            return
+        }
+        navigationController?.popViewController(animated: true)
     }
 
     /// Commandes déjà présentes dans un niveau de campagne plus ancien.
@@ -1079,8 +1128,14 @@ final class GameViewController: UIViewController {
         )
         if let campaign {
             CampaignStore.shared.record(score, at: campaign)
+            let finishedCampaignArc = campaign.world == CatalogCampaign.worldCount
+                && campaign.level == CatalogCampaign.levelsPerWorld
+            pendingStoryEpilogue = finishedCampaignArc && !PlaySettings.hasSeenStory(RobotStory.epilogueID)
+        } else {
+            pendingStoryEpilogue = false
         }
         var boltsGained = 0
+        var worldBonusBolts = 0
         var showBoltRecap = false
         if let daily {
             switch daily.kind {
@@ -1094,16 +1149,29 @@ final class GameViewController: UIViewController {
                 }
             }
         } else {
+            // Les étoiles ne rapportent plus d'écrous : seul le collectible de plateau compte ici.
             boltsGained = BoltWallet.shared.creditVictory(
                 levelID: level.id,
                 collected: engine.state.game.collectedThisAttempt
             )
+            if let campaign,
+               CampaignRules.isPerfectWorld(
+                   campaign.world,
+                   progress: CampaignStore.shared.progress(),
+                   layout: CatalogCampaign.layout
+               ) {
+                worldBonusBolts = BoltWallet.shared.creditPerfectWorld(campaign.world)
+                boltsGained += worldBonusBolts
+            }
             showBoltRecap = boltsGained > 0 || bonusCollected
         }
         let exitTitle = daily != nil ? "Retour" : (campaign != nil ? "Carte du monde" : "Retour")
         var note = PlayerCopy.improvement(rating: rating, rules: rules, bonusCollected: bonusCollected)
         if let daily, daily.kind == .bug, !editor.hasModifiedFromBaseline {
             note = "Modifie une commande avant de rejouer pour gagner la récompense."
+        } else if worldBonusBolts > 0 {
+            let worldNote = "Monde parfait ! +\(worldBonusBolts) écrous."
+            note = note.isEmpty ? worldNote : "\(worldNote) \(note)"
         } else if boltsGained > 0 {
             let boltNote = boltsGained == 1 ? "+1 écrou !" : "+\(boltsGained) écrous !"
             note = note.isEmpty ? boltNote : "\(boltNote) \(note)"
@@ -1129,6 +1197,7 @@ final class GameViewController: UIViewController {
         refreshBoltBadge(animated: boltsGained > 0)
         hideFullscreenOverlay(errorAlert)
         hideFullscreenOverlay(commandIntro)
+        hideFullscreenOverlay(storyBeat)
         hideFullscreenOverlay(helpAlert)
         hideFullscreenOverlay(helpCommandsAlert)
         navigationController?.setNavigationBarHidden(true, animated: true)
@@ -1306,22 +1375,42 @@ final class GameViewController: UIViewController {
 
     private func openNextCampaignLevel() {
         guard let campaign, !isOpeningNext else { return }
-        isOpeningNext = true
         let address = CampaignRules.nextAddress(after: campaign, layout: CatalogCampaign.layout)
-        guard CatalogCampaign.level(at: address) != nil else { return }
-        CampaignStore.shared.materialize(address) { [weak self] level in
-            guard let self, let navigation = self.navigationController else { return }
-            var stack = navigation.viewControllers
-            guard stack.last === self else { return }
-            stack.removeLast()
-            if address.world != campaign.world,
-               let index = stack.lastIndex(where: { $0 is WorldLevelsViewController }) {
-                stack.remove(at: index)
-                stack.append(WorldLevelsViewController(world: address.world))
-            }
-            stack.append(GameViewController(level: level, campaign: address))
-            navigation.setViewControllers(stack, animated: true)
+        guard CatalogCampaign.level(at: address) != nil else {
+            // Pas de niveau suivant pour l'instant : l'épilogue (si besoin) puis retour carte.
+            leaveAfterVictory()
+            return
         }
+        let crossingWorld = address.world != campaign.world
+        let proceed: () -> Void = { [weak self] in
+            guard let self else { return }
+            self.isOpeningNext = true
+            self.navigationController?.setNavigationBarHidden(false, animated: true)
+            self.hideFullscreenOverlay(self.overlay)
+            CampaignStore.shared.materialize(address) { [weak self] level in
+                guard let self, let navigation = self.navigationController else { return }
+                var stack = navigation.viewControllers
+                guard stack.last === self else { return }
+                stack.removeLast()
+                if crossingWorld,
+                   let index = stack.lastIndex(where: { $0 is WorldLevelsViewController }) {
+                    stack.remove(at: index)
+                    stack.append(WorldLevelsViewController(world: address.world))
+                }
+                stack.append(GameViewController(level: level, campaign: address))
+                navigation.setViewControllers(stack, animated: true)
+            }
+        }
+        if crossingWorld,
+           let chapter = RobotStory.enteringWorld(address.world),
+           !PlaySettings.hasSeenStory(chapter.id) {
+            navigationController?.setNavigationBarHidden(false, animated: true)
+            hideFullscreenOverlay(overlay)
+            afterStoryAction = proceed
+            presentStory(chapter)
+            return
+        }
+        proceed()
     }
 
     private func openAnotherGeneratedLevel() {

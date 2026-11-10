@@ -90,10 +90,29 @@ enum PlaySettings {
         UserDefaults.standard.removeObject(forKey: introducedCommandsKey)
     }
 
+    static func hasSeenStory(_ id: String) -> Bool {
+        seenStoryBeats.contains(id)
+    }
+
+    static func markStorySeen(_ id: String) {
+        var known = seenStoryBeats
+        known.insert(id)
+        UserDefaults.standard.set(known.sorted(), forKey: seenStoryBeatsKey)
+    }
+
+    static func resetSeenStories() {
+        UserDefaults.standard.removeObject(forKey: seenStoryBeatsKey)
+    }
+
     private static let introducedCommandsKey = "robotidiot.introducedCommands"
+    private static let seenStoryBeatsKey = "robotidiot.seenStoryBeats"
 
     private static var introducedCommands: Set<String> {
         Set(UserDefaults.standard.stringArray(forKey: introducedCommandsKey) ?? [])
+    }
+
+    private static var seenStoryBeats: Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: seenStoryBeatsKey) ?? [])
     }
 
     static var prefersReducedMotion: Bool {

@@ -128,4 +128,20 @@ public enum CampaignRules {
             record.address.world == world ? partial + record.score.stars : partial
         }
     }
+
+    /// Tous les niveaux du monde sont validés avec exactement 3 étoiles.
+    public static func isPerfectWorld(
+        _ world: Int,
+        progress: CampaignProgress,
+        layout: CampaignLayout = .standard
+    ) -> Bool {
+        guard world >= 1 else { return false }
+        for level in 1...layout.levelCount {
+            guard let score = progress.score(at: LevelAddress(world: world, level: level)),
+                  score.stars >= 3 else {
+                return false
+            }
+        }
+        return true
+    }
 }
