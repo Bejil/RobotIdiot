@@ -48,6 +48,12 @@ enum PlaySettings {
         set { write(newValue, key: "robotidiot.reduceMotion") }
     }
 
+    /// Mode gaucher : palette de commandes à gauche sur iPhone.
+    static var leftHandedMode: Bool {
+        get { stored("robotidiot.leftHandedMode", default: false) }
+        set { write(newValue, key: "robotidiot.leftHandedMode") }
+    }
+
     static var scale: InterfaceScale {
         get { InterfaceScale(rawValue: UserDefaults.standard.string(forKey: "robotidiot.scale") ?? "") ?? .system }
         set {

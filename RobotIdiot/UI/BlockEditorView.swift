@@ -23,8 +23,18 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     private let gutterView = UITextView()
     private let textView = UITextView()
     private let programColumn = UIStackView()
+    private let workspace = UIStackView()
     private let actionsSpacer = UIView()
     private var actionsSpacerHeight: NSLayoutConstraint?
+    private var paletteWidthConstraint: NSLayoutConstraint?
+    private var paletteTopConstraint: NSLayoutConstraint?
+    private var paletteBottomConstraint: NSLayoutConstraint?
+    private var paletteDetached = false
+    private var paletteFillsHeight = false
+    /// Nombre max de boutons palette (référence pour répartir la hauteur).
+    static let maxPaletteCommandCount = 10
+    static let paletteFillSpacing: CGFloat = 6
+    private static let palettePlaceholderTag = -9001
 
     private var undoStack: [Program] = []
     private var redoStack: [Program] = []
@@ -267,17 +277,19 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         programColumn.addArrangedSubview(banner)
         programColumn.addArrangedSubview(actionsSpacer)
 
-        let workspace = UIStackView(arrangedSubviews: [paletteScroll, programColumn])
         workspace.axis = .horizontal
         workspace.spacing = 16
         workspace.alignment = .fill
         workspace.translatesAutoresizingMaskIntoConstraints = false
+        workspace.addArrangedSubview(paletteScroll)
+        workspace.addArrangedSubview(programColumn)
         addSubview(workspace)
 
         banner.setContentHuggingPriority(.required, for: .vertical)
         actionsSpacer.setContentHuggingPriority(.required, for: .vertical)
         actionsSpacer.setContentCompressionResistancePriority(.required, for: .vertical)
         paletteScroll.backgroundColor = .clear
+        paletteScroll.translatesAutoresizingMaskIntoConstraints = false
         paletteScroll.setContentHuggingPriority(.init(1), for: .vertical)
         paletteScroll.setContentCompressionResistancePriority(.init(1), for: .vertical)
         paletteScroll.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -286,6 +298,13 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         tableView.setContentCompressionResistancePriority(.init(1), for: .vertical)
         textRow.setContentHuggingPriority(.init(1), for: .vertical)
         textRow.setContentCompressionResistancePriority(.init(1), for: .vertical)
+
+        let paletteWidth = paletteScroll.widthAnchor.constraint(equalToConstant: 56)
+        paletteWidthConstraint = paletteWidth
+        let paletteTop = palette.topAnchor.constraint(equalTo: paletteScroll.contentLayoutGuide.topAnchor)
+        let paletteBottom = palette.bottomAnchor.constraint(equalTo: paletteScroll.contentLayoutGuide.bottomAnchor)
+        paletteTopConstraint = paletteTop
+        paletteBottomConstraint = paletteBottom
 
         NSLayoutConstraint.activate([
             workspace.topAnchor.constraint(equalTo: topAnchor),
@@ -296,9 +315,9 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
             bannerLabel.leadingAnchor.constraint(equalTo: banner.leadingAnchor, constant: 12),
             bannerLabel.trailingAnchor.constraint(equalTo: banner.trailingAnchor, constant: -12),
             bannerLabel.bottomAnchor.constraint(equalTo: banner.bottomAnchor, constant: -10),
-            paletteScroll.widthAnchor.constraint(equalToConstant: 56),
-            palette.topAnchor.constraint(equalTo: paletteScroll.contentLayoutGuide.topAnchor),
-            palette.bottomAnchor.constraint(equalTo: paletteScroll.contentLayoutGuide.bottomAnchor),
+            paletteWidth,
+            paletteTop,
+            paletteBottom,
             palette.leadingAnchor.constraint(equalTo: paletteScroll.contentLayoutGuide.leadingAnchor),
             palette.trailingAnchor.constraint(equalTo: paletteScroll.contentLayoutGuide.trailingAnchor),
             palette.widthAnchor.constraint(equalTo: paletteScroll.frameLayoutGuide.widthAnchor),
@@ -310,6 +329,165 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         rebuildPalette()
         refreshHint()
         refreshChrome()
+    }
+
+    /// Vue palette détachable (layout iPhone : colonne pleine hauteur hors de l'éditeur).
+    var detachedPaletteView: UIView { paletteScroll }
+
+    /// Si vrai, la palette n'est plus dans l'éditeur : l'hôte doit l'afficher ailleurs.
+    func setPaletteDetached(_ detached: Bool) {
+        guard paletteDetached != detached else { return }
+        paletteDetached = detached
+        if detached {
+            workspace.removeArrangedSubview(paletteScroll)
+            paletteScroll.removeFromSuperview()
+            workspace.spacing = 0
+            paletteWidthConstraint?.isActive = false
+        } else {
+            if paletteScroll.superview !== workspace {
+                workspace.insertArrangedSubview(paletteScroll, at: 0)
+            }
+            workspace.spacing = 16
+            paletteWidthConstraint?.isActive = true
+            setPaletteFillsHeight(false)
+        }
+        applyPaletteFillMode()
+    }
+
+    /// Répartit les boutons sur toute la hauteur (iPhone).
+    func setPaletteFillsHeight(_ fills: Bool) {
+        paletteFillsHeight = fills
+        syncPalettePlaceholders()
+        applyPaletteFillMode()
+        refreshPaletteButtonSizing()
+    }
+
+    /// À appeler après un layout pour recalculer la hauteur des boutons.
+    func refreshDetachedPaletteLayout() {
+        guard paletteDetached, paletteFillsHeight else { return }
+        syncPalettePlaceholders()
+        refreshPaletteButtonSizing()
+    }
+
+    private func applyPaletteFillMode() {
+        let fills = paletteDetached && paletteFillsHeight
+        palette.spacing = fills ? Self.paletteFillSpacing : 8
+        // Avec placeholders jusqu'au max, la colonne est toujours pleine.
+        palette.distribution = fills ? .fillEqually : .fill
+        palette.alignment = .fill
+        paletteScroll.isScrollEnabled = !fills
+        paletteScroll.alwaysBounceVertical = !fills
+        paletteScroll.showsVerticalScrollIndicator = !fills
+
+        paletteTopConstraint?.isActive = false
+        paletteBottomConstraint?.isActive = false
+        if fills {
+            let top = palette.topAnchor.constraint(equalTo: paletteScroll.frameLayoutGuide.topAnchor)
+            let bottom = palette.bottomAnchor.constraint(equalTo: paletteScroll.frameLayoutGuide.bottomAnchor)
+            paletteTopConstraint = top
+            paletteBottomConstraint = bottom
+            NSLayoutConstraint.activate([top, bottom])
+        } else {
+            let top = palette.topAnchor.constraint(equalTo: paletteScroll.contentLayoutGuide.topAnchor)
+            let bottom = palette.bottomAnchor.constraint(equalTo: paletteScroll.contentLayoutGuide.bottomAnchor)
+            paletteTopConstraint = top
+            paletteBottomConstraint = bottom
+            NSLayoutConstraint.activate([top, bottom])
+        }
+    }
+
+    /// Complète la palette iPhone avec des slots vides jusqu'au max.
+    private func syncPalettePlaceholders() {
+        for view in palette.arrangedSubviews where view.tag == Self.palettePlaceholderTag {
+            palette.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+        guard paletteDetached, paletteFillsHeight, modeControl.selectedSegmentIndex == 0 else { return }
+        let missing = Self.maxPaletteCommandCount - palette.arrangedSubviews.count
+        guard missing > 0 else { return }
+        for _ in 0..<missing {
+            palette.addArrangedSubview(palettePlaceholder())
+        }
+    }
+
+    private func palettePlaceholder() -> UIView {
+        let slot = PalettePlaceholderSlot()
+        slot.tag = Self.palettePlaceholderTag
+        return slot
+    }
+
+    private func refreshPaletteButtonSizing() {
+        let fills = paletteDetached && paletteFillsHeight
+        let available = paletteScroll.bounds.height
+        let visibleCount = max(palette.arrangedSubviews.count, 1)
+        let spacing = fills ? Self.paletteFillSpacing : 8
+        let computedHeight: CGFloat
+        if fills, available > 1 {
+            let gaps = CGFloat(max(visibleCount - 1, 0)) * spacing
+            computedHeight = max(32, (available - gaps) / CGFloat(visibleCount))
+        } else {
+            computedHeight = 48
+        }
+
+        applyPaletteFillMode()
+
+        for view in palette.arrangedSubviews {
+            if view.tag == Self.palettePlaceholderTag {
+                view.constraints
+                    .filter { ($0.firstAttribute == .width || $0.firstAttribute == .height) && $0.firstItem as? UIView === view }
+                    .forEach { view.removeConstraint($0) }
+                if fills {
+                    view.setContentHuggingPriority(.defaultLow, for: .vertical)
+                    view.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+                    if let slot = view as? PalettePlaceholderSlot {
+                        slot.cornerRadius = min(16, max(10, computedHeight * 0.22))
+                    }
+                }
+                continue
+            }
+            guard let button = view as? UIButton else { continue }
+            button.constraints
+                .filter { ($0.firstAttribute == .width || $0.firstAttribute == .height) && $0.firstItem as? UIView === button }
+                .forEach { button.removeConstraint($0) }
+            if fills {
+                button.setContentHuggingPriority(.defaultLow, for: .vertical)
+                button.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+            } else {
+                button.widthAnchor.constraint(equalToConstant: 56).isActive = true
+                button.heightAnchor.constraint(equalToConstant: computedHeight).isActive = true
+                button.setContentHuggingPriority(.required, for: .vertical)
+                button.setContentCompressionResistancePriority(.required, for: .vertical)
+            }
+
+            guard fills, var configuration = button.configuration else { continue }
+            let iconSide = min(30, max(16, computedHeight * 0.36))
+            if CommandType.allCases.indices.contains(button.tag) {
+                let command = CommandType.allCases[button.tag]
+                configuration.image = GameArt.fitted(GameArt.commandIcon(command), side: iconSide)
+            }
+            configuration.imagePadding = max(1, computedHeight * 0.05)
+            let verticalInset = max(2, computedHeight * 0.07)
+            configuration.contentInsets = NSDirectionalEdgeInsets(
+                top: verticalInset,
+                leading: 2,
+                bottom: verticalInset,
+                trailing: 2
+            )
+            configuration.background.cornerRadius = min(16, max(10, computedHeight * 0.22))
+            let fontSize = min(12, max(8, computedHeight * 0.13))
+            let ink = configuration.baseForegroundColor
+            configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+                var outgoing = incoming
+                outgoing.font = AppTheme.font(fontSize, .heavy, textStyle: .caption2)
+                if let ink { outgoing.foregroundColor = ink }
+                return outgoing
+            }
+            button.configuration = configuration
+        }
+        if fills {
+            palette.setNeedsLayout()
+            paletteScroll.layoutIfNeeded()
+        }
     }
 
     /// Réserve sous le programme la place pour Exécuter / vitesse (sans agrandir le fond gris).
@@ -325,9 +503,11 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     }
 
     private var paletteCommands: [CommandType] {
+        // Ordre de découverte campagne : déplacements, puis objets, puis boucles/conditions.
         let preferred: [CommandType] = [
-            .moveForward, .turnLeft, .turnRight, .forever, .ifBlock, .moveBackward,
-            .pickUp, .use, .push, .activate
+            .moveForward, .turnLeft, .turnRight, .moveBackward,
+            .pickUp, .use, .push, .activate,
+            .forever, .ifBlock
         ]
         return preferred.filter { allowed.contains($0) }
     }
@@ -349,12 +529,15 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
                 let button = completionButton(item, index: index)
                 palette.addArrangedSubview(button)
             }
+            refreshPaletteButtonSizing()
             return
         }
         suggestionItems = []
         for command in paletteCommands {
             palette.addArrangedSubview(paletteButton(command))
         }
+        syncPalettePlaceholders()
+        refreshPaletteButtonSizing()
     }
 
     private func paletteButton(_ command: CommandType) -> UIButton {
@@ -367,8 +550,6 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         button.tag = CommandType.allCases.firstIndex(of: command) ?? 0
         button.accessibilityLabel = PlayerCopy.commandTitle(command)
         button.addTarget(self, action: #selector(addCommand(_:)), for: .touchUpInside)
-        button.widthAnchor.constraint(equalToConstant: 56).isActive = true
-        button.heightAnchor.constraint(equalToConstant: 48).isActive = true
         let ink = CommandChrome.paletteInk(command)
         if var configuration = button.configuration {
             let colors = CommandChrome.badgeColors(command)
@@ -1132,6 +1313,61 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard scrollView === textView else { return }
         gutterView.contentOffset = CGPoint(x: 0, y: textView.contentOffset.y)
+    }
+}
+
+/// Slot fantôme discret : fond arrondi quasi transparent + bordure en pointillés.
+private final class PalettePlaceholderSlot: UIView {
+    private let dash = CAShapeLayer()
+    private let mark = UIImageView()
+
+    var cornerRadius: CGFloat = 14 {
+        didSet {
+            layer.cornerRadius = cornerRadius
+            setNeedsLayout()
+        }
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        isAccessibilityElement = false
+        backgroundColor = UIColor.white.withAlphaComponent(0.08)
+        layer.cornerRadius = cornerRadius
+        layer.cornerCurve = .continuous
+        clipsToBounds = true
+
+        dash.fillColor = UIColor.clear.cgColor
+        dash.strokeColor = UIColor(hex: 0x98A2B3).withAlphaComponent(0.35).cgColor
+        dash.lineWidth = 1.25
+        dash.lineDashPattern = [4, 3]
+        dash.lineCap = .round
+        layer.addSublayer(dash)
+
+        mark.image = UIImage(
+            systemName: "lock.fill",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
+        )
+        mark.tintColor = UIColor(hex: 0x98A2B3).withAlphaComponent(0.45)
+        mark.contentMode = .scaleAspectFit
+        mark.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(mark)
+        NSLayoutConstraint.activate([
+            mark.centerXAnchor.constraint(equalTo: centerXAnchor),
+            mark.centerYAnchor.constraint(equalTo: centerYAnchor),
+            mark.widthAnchor.constraint(equalToConstant: 13),
+            mark.heightAnchor.constraint(equalToConstant: 13)
+        ])
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let inset = dash.lineWidth / 2
+        let rect = bounds.insetBy(dx: inset, dy: inset)
+        dash.path = UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius).cgPath
+        dash.frame = bounds
     }
 }
 
