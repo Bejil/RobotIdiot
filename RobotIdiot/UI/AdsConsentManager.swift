@@ -2,6 +2,7 @@ import UIKit
 import UserMessagingPlatform
 
 /// Collecte le consentement UMP avant toute requête AdMob.
+/// Pas d’ATT : l’app ne fait pas de suivi cross-app (pubs non personnalisées côté IDFA).
 @MainActor
 final class AdsConsentManager {
     static let shared = AdsConsentManager()
