@@ -1,6 +1,6 @@
 import Foundation
 
-/// Chapitres narratifs du robot : une entrée par monde, plus un épilogue après le monde 10.
+/// Chapitres narratifs du robot : une entrée par monde, plus un épilogue après le monde 15.
 enum RobotStory {
     struct Page {
         /// Phrase dite par le robot.
@@ -27,7 +27,7 @@ enum RobotStory {
             ribbon: "Fin du récit",
             pages: [
                 Page(
-                    line: "Voilà. Dix mondes, une mémoire presque complète, et une batterie qui tient enfin debout toute seule.",
+                    line: "Voilà. Quinze mondes, une mémoire presque complète, et une batterie qui tient enfin debout toute seule.",
                     aside: nil
                 ),
                 Page(
@@ -210,7 +210,7 @@ enum RobotStory {
             ribbon: "Chapitre 10 · Nom propre",
             pages: [
                 Page(
-                    line: "Dernier monde de cette histoire. Ma mémoire est presque entière. Il me manque seulement la fin — celle que je choisirai.",
+                    line: "Ma mémoire est presque entière. Il me manque seulement la suite — celle que je choisirai, au-delà de ces dix premiers mondes.",
                     aside: nil
                 ),
                 Page(
@@ -218,8 +218,78 @@ enum RobotStory {
                     aside: nil
                 ),
                 Page(
-                    line: "Aide-moi à franchir ces dernières grilles. Après, je ne te raconterai plus mon passé. Je te montrerai ce que je suis devenu.",
+                    line: "Aide-moi à franchir ces grilles. Ensuite, d’autres ruines m’attendent — plus vastes, plus étranges. On y va ensemble.",
                     aside: "Monde 10"
+                )
+            ]
+        ),
+        11: Chapter(
+            id: "enter-world-11",
+            ribbon: "Chapitre 11 · Ruines",
+            pages: [
+                Page(
+                    line: "Les dalles sont plus larges. Huit cases. Comme si quelqu’un avait étiré le monde pour y cacher d’anciennes portes.",
+                    aside: nil
+                ),
+                Page(
+                    line: "Chaque bouton ouvre un passage. Chaque clé, une serrure. Rien de nouveau… sauf l’espace. Et le silence qui va avec.",
+                    aside: "Ruines dimensionnelles"
+                )
+            ]
+        ),
+        12: Chapter(
+            id: "enter-world-12",
+            ribbon: "Chapitre 12 · Grottes",
+            pages: [
+                Page(
+                    line: "On dit « obscures », mais je vois tout. Les cristaux font le travail des torches — sans torches. Tant mieux : je n’aime pas le noir.",
+                    aside: nil
+                ),
+                Page(
+                    line: "Les couloirs se croisent. Les objets aussi. Je compte mes pas, tu comptes mes blocs. On s’en sortira.",
+                    aside: "Grottes obscures"
+                )
+            ]
+        ),
+        13: Chapter(
+            id: "enter-world-13",
+            ribbon: "Chapitre 13 · Sanctuaire",
+            pages: [
+                Page(
+                    line: "Ici, les couleurs ont un poids. Deux portes, une serrure, des caisses. Comme un rituel mécanique.",
+                    aside: nil
+                ),
+                Page(
+                    line: "Si j’empile mal l’ordre des gestes, tout se fige. Si je les aligne, le sanctuaire s’ouvre. Simple. Exigeant.",
+                    aside: "Sanctuaire chromatique"
+                )
+            ]
+        ),
+        14: Chapter(
+            id: "enter-world-14",
+            ribbon: "Chapitre 14 · Fracture",
+            pages: [
+                Page(
+                    line: "Le labyrinthe est cassé en îlots. Deux portes, deux serrures. Chaque fragment a sa logique — et aucune pitié.",
+                    aside: nil
+                ),
+                Page(
+                    line: "Je pousse, j’active, j’utilise. Tu programmes. Entre nous, le plateau tient encore.",
+                    aside: "Labyrinthe fracturé"
+                )
+            ]
+        ),
+        15: Chapter(
+            id: "enter-world-15",
+            ribbon: "Chapitre 15 · Noyau",
+            pages: [
+                Page(
+                    line: "Le centre. Trois portes, deux serrures, des caisses. Tout ce que j’ai appris tient dans ces huit par huit.",
+                    aside: nil
+                ),
+                Page(
+                    line: "Si on franchit ça, ce n’est plus un prototype qui survit. C’est un robot qui a fini sa première vraie histoire.",
+                    aside: "Noyau central"
                 )
             ]
         )

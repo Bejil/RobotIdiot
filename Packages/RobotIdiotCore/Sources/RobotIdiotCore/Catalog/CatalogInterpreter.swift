@@ -33,7 +33,11 @@ public enum CatalogInterpreter {
     ) -> CatalogRun {
         let source = program ?? level.solution.program
         let grid = level.cells
-        guard grid.count == 7, grid.allSatisfy({ $0.count == 7 }) else {
+        let width = level.width
+        let height = level.height
+        guard width > 0, height > 0,
+              grid.count == height,
+              grid.allSatisfy({ $0.count == width }) else {
             return CatalogRun(actions: 0, result: .invalidCommand("grille"))
         }
         guard let direction = ["N": 0, "E": 1, "S": 2, "W": 3][level.start.orientation] else {
@@ -84,7 +88,7 @@ public enum CatalogInterpreter {
         let allowed = Set(level.unlockedCommands)
 
         func tile(_ x: Int, _ y: Int) -> Character {
-            guard (0..<7).contains(x), (0..<7).contains(y) else { return "#" }
+            guard (0..<width).contains(x), (0..<height).contains(y) else { return "#" }
             return grid[y][x]
         }
         func isLethal(_ x: Int, _ y: Int) -> Bool {
@@ -194,17 +198,12 @@ public enum CatalogInterpreter {
                 let aheadY = machine.y + dy
                 let ahead = CellPoint(x: aheadX, y: aheadY)
                 let aheadSafe = safe(aheadX, aheadY)
-                let hereTile = tile(machine.x, machine.y)
                 let passes: Bool
                 switch condition {
                 case "CASE_DEVANT_LIBRE", "SI_CASE_DEVANT_LIBRE":
                     passes = aheadSafe
                 case "OBSTACLE_DEVANT", "SI_OBSTACLE_DEVANT":
                     passes = !aheadSafe
-                case "SI_SUR_CERCLE":
-                    passes = hereTile == "c"
-                case "SI_SUR_LOSANGE":
-                    passes = hereTile == "l"
                 case "SI_CLE_DEVANT":
                     passes = keys.contains(ahead) && machine.remainingKeys.contains(ahead)
                 case "SI_CADENAS_DEVANT":

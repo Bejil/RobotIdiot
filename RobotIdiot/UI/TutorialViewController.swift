@@ -56,7 +56,7 @@ final class TutorialViewController: UIViewController {
         ),
         Page(
             eyebrow: "Phase 4 · Progresser",
-            title: "Dix mondes,\ncent niveaux.",
+            title: "Quinze mondes,\ncent cinquante niveaux.",
             body: "Chaque monde cache une nouvelle base et de nouveaux pièges. Continue pour reprendre ta place, ou ouvre Progression pour choisir un niveau. Les nouvelles commandes s’expliquent toutes seules au moment où tu en as besoin.",
             accent: UIColor(hex: 0xFF5A6E),
             art: .campaign

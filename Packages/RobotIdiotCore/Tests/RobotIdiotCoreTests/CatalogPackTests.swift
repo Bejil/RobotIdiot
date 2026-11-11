@@ -6,12 +6,17 @@ final class CatalogPackTests: XCTestCase {
         let pack = try LevelPackLoader.loadBundled()
         XCTAssertEqual(pack.schemaVersion, LevelPack.supportedSchemaVersion)
         XCTAssertEqual(pack.coordinateSystem, LevelPack.documentedCoordinateSystem)
-        XCTAssertEqual(pack.levels.count, 100)
+        XCTAssertEqual(pack.levels.count, 150)
         XCTAssertEqual(LevelPackChecker.issues(in: pack), [])
-        XCTAssertEqual(Set(pack.levels.map(\.world)), Set(1...10))
-        for world in 1...10 {
+        XCTAssertEqual(Set(pack.levels.map(\.world)), Set(1...15))
+        for world in 1...15 {
             let slice = pack.levels.filter { $0.world == world }
             XCTAssertEqual(slice.map(\.worldLevel), Array(1...10), "monde \(world)")
+            let expectedSide = world <= 10 ? 7 : 8
+            for level in slice {
+                XCTAssertEqual(level.width, expectedSide, level.id)
+                XCTAssertEqual(level.height, expectedSide, level.id)
+            }
         }
     }
 
@@ -48,7 +53,7 @@ final class CatalogPackTests: XCTestCase {
 
     func testRepeatStopsWhenTheFlagIsEntered() throws {
         let pack = try LevelPackLoader.loadBundled()
-        let level = try XCTUnwrap(pack.levels.first { $0.id == "RI-061" })
+        let level = try XCTUnwrap(pack.levels.first { $0.id == "RI-071" })
         XCTAssertTrue(level.solution.program.contains {
             if case .repete = $0 { return true }
             return false
@@ -60,12 +65,13 @@ final class CatalogPackTests: XCTestCase {
 
     func testControlNodesStayFreeWhileTheirChildrenStillCount() throws {
         let pack = try LevelPackLoader.loadBundled()
-        let repeats = pack.levels.filter { contains($0.solution.program, .repete) }
-        let conditions = pack.levels.filter { contains($0.solution.program, .si) }
-        XCTAssertEqual(repeats.count, 40)
-        XCTAssertEqual(conditions.count, 30)
-        XCTAssertEqual(Set(repeats.map(\.world)), Set(7...10))
-        XCTAssertEqual(Set(conditions.map(\.world)), Set(8...10))
+        let campaign = pack.levels.filter { $0.world <= 10 }
+        let repeats = campaign.filter { contains($0.solution.program, .repete) }
+        let conditions = campaign.filter { contains($0.solution.program, .si) }
+        XCTAssertEqual(repeats.count, 24)
+        XCTAssertEqual(conditions.count, 24)
+        XCTAssertEqual(Set(repeats.map(\.world)), Set(8...10))
+        XCTAssertEqual(Set(conditions.map(\.world)), Set(7...10))
         for level in repeats + conditions {
             let run = CatalogInterpreter.execute(level)
             XCTAssertEqual(run.result, .victory, level.id)

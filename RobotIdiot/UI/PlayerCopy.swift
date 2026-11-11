@@ -99,8 +99,6 @@ enum PlayerCopy {
         case .doorClosed: return "porte fermée"
         case .switchActivated: return "interrupteur activé"
         case .carryingItem: return "transporte un objet"
-        case .onCircle: return "sur un cercle"
-        case .onDiamond: return "sur un losange"
         case .keyAhead: return "clé devant"
         case .lockAhead: return "cadenas devant"
         case .crateAhead: return "caisse devant"
@@ -435,7 +433,14 @@ enum PlayerCopy {
     }
 
     static func worldTitle(_ world: Int) -> String {
-        "Monde \(world)"
+        switch world {
+        case 11: return "Ruines dimensionnelles"
+        case 12: return "Grottes obscures"
+        case 13: return "Sanctuaire chromatique"
+        case 14: return "Labyrinthe fracturé"
+        case 15: return "Noyau central"
+        default: return "Monde \(world)"
+        }
     }
 
     static func themeName(_ theme: ThemeIdentifier) -> String {

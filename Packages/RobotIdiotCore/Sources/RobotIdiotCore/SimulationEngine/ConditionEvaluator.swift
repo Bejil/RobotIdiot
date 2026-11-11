@@ -18,10 +18,6 @@ public enum ConditionEvaluator {
             return (here + ahead).contains { $0.kind == MechanismKind.plate && $0.isActive }
         case .carryingItem:
             return !game.robot.inventory.isEmpty
-        case .onCircle:
-            return game.grid.cell(at: game.robot.position)?.terrain == .markerCircle
-        case .onDiamond:
-            return game.grid.cell(at: game.robot.position)?.terrain == .markerDiamond
         case .keyAhead:
             return cellAhead(game)?.objects.contains { $0.kind == ObjectKind.key } == true
         case .lockAhead:

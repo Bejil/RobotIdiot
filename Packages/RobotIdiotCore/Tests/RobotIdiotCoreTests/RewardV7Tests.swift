@@ -7,8 +7,8 @@ final class RewardV7Tests: XCTestCase {
         XCTAssertEqual(pack.schemaVersion, "7.0")
         let bonus = pack.levels.filter { !($0.rewards?.collectibles ?? []).isEmpty }
         let plain = pack.levels.filter { ($0.rewards?.collectibles ?? []).isEmpty }
-        XCTAssertEqual(bonus.count, 30)
-        XCTAssertEqual(plain.count, 70)
+        XCTAssertEqual(bonus.count, 45)
+        XCTAssertEqual(plain.count, 105)
         for level in pack.levels {
             XCTAssertLessThanOrEqual(level.rewards?.collectibles.count ?? 0, 1, level.id)
         }

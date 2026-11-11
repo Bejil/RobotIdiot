@@ -1,11 +1,11 @@
 import Foundation
 
-/// Campagne jouable : les 100 grilles du pack, dix mondes de dix niveaux.
-/// Les coordonnées du fichier augmentent vers le bas. Le `Level` en mémoire
-/// les retourne pour le moteur, dont Y augmente vers le haut, sans déplacer
-/// une case par rapport aux autres.
+/// Campagne jouable : 150 grilles du pack, quinze mondes de dix niveaux.
+/// Mondes 1–10 en 7×7 ; mondes 11–15 en 8×8. Les coordonnées du fichier
+/// augmentent vers le bas. Le `Level` en mémoire les retourne pour le moteur,
+/// dont Y augmente vers le haut, sans déplacer une case par rapport aux autres.
 public enum CatalogCampaign {
-    public static let worldCount = 10
+    public static let worldCount = 15
     public static let levelsPerWorld = 10
     public static let formulaVersion = 7
     public static let layout = CampaignLayout(standardLevelCount: 10, includesFinale: false)
@@ -233,8 +233,6 @@ public enum CatalogCampaign {
         case "P": return .spikes
         case "O": return .stone
         case "W": return .water
-        case "c": return .markerCircle
-        case "l": return .markerDiamond
         default: return .floor
         }
     }

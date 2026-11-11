@@ -370,7 +370,7 @@ public enum LevelPackLoader {
 }
 
 public enum LevelPackChecker {
-    public static let symbols: Set<Character> = Set("gBRLTPOWF^>v<KUADCcl0123456789")
+    public static let symbols: Set<Character> = Set("gBRLTPOWF^>v<KUADC")
     public static let orientations = ["N": "^", "E": ">", "S": "v", "W": "<"]
     public static let knownCommands: Set<String> = [
         "AVANCE", "RECULE", "TOURNE_GAUCHE", "TOURNE_DROITE",
@@ -397,17 +397,18 @@ public enum LevelPackChecker {
         if pack.coordinateSystem != LevelPack.documentedCoordinateSystem {
             report(nil, "coordinateSystem", pack.coordinateSystem)
         }
-        if pack.levels.count != 100 {
-            report(nil, "nombre de niveaux", "\(pack.levels.count) au lieu de 100")
+        let expectedLevelCount = CatalogCampaign.worldCount * CatalogCampaign.levelsPerWorld
+        if pack.levels.count != expectedLevelCount {
+            report(nil, "nombre de niveaux", "\(pack.levels.count) au lieu de \(expectedLevelCount)")
         }
 
         let identifiers = pack.levels.map(\.id)
         if Set(identifiers).count != identifiers.count {
             report(nil, "identifiants", "des identifiants sont répétés")
         }
-        let expectedIDs = (1...100).map { String(format: "RI-%03d", $0) }
-        if identifiers != expectedIDs, pack.levels.count == 100 {
-            report(nil, "identifiants", "la suite n'est pas RI-001 … RI-100 dans l'ordre")
+        let expectedIDs = (1...expectedLevelCount).map { String(format: "RI-%03d", $0) }
+        if identifiers != expectedIDs, pack.levels.count == expectedLevelCount {
+            report(nil, "identifiants", "la suite n'est pas RI-001 … RI-\(String(format: "%03d", expectedLevelCount)) dans l'ordre")
         }
 
         var seenGrids = Set<[String]>()
@@ -434,8 +435,16 @@ public enum LevelPackChecker {
                 "monde \(level.world) niveau \(level.worldLevel) pour le rang \(level.globalLevel)"
             )
         }
-        if level.width != 7 || level.height != 7 || level.grid.count != 7 || level.grid.contains(where: { $0.count != 7 }) {
-            report("grille 7×7", "\(level.width)×\(level.height), \(level.grid.count) lignes")
+        let expectedSide = level.world <= 10 ? 7 : 8
+        let gridOK = level.width == expectedSide
+            && level.height == expectedSide
+            && level.grid.count == expectedSide
+            && level.grid.allSatisfy({ $0.count == expectedSide })
+        if !gridOK {
+            report(
+                "grille \(expectedSide)×\(expectedSide)",
+                "\(level.width)×\(level.height), \(level.grid.count) lignes"
+            )
         }
 
         let foreign = level.grid.joined().filter { !symbols.contains($0) }
@@ -446,7 +455,7 @@ public enum LevelPackChecker {
         var arrows: [(Int, Int, Character)] = []
         var flags: [(Int, Int)] = []
         var counts: [Character: Int] = [:]
-        if level.grid.count == 7, level.grid.allSatisfy({ $0.count == 7 }) {
+        if gridOK {
             for (y, row) in level.grid.enumerated() {
                 for (x, symbol) in row.enumerated() {
                     counts[symbol, default: 0] += 1
@@ -468,7 +477,7 @@ public enum LevelPackChecker {
         if LevelPackChecker.orientations[level.start.orientation] == nil {
             report("orientation", level.start.orientation)
         }
-        if !inBounds(level.start.x, level.start.y) {
+        if !inBounds(level.start.x, level.start.y, width: level.width, height: level.height) {
             report("départ", "coordonnées \(level.start.x),\(level.start.y) hors grille")
         } else if arrows.count == 1 {
             let arrow = arrows[0]
@@ -480,7 +489,7 @@ public enum LevelPackChecker {
                 )
             }
         }
-        if !inBounds(level.finish.x, level.finish.y) {
+        if !inBounds(level.finish.x, level.finish.y, width: level.width, height: level.height) {
             report("drapeau", "coordonnées \(level.finish.x),\(level.finish.y) hors grille")
         } else if flags.count == 1, flags[0] != (level.finish.x, level.finish.y) {
             report("drapeau", "F est en \(flags[0]) et finish en \(level.finish.x),\(level.finish.y)")
@@ -495,7 +504,7 @@ public enum LevelPackChecker {
                 report("mécanisme", "type \(mechanic.type)")
                 continue
             }
-            guard inBounds(mechanic.x, mechanic.y), level.grid.count == 7, level.grid[mechanic.y].count == 7 else {
+            guard inBounds(mechanic.x, mechanic.y, width: level.width, height: level.height), gridOK else {
                 report("mécanisme", "\(mechanic.type) en \(mechanic.x),\(mechanic.y) hors grille")
                 continue
             }
@@ -530,9 +539,9 @@ public enum LevelPackChecker {
             if item.type != "BoardBolt" {
                 report("récompense", "type \(item.type)")
             }
-            if !inBounds(item.x, item.y) {
+            if !inBounds(item.x, item.y, width: level.width, height: level.height) {
                 report("récompense", "\(item.id) hors grille")
-            } else if level.grid.count == 7, level.grid[item.y].count == 7 {
+            } else if gridOK {
                 let tile = level.grid[item.y][level.grid[item.y].index(level.grid[item.y].startIndex, offsetBy: item.x)]
                 if tile != "g" && !"KUCAD".contains(tile) {
                     // Overlay sur herbe : g, ou mécanique posée sur herbe.
@@ -559,14 +568,13 @@ public enum LevelPackChecker {
         return issues
     }
 
-    private static func inBounds(_ x: Int, _ y: Int) -> Bool {
-        (0..<7).contains(x) && (0..<7).contains(y)
+    private static func inBounds(_ x: Int, _ y: Int, width: Int, height: Int) -> Bool {
+        (0..<width).contains(x) && (0..<height).contains(y)
     }
 
     private static let allowedSIConditions: Set<String> = [
         "CASE_DEVANT_LIBRE", "SI_CASE_DEVANT_LIBRE",
         "OBSTACLE_DEVANT", "SI_OBSTACLE_DEVANT",
-        "SI_SUR_CERCLE", "SI_SUR_LOSANGE",
         "SI_CLE_DEVANT", "SI_CADENAS_DEVANT", "SI_CAISSE_DEVANT",
         "OBJET_PRESENT", "PORTE_FERMEE", "INTERRUPTEUR_ACTIVE", "TRANSPORTE_OBJET"
     ]
