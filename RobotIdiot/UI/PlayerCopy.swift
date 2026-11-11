@@ -433,14 +433,7 @@ enum PlayerCopy {
     }
 
     static func worldTitle(_ world: Int) -> String {
-        switch world {
-        case 11: return "Ruines dimensionnelles"
-        case 12: return "Grottes obscures"
-        case 13: return "Sanctuaire chromatique"
-        case 14: return "Labyrinthe fracturé"
-        case 15: return "Noyau central"
-        default: return "Monde \(world)"
-        }
+        "Monde \(world)"
     }
 
     static func themeName(_ theme: ThemeIdentifier) -> String {

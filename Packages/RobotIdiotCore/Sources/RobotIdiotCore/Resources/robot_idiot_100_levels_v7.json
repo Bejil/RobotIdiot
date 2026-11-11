@@ -71674,7 +71674,7 @@
   "worldDefinitions": [
     {
       "world": 11,
-      "name": "Ruines dimensionnelles",
+      "name": "Monde 11",
       "theme": "dimensional_ruins",
       "description": "Ruines suspendues, dalles de pierre et mécanismes antiques",
       "gridSize": [
@@ -71688,7 +71688,7 @@
     },
     {
       "world": 12,
-      "name": "Grottes obscures",
+      "name": "Monde 12",
       "theme": "dark_caverns",
       "description": "Grottes illuminées par des cristaux — aucune obscurité dynamique ni torche",
       "gridSize": [
@@ -71702,7 +71702,7 @@
     },
     {
       "world": 13,
-      "name": "Sanctuaire chromatique",
+      "name": "Monde 13",
       "theme": "chromatic_sanctuary",
       "description": "Dalles gravées, clés et mécanismes de précision",
       "gridSize": [
@@ -71716,7 +71716,7 @@
     },
     {
       "world": 14,
-      "name": "Labyrinthe fracturé",
+      "name": "Monde 14",
       "theme": "fractured_labyrinth",
       "description": "Îlots mécaniques fragmentés et plateformes suspendues",
       "gridSize": [
@@ -71730,7 +71730,7 @@
     },
     {
       "world": 15,
-      "name": "Noyau central",
+      "name": "Monde 15",
       "theme": "central_core",
       "description": "Cœur du réseau robotique et circuits stellaires",
       "gridSize": [

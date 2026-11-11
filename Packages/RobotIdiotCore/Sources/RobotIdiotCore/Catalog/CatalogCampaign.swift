@@ -27,6 +27,9 @@ public enum CatalogCampaign {
     }
 
     public static func mechanicTitle(for world: Int) -> String {
+        if (11...worldCount).contains(world) {
+            return "Maîtrise"
+        }
         var seen: [String] = []
         for level in pack.levels where level.world == world {
             if !seen.contains(level.family) {
@@ -217,7 +220,8 @@ public enum CatalogCampaign {
             return "Boucles"
         case "condition_loop_plus_existing", "infinite_loop_with_condition":
             return "Conditions"
-        case "integrated_advanced", "integrated_mastery":
+        case "integrated_advanced", "integrated_mastery",
+             "advanced_8x8_dependency_maze_with_conditional_loop":
             return "Maîtrise"
         default:
             return "Déplacements"
