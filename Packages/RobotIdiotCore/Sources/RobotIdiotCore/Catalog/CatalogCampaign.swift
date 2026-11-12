@@ -8,8 +8,8 @@ public enum CatalogCampaign {
     public static let worldCount = 15
     public static let levelsPerWorld = 10
     public static let formulaVersion = 7
-    /// Révision pack V13 (portails) : conserve la progression, invalide les brouillons mondes 9–15.
-    public static let contentRevision = "V13-portals"
+    /// Révision pack V14 (≤ 3 paires A–C) : conserve la progression, invalide les brouillons mondes 9–15.
+    public static let contentRevision = "V14-three-portal-pairs"
     public static let layout = CampaignLayout(standardLevelCount: 10, includesFinale: false)
 
     public static let pack: LevelPack = {

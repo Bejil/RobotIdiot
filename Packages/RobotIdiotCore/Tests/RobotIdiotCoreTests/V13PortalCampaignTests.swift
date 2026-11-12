@@ -1,7 +1,7 @@
 import XCTest
 @testable import RobotIdiotCore
 
-/// Mondes 9–15 (V13) : labyrinthes à portails Q / BoardPortal.
+/// Mondes 9–15 (V14) : labyrinthes à portails, ≤ 3 paires A/B/C.
 final class V13PortalCampaignTests: XCTestCase {
     private var portalLevels: [CatalogLevel] {
         CatalogCampaign.pack.levels.filter { $0.world >= 9 }
@@ -9,17 +9,21 @@ final class V13PortalCampaignTests: XCTestCase {
 
     func testSeventyPortalLevelsWithExpectedGrids() {
         XCTAssertEqual(portalLevels.count, 70)
-        XCTAssertEqual(CatalogCampaign.pack.schemaVersion, "13.0")
+        XCTAssertEqual(CatalogCampaign.pack.schemaVersion, "14.0")
         XCTAssertEqual(CatalogCampaign.pack.levels.count, 150)
         for level in portalLevels {
             let expected = level.world <= 10 ? 7 : 8
             XCTAssertEqual(level.width, expected, level.id)
             XCTAssertEqual(level.height, expected, level.id)
             XCTAssertFalse(level.portalLinks.isEmpty, level.id)
+            XCTAssertLessThanOrEqual(level.portalLinks.count, LevelPackChecker.maxPortalPairsPerLevel, level.id)
             XCTAssertTrue(level.grid.joined().contains("Q"), level.id)
             XCTAssertFalse(level.grid.joined().contains(where: \.isNumber), level.id)
             XCTAssertFalse(level.grid.joined().contains("c"), level.id)
             XCTAssertFalse(level.grid.joined().contains("l"), level.id)
+            for link in level.portalLinks {
+                XCTAssertTrue(LevelPackChecker.portalVariants.contains(link.visualVariant), "\(level.id) \(link.visualVariant)")
+            }
         }
     }
 
@@ -54,16 +58,16 @@ final class V13PortalCampaignTests: XCTestCase {
         let url = try XCTUnwrap(
             Bundle.module.url(forResource: "robot_idiot_100_levels_v7", withExtension: "json")
         )
-        let file = try JSONDecoder().decode(V13PackFile.self, from: Data(contentsOf: url))
-        let bonusLevels = file.levels.filter { $0.v13?.bonusReferenceProgram?.isEmpty == false }
+        let file = try JSONDecoder().decode(V14PackFile.self, from: Data(contentsOf: url))
+        let bonusLevels = file.levels.filter { $0.v14?.bonusReferenceProgram?.isEmpty == false }
         XCTAssertEqual(bonusLevels.count, 21)
 
         let pack = try LevelPackLoader.loadBundled()
         for entry in bonusLevels {
             let source = try XCTUnwrap(pack.levels.first { $0.id == entry.id })
-            let program = try XCTUnwrap(entry.v13?.bonusReferenceProgram)
-            let expected = entry.v13?.bonusReferenceCommands?.count
-                ?? entry.v13?.bonusReferenceActions
+            let program = try XCTUnwrap(entry.v14?.bonusReferenceProgram)
+            let expected = entry.v14?.bonusReferenceCommands?.count
+                ?? entry.v14?.bonusReferenceActions
             let run = CatalogInterpreter.execute(source, program: program)
             XCTAssertEqual(run.result, .victory, "\(entry.id) bonus \(run)")
             if let expected {
@@ -84,9 +88,11 @@ final class V13PortalCampaignTests: XCTestCase {
     }
 
     func testSpotlightPortalLevelsDecodeAndWin() throws {
-        let ids = ["RI-081", "RI-082", "RI-090", "RI-100", "RI-110", "RI-120", "RI-130", "RI-140", "RI-150"]
+        // 9-1, 9-2, 9-3, 10-10, 11-1, 13-10, 14-10, 15-10
+        let ids = ["RI-081", "RI-082", "RI-083", "RI-100", "RI-101", "RI-130", "RI-140", "RI-150"]
         for id in ids {
             let source = try XCTUnwrap(CatalogCampaign.pack.levels.first { $0.id == id })
+            XCTAssertLessThanOrEqual(source.portalLinks.count, 3, id)
             XCTAssertEqual(CatalogInterpreter.execute(source).result, .victory, id)
             var engine = SimulationEngine(
                 level: CatalogCampaign.playableLevel(source),
@@ -119,16 +125,16 @@ final class V13PortalCampaignTests: XCTestCase {
     }
 }
 
-private struct V13PackFile: Decodable {
-    var levels: [V13LevelEntry]
+private struct V14PackFile: Decodable {
+    var levels: [V14LevelEntry]
 }
 
-private struct V13LevelEntry: Decodable {
+private struct V14LevelEntry: Decodable {
     var id: String
-    var v13: V13Meta?
+    var v14: V14Meta?
 }
 
-private struct V13Meta: Decodable {
+private struct V14Meta: Decodable {
     var bonusReferenceProgram: [CatalogInstruction]?
     var bonusReferenceCommands: [String]?
     var bonusReferenceActions: Int?

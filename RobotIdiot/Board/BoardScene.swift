@@ -911,12 +911,20 @@ final class BoardScene: SKScene {
         return node
     }
 
-    /// Portail procédural distinct par variante A–E (symbole + couleur), en attendant les PNG.
+    /// Portail A/B/C : asset `BoardPortalX` si présent, sinon fallback couleur + symbole.
     private func makePortal(variant: String, linkId: String, at coordinate: GridCoordinate) -> SKNode {
         let node = SKNode()
         node.name = "portal-\(linkId)-\(coordinate.x)-\(coordinate.y)"
         node.position = center(of: coordinate)
         node.zPosition = 1.15
+
+        let key = "BoardPortal\(variant.uppercased())"
+        if let image = UIImage(named: key) ?? UIImage(named: "W\(level.worldNumber)\(key.dropFirst(5))") {
+            let sprite = SKSpriteNode(texture: SKTexture(image: image), size: CGSize(width: tileSpan, height: tileSpan))
+            sprite.zPosition = 0
+            node.addChild(sprite)
+            return node
+        }
 
         let color = portalColor(variant)
         let ring = SKShapeNode(circleOfRadius: cellSize * 0.32)
@@ -932,7 +940,7 @@ final class BoardScene: SKScene {
         inner.lineWidth = max(1, cellSize * 0.03)
         node.addChild(inner)
 
-        let label = SKLabelNode(text: variant)
+        let label = SKLabelNode(text: variant.uppercased())
         label.fontName = "AvenirNext-Heavy"
         label.fontSize = max(12, cellSize * 0.28)
         label.fontColor = .white
@@ -948,8 +956,6 @@ final class BoardScene: SKScene {
         case "A": return UIColor(hex: 0x2F6BFF)
         case "B": return UIColor(hex: 0xE23D7A)
         case "C": return UIColor(hex: 0x2ECF8F)
-        case "D": return UIColor(hex: 0xF5A623)
-        case "E": return UIColor(hex: 0x9B5CFF)
         default: return UIColor(hex: 0x7B3FF2)
         }
     }

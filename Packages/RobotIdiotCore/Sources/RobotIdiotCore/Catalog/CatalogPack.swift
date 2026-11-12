@@ -1,6 +1,6 @@
 import Foundation
 
-/// Pack officiel (schéma 13.0 : portails Q / BoardPortal).
+/// Pack officiel (schéma 14.0 : portails Q / BoardPortal, ≤ 3 paires A–C).
 /// L'axe Y du fichier augmente vers le bas. Cette orientation n'est pas inversée ici.
 public struct LevelPack: Codable, Equatable, Sendable {
     public var schemaVersion: String
@@ -10,7 +10,7 @@ public struct LevelPack: Codable, Equatable, Sendable {
     public var commandRules: [String: String]
     public var levels: [CatalogLevel]
 
-    public static let supportedSchemaVersion = "13.0"
+    public static let supportedSchemaVersion = "14.0"
     public static let documentedCoordinateSystem = "x increases right, y increases down, zero indexed"
 }
 
@@ -447,7 +447,8 @@ public enum LevelPackChecker {
         "BoardCrate": "C",
         "BoardPortal": "Q"
     ]
-    public static let portalVariants: Set<String> = ["A", "B", "C", "D", "E"]
+    public static let portalVariants: Set<String> = ["A", "B", "C"]
+    public static let maxPortalPairsPerLevel = 3
     public static let blockingSymbols: Set<Character> = Set("BRLTPOW")
 
     public static func issues(in pack: LevelPack) -> [LevelPackIssue] {
@@ -663,6 +664,10 @@ public enum LevelPackChecker {
         let portalMechanics = level.mechanics.filter { $0.type == "BoardPortal" }
         if qCells.count != portalMechanics.count {
             report("portail", "Q=\(qCells.count) / BoardPortal=\(portalMechanics.count)")
+        }
+
+        if level.portalLinks.count > maxPortalPairsPerLevel {
+            report("portail", "\(level.portalLinks.count) paires (max \(maxPortalPairsPerLevel))")
         }
 
         var covered = Set<String>()

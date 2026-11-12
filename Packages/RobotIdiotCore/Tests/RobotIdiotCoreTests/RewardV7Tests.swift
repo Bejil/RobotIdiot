@@ -4,7 +4,7 @@ import XCTest
 final class RewardV7Tests: XCTestCase {
     func testThirtyBonusLevelsAndSingleCollectibleCap() throws {
         let pack = try LevelPackLoader.loadBundled()
-        XCTAssertEqual(pack.schemaVersion, "13.0")
+        XCTAssertEqual(pack.schemaVersion, "14.0")
         let bonus = pack.levels.filter { !($0.rewards?.collectibles ?? []).isEmpty }
         let plain = pack.levels.filter { ($0.rewards?.collectibles ?? []).isEmpty }
         XCTAssertEqual(bonus.count, 45)
@@ -22,7 +22,7 @@ final class RewardV7Tests: XCTestCase {
         )
         let data = try Data(contentsOf: url)
         let validation = try JSONDecoder().decode(V7ValidationFile.self, from: data)
-        // Le fichier V7 ne couvre plus les mondes 9–15 (refonte portails V13).
+        // Le fichier V7 ne couvre plus les mondes 9–15 (refonte portails V14).
         let keptBonus = validation.levelResults.filter { result in
             pack.levels.first { $0.id == result.id }?.world ?? 99 <= 8
         }

@@ -48,7 +48,7 @@ final class V11CampaignTests: XCTestCase {
     }
 
     func testBonusReferenceProgramsWinWhenPresent() throws {
-        // Les bonus des mondes 11–15 sont couverts par V13PortalCampaignTests (champ `v13`).
+        // Les bonus des mondes 11–15 sont couverts par V13PortalCampaignTests (champ `v14`).
         // Ce test ne s’applique plus qu’aux packs qui exposent encore `v11`.
         let url = try XCTUnwrap(
             Bundle.module.url(forResource: "robot_idiot_100_levels_v7", withExtension: "json")
