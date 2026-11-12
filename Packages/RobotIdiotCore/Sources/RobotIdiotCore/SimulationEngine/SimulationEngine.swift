@@ -138,23 +138,33 @@ public struct SimulationEngine: Sendable {
                     state.status = .succeeded
                     return StepOutcome(event: applied.event, state: state)
                 }
-                if case .moved(let from, let to, let forward, let command) = applied.event,
-                   let terrain = state.game.grid.cell(at: to)?.terrain,
+                let hazardLanding: (from: GridCoordinate, to: GridCoordinate, forward: Bool, command: CommandType)? = {
+                    switch applied.event {
+                    case .moved(let from, let to, let forward, let command):
+                        return (from, to, forward, command)
+                    case .teleported(let from, _, let exit, let forward, let command):
+                        return (from, exit, forward, command)
+                    default:
+                        return nil
+                    }
+                }()
+                if let landing = hazardLanding,
+                   let terrain = state.game.grid.cell(at: landing.to)?.terrain,
                    terrain.isLethal {
                     let fault = ExecutionFault.hazard(
-                        command: command,
+                        command: landing.command,
                         instructionID: instruction.id,
                         terrain: terrain,
-                        at: to
+                        at: landing.to
                     )
                     state.status = .failed
                     state.fault = fault
                     let event = SimulationEvent.enteredHazard(
-                        from: from,
-                        to: to,
+                        from: landing.from,
+                        to: landing.to,
                         terrain: terrain,
-                        forward: forward,
-                        command: command
+                        forward: landing.forward,
+                        command: landing.command
                     )
                     state.history.append(ExecutionRecord(
                         instructionID: instruction.id,

@@ -4,11 +4,11 @@ import XCTest
 final class RewardV7Tests: XCTestCase {
     func testThirtyBonusLevelsAndSingleCollectibleCap() throws {
         let pack = try LevelPackLoader.loadBundled()
-        XCTAssertEqual(pack.schemaVersion, "7.0")
+        XCTAssertEqual(pack.schemaVersion, "14.1")
         let bonus = pack.levels.filter { !($0.rewards?.collectibles ?? []).isEmpty }
         let plain = pack.levels.filter { ($0.rewards?.collectibles ?? []).isEmpty }
-        XCTAssertEqual(bonus.count, 30)
-        XCTAssertEqual(plain.count, 70)
+        XCTAssertEqual(bonus.count, 45)
+        XCTAssertEqual(plain.count, 105)
         for level in pack.levels {
             XCTAssertLessThanOrEqual(level.rewards?.collectibles.count ?? 0, 1, level.id)
         }
@@ -22,8 +22,15 @@ final class RewardV7Tests: XCTestCase {
         )
         let data = try Data(contentsOf: url)
         let validation = try JSONDecoder().decode(V7ValidationFile.self, from: data)
-        XCTAssertEqual(validation.bonusLevels, 30)
-        for result in validation.levelResults {
+        // Le fichier V7 de validation ne couvre plus les mondes 7–15 (refonte V14).
+        let keptBonus = validation.levelResults.filter { result in
+            pack.levels.first { $0.id == result.id }?.world ?? 99 <= 6
+        }
+        let keptPlain = validation.noBonusResults.filter { result in
+            pack.levels.first { $0.id == result.id }?.world ?? 99 <= 6
+        }
+        XCTAssertFalse(keptBonus.isEmpty)
+        for result in keptBonus {
             let level = try XCTUnwrap(pack.levels.first { $0.id == result.id })
             let stars = try XCTUnwrap(level.starTargets)
             XCTAssertEqual(stars.withoutBonus.threeStarsMax, result.directOptimal, result.id)
@@ -31,7 +38,7 @@ final class RewardV7Tests: XCTestCase {
             XCTAssertEqual(level.rewards?.collectibles.first?.x, result.bonus[0], result.id)
             XCTAssertEqual(level.rewards?.collectibles.first?.y, result.bonus[1], result.id)
         }
-        for result in validation.noBonusResults {
+        for result in keptPlain {
             let level = try XCTUnwrap(pack.levels.first { $0.id == result.id })
             XCTAssertEqual(level.starTargets?.withoutBonus.threeStarsMax, result.optimal, result.id)
             XCTAssertNil(level.starTargets?.withBonus, result.id)
@@ -131,7 +138,8 @@ final class RewardV7Tests: XCTestCase {
         for source in pack.levels {
             guard let item = source.rewards?.collectibles.first else { continue }
             XCTAssertEqual(item.type, "BoardBolt", source.id)
-            XCTAssertEqual(item.amount, RewardEconomy.defaultAwardAmount, source.id)
+            // V13 : certains écrous avancés rapportent 2 ; le défaut historique reste 1.
+            XCTAssertGreaterThanOrEqual(item.amount, RewardEconomy.defaultAwardAmount, source.id)
             XCTAssertTrue(item.optional, source.id)
             let cell = Array(source.grid[item.y])[item.x]
             XCTAssertEqual(cell, "g", "\(source.id) bolt must overlay grass at \(item.x),\(item.y)")

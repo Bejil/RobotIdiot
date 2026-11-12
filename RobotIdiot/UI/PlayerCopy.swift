@@ -99,8 +99,6 @@ enum PlayerCopy {
         case .doorClosed: return "porte fermée"
         case .switchActivated: return "interrupteur activé"
         case .carryingItem: return "transporte un objet"
-        case .onCircle: return "sur un cercle"
-        case .onDiamond: return "sur un losange"
         case .keyAhead: return "clé devant"
         case .lockAhead: return "cadenas devant"
         case .crateAhead: return "caisse devant"
@@ -339,12 +337,11 @@ enum PlayerCopy {
                 return "Active l'interrupteur en te tenant dessus. La grille s'ouvre et reste ouverte."
             case "push_crate":
                 return "Pousse la caisse : elle avance d'une case, et le robot prend sa place."
-            case "loop_plus_existing", "infinite_loop_navigation":
-                return "Atteins le drapeau. Tu peux utiliser une boucle infinie."
-            case "condition_loop_plus_existing", "infinite_loop_with_condition":
-                return "Atteins le drapeau. Combine boucle et condition si tu en as besoin."
-            case "integrated_advanced", "integrated_mastery":
-                return "Combine tout ce que tu as appris pour atteindre le drapeau."
+            case "loop_plus_existing", "infinite_loop_navigation",
+                 "condition_loop_plus_existing", "infinite_loop_with_condition",
+                 "integrated_advanced", "integrated_mastery":
+                // V14.1 Aventure : SI/REPETE restent verrouillés même si la famille historique parlait de boucles.
+                return "Atteins le drapeau avec les commandes déjà débloquées."
             case "navigation_backwards":
                 return "Atteins le drapeau. Tu peux aussi reculer sans changer de direction."
             case "collect_key":

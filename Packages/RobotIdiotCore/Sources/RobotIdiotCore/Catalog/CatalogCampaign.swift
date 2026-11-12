@@ -1,14 +1,25 @@
 import Foundation
 
-/// Campagne jouable : les 100 grilles du pack, dix mondes de dix niveaux.
-/// Les coordonnées du fichier augmentent vers le bas. Le `Level` en mémoire
-/// les retourne pour le moteur, dont Y augmente vers le haut, sans déplacer
-/// une case par rapport aux autres.
+/// Campagne jouable : 150 grilles du pack, quinze mondes de dix niveaux.
+/// Mondes 1–10 en 7×7 ; mondes 11–15 en 8×8. Les coordonnées du fichier
+/// augmentent vers le bas. Le `Level` en mémoire les retourne pour le moteur,
+/// dont Y augmente vers le haut, sans déplacer une case par rapport aux autres.
 public enum CatalogCampaign {
-    public static let worldCount = 10
+    public static let worldCount = 15
     public static let levelsPerWorld = 10
     public static let formulaVersion = 7
+    /// Révision pack V14.1 Aventure : SI/REPETE verrouillés partout ; conserve la progression.
+    public static let contentRevision = "V14.1-aventure"
     public static let layout = CampaignLayout(standardLevelCount: 10, includesFinale: false)
+
+    /// Commandes toujours verrouillées en Aventure (implémentation moteur conservée).
+    public static var adventureLockedCommands: [CommandType] {
+        pack.adventureCommandPolicy?.lockedCommandTypes ?? [.forever, .ifBlock]
+    }
+
+    public static var showsLockedAdventureButtons: Bool {
+        pack.adventureCommandPolicy?.showLockedButtonsInEditor ?? true
+    }
 
     public static let pack: LevelPack = {
         do {
@@ -26,19 +37,68 @@ public enum CatalogCampaign {
         catalogLevel(at: address).map(playableLevel)
     }
 
+    /// Sous-titre de la carte monde : commande(s) nouvellement débloquée(s),
+    /// sinon un principe court du monde.
     public static func mechanicTitle(for world: Int) -> String {
-        var seen: [String] = []
-        for level in pack.levels where level.world == world {
-            if !seen.contains(level.family) {
-                seen.append(level.family)
-            }
+        let introduced = newlyUnlockedCommands(in: world)
+        if !introduced.isEmpty {
+            return introduced.map(commandSubtitle).joined(separator: " · ")
         }
-        var names = seen.map(familyTitle)
-        if pack.levels.contains(where: { $0.world == world && $0.objective.requiresItemHeld }),
-           !names.contains("Clé à garder") {
-            names.append("Clé à garder")
+        return worldPrinciple(for: world)
+    }
+
+    /// Commandes présentes dans ce monde mais absentes du précédent.
+    /// Le monde 1 (bases AVANCE / tours) est traité comme sans nouveauté particulière.
+    private static func newlyUnlockedCommands(in world: Int) -> [String] {
+        guard world > 1 else { return [] }
+        let order = [
+            "RECULE", "RAMASSE", "UTILISE", "POUSSE", "ACTIVE"
+        ]
+        let current = Set(pack.levels.filter { $0.world == world }.flatMap(\.unlockedCommands))
+        let previous = Set(pack.levels.filter { $0.world == world - 1 }.flatMap(\.unlockedCommands))
+        return order.filter { current.contains($0) && !previous.contains($0) }
+    }
+
+    private static func commandSubtitle(_ raw: String) -> String {
+        switch raw {
+        case "RECULE":
+            return "Apprends à reculer sans changer de direction."
+        case "RAMASSE":
+            return "Ramasse les clés pour ouvrir la suite du parcours."
+        case "UTILISE":
+            return "Utilise ce que tu portes pour ouvrir les portes."
+        case "POUSSE":
+            return "Pousse les caisses pour libérer le chemin."
+        case "ACTIVE":
+            return "Active les interrupteurs pour débloquer le passage."
+        default:
+            return raw
         }
-        return names.isEmpty ? "Déplacements" : names.joined(separator: " · ")
+    }
+
+    private static func worldPrinciple(for world: Int) -> String {
+        switch world {
+        case 1:
+            return "Avance et tourne pour rejoindre le drapeau."
+        case 7, 8:
+            return "Maîtrise les commandes déjà acquises sur des parcours plus longs."
+        case 9:
+            return "Traverse tes premiers portails entre salles séparées."
+        case 10:
+            return "Reviens par les portails pour activer chaque mécanisme."
+        case 11:
+            return "Choisis ta paire de portails sur une grille plus vaste."
+        case 12:
+            return "Respecte l’ordre des clés, portes et téléportations."
+        case 13:
+            return "Emprunte la bonne bifurcation de portails."
+        case 14:
+            return "Atteins la zone cachée via une autre paire de portails."
+        case 15:
+            return "Enchaîne tous les retours entre zones pour finir."
+        default:
+            return "Explore le monde et trouve le bon programme."
+        }
     }
 
     public static func theme(for world: Int) -> ThemeIdentifier {
@@ -132,6 +192,14 @@ public enum CatalogCampaign {
                 amount: item.amount
             )
         }
+        let portals = source.portalLinks.compactMap { link -> LevelPortalLink? in
+            guard link.portals.count == 2 else { return nil }
+            return LevelPortalLink(
+                linkId: link.linkId,
+                endpoints: link.portals.map { flipped($0.x, $0.y) },
+                visualVariant: link.visualVariant
+            )
+        }
         var level = Level(
             id: source.id,
             version: 1,
@@ -162,7 +230,8 @@ public enum CatalogCampaign {
                 referenceNote: ""
             ),
             validation: ValidationMetadata(status: .handcrafted, notes: notes),
-            collectibles: collectibles
+            collectibles: collectibles,
+            portalLinks: portals
         )
         if let stars = source.starTargets {
             let without = stars.withoutBonus.threeStarsMax
@@ -201,29 +270,6 @@ public enum CatalogCampaign {
         mapCommandType(name)
     }
 
-    private static func familyTitle(_ family: String) -> String {
-        switch family {
-        case "navigation", "navigation_backwards":
-            return "Déplacements"
-        case "collect_key":
-            return "Clé à garder"
-        case "key_door":
-            return "Clés et portes"
-        case "crate_and_key_door", "push_crate":
-            return "Caisses"
-        case "switch_plus_existing", "switch_gate":
-            return "Interrupteurs"
-        case "loop_plus_existing", "infinite_loop_navigation":
-            return "Boucles"
-        case "condition_loop_plus_existing", "infinite_loop_with_condition":
-            return "Conditions"
-        case "integrated_advanced", "integrated_mastery":
-            return "Maîtrise"
-        default:
-            return "Déplacements"
-        }
-    }
-
     private static func terrain(for symbol: Character) -> TerrainType {
         switch symbol {
         case "B": return .bush
@@ -233,8 +279,6 @@ public enum CatalogCampaign {
         case "P": return .spikes
         case "O": return .stone
         case "W": return .water
-        case "c": return .markerCircle
-        case "l": return .markerDiamond
         default: return .floor
         }
     }

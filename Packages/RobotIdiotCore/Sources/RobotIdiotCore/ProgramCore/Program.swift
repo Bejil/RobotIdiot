@@ -54,11 +54,34 @@ public enum ConditionType: String, Codable, Hashable, Sendable, CaseIterable {
     case doorClosed = "PORTE_FERMEE"
     case switchActivated = "INTERRUPTEUR_ACTIVE"
     case carryingItem = "TRANSPORTE_OBJET"
-    case onCircle = "SI_SUR_CERCLE"
-    case onDiamond = "SI_SUR_LOSANGE"
     case keyAhead = "SI_CLE_DEVANT"
     case lockAhead = "SI_CADENAS_DEVANT"
     case crateAhead = "SI_CAISSE_DEVANT"
+
+    /// Décode les conditions actives ; les anciennes balises cercle/losange
+    /// sont migrées vers `obstacleAhead` pour ne pas faire planter les saves.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+        if let value = ConditionType(rawValue: raw) {
+            self = value
+            return
+        }
+        switch raw {
+        case "SI_SUR_CERCLE", "SI_SUR_LOSANGE", "SUR_CERCLE", "SUR_LOSANGE":
+            self = .obstacleAhead
+        default:
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Condition inconnue \(raw)"
+            )
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 public struct Instruction: Codable, Hashable, Sendable, Identifiable {
@@ -120,6 +143,18 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
         self.id = id
         self.version = version
         self.instructions = instructions
+    }
+
+    /// Vrai si le programme contient au moins une des commandes listées (récursif).
+    public func containsAny(of commands: Set<CommandType>) -> Bool {
+        func walk(_ nodes: [Instruction]) -> Bool {
+            for node in nodes {
+                if commands.contains(node.command) { return true }
+                if walk(node.children) { return true }
+            }
+            return false
+        }
+        return walk(instructions)
     }
 
     public var blockCount: Int {

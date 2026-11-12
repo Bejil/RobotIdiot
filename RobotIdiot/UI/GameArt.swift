@@ -409,12 +409,11 @@ enum GameArt {
     enum BoardPiece: String {
         case grassA, grassB, stone, slab, goal, bush, shutter, cracked
         case hero, flag, crate, key, bolt, door, doorOpen, lock, plate, plateOn
-        case water, lava, spikes, portal
-        case markerCircle, markerDiamond
+        case water, lava, spikes
     }
 
     static func piece(_ piece: BoardPiece, world: Int = 0) -> UIImage {
-        if (1...10).contains(world) {
+        if (1...CatalogCampaign.worldCount).contains(world) {
             let themed = "W\(world)" + assetName(piece).dropFirst(5)
             if let image = UIImage(named: themed) {
                 return image
@@ -448,12 +447,6 @@ enum GameArt {
             return "BoardLava"
         case .spikes:
             return "BoardSpikes"
-        case .portal:
-            return "BoardPortal"
-        case .markerCircle:
-            return "BoardMarkerCircle"
-        case .markerDiamond:
-            return "BoardMarkerDiamond"
         case .crate:
             return "BoardCrate"
         case .key:
@@ -482,7 +475,7 @@ enum GameArt {
                 let shift: CGFloat = piece == .grassA ? 0 : 18
                 ctx.fillEllipse(in: CGRect(x: 28 + shift, y: 36, width: 10, height: 16))
                 ctx.fillEllipse(in: CGRect(x: 70 - shift, y: 72, width: 8, height: 14))
-            case .stone, .slab, .bush, .shutter, .cracked, .water, .lava, .spikes, .portal:
+            case .stone, .slab, .bush, .shutter, .cracked, .water, .lava, .spikes:
                 roundedTile(CGRect(x: 4, y: 4, width: s - 8, height: s - 8), fill: UIColor(hex: 0x8E97A8), radius: s * 0.16)
                 UIColor.white.withAlphaComponent(0.45).setFill()
                 ctx.fillEllipse(in: CGRect(x: s * 0.22, y: s * 0.28, width: s * 0.16, height: s * 0.12))
@@ -574,23 +567,6 @@ enum GameArt {
                 base.stroke()
                 (on ? AppTheme.coral : AppTheme.line).setFill()
                 ctx.fillEllipse(in: CGRect(x: s * 0.4, y: s * 0.4, width: s * 0.2, height: s * 0.16))
-            case .markerCircle:
-                roundedTile(CGRect(x: 4, y: 4, width: s - 8, height: s - 8), fill: UIColor(hex: 0x7DDE63), radius: s * 0.18)
-                let ring = UIBezierPath(ovalIn: CGRect(x: s * 0.22, y: s * 0.22, width: s * 0.56, height: s * 0.56))
-                AppTheme.teal.setStroke()
-                ring.lineWidth = s * 0.08
-                ring.stroke()
-            case .markerDiamond:
-                roundedTile(CGRect(x: 4, y: 4, width: s - 8, height: s - 8), fill: UIColor(hex: 0x7DDE63), radius: s * 0.18)
-                let diamond = UIBezierPath()
-                diamond.move(to: CGPoint(x: s * 0.5, y: s * 0.18))
-                diamond.addLine(to: CGPoint(x: s * 0.82, y: s * 0.5))
-                diamond.addLine(to: CGPoint(x: s * 0.5, y: s * 0.82))
-                diamond.addLine(to: CGPoint(x: s * 0.18, y: s * 0.5))
-                diamond.close()
-                AppTheme.coral.setStroke()
-                diamond.lineWidth = s * 0.08
-                diamond.stroke()
             }
         }
     }

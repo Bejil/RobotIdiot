@@ -203,6 +203,12 @@ final class BoardScene: SKScene {
             let collected = collectBonusNodes(missingFrom: resulting)
             slideRobot(to: destination, tempo: tempo, reduceMotion: reduceMotion, victory: victory)
             animateBonusCollection(collected, tempo: tempo, reduceMotion: reduceMotion)
+        case .teleported(_, let entrance, let exit, _, _):
+            let collected = collectBonusNodes(missingFrom: resulting)
+            warpRobot(via: entrance, to: exit, tempo: tempo, reduceMotion: reduceMotion, victory: victory)
+            animateBonusCollection(collected, tempo: tempo, reduceMotion: reduceMotion)
+            pulsePortal(at: entrance)
+            pulsePortal(at: exit)
         case .enteredHazard(_, let destination, let terrain, _, _):
             fallIntoHazard(at: destination, terrain: terrain, tempo: tempo, reduceMotion: reduceMotion)
         case .turned:
@@ -346,6 +352,11 @@ final class BoardScene: SKScene {
                 addChild(makeMechanism(mechanism, at: cell.coordinate))
             }
         }
+        for link in level.portalLinks {
+            for endpoint in link.endpoints {
+                addChild(makePortal(variant: link.visualVariant, linkId: link.linkId, at: endpoint))
+            }
+        }
         for bonus in presented.remainingCollectibles {
             addChild(makeBonus(bonus))
         }
@@ -385,10 +396,6 @@ final class BoardScene: SKScene {
         switch terrain {
         case .floor, .none:
             return .grassA
-        case .markerCircle:
-            return .markerCircle
-        case .markerDiamond:
-            return .markerDiamond
         case .bush:
             return .bush
         case .cracked:
@@ -902,6 +909,109 @@ final class BoardScene: SKScene {
             node.addChild(textured(.plate, side: tileSpan))
         }
         return node
+    }
+
+    /// Portail A/B/C : asset `BoardPortalX` si présent, sinon fallback couleur + symbole.
+    private func makePortal(variant: String, linkId: String, at coordinate: GridCoordinate) -> SKNode {
+        let node = SKNode()
+        node.name = "portal-\(linkId)-\(coordinate.x)-\(coordinate.y)"
+        node.position = center(of: coordinate)
+        node.zPosition = 1.15
+
+        let key = "BoardPortal\(variant.uppercased())"
+        if let image = UIImage(named: key) ?? UIImage(named: "W\(level.worldNumber)\(key.dropFirst(5))") {
+            let sprite = SKSpriteNode(texture: SKTexture(image: image), size: CGSize(width: tileSpan, height: tileSpan))
+            sprite.zPosition = 0
+            node.addChild(sprite)
+            return node
+        }
+
+        let color = portalColor(variant)
+        let ring = SKShapeNode(circleOfRadius: cellSize * 0.32)
+        ring.fillColor = color.withAlphaComponent(0.28)
+        ring.strokeColor = color
+        ring.lineWidth = max(2, cellSize * 0.06)
+        ring.glowWidth = 2
+        node.addChild(ring)
+
+        let inner = SKShapeNode(circleOfRadius: cellSize * 0.18)
+        inner.fillColor = color.withAlphaComponent(0.55)
+        inner.strokeColor = .white
+        inner.lineWidth = max(1, cellSize * 0.03)
+        node.addChild(inner)
+
+        let label = SKLabelNode(text: variant.uppercased())
+        label.fontName = "AvenirNext-Heavy"
+        label.fontSize = max(12, cellSize * 0.28)
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        label.horizontalAlignmentMode = .center
+        label.zPosition = 1
+        node.addChild(label)
+        return node
+    }
+
+    private func portalColor(_ variant: String) -> UIColor {
+        switch variant.uppercased() {
+        case "A": return UIColor(hex: 0x2F6BFF)
+        case "B": return UIColor(hex: 0xE23D7A)
+        case "C": return UIColor(hex: 0x2ECF8F)
+        default: return UIColor(hex: 0x7B3FF2)
+        }
+    }
+
+    private func pulsePortal(at coordinate: GridCoordinate) {
+        let namePrefix = "portal-"
+        enumerateChildNodes(withName: "//\(namePrefix)*") { node, _ in
+            guard abs(node.position.x - self.center(of: coordinate).x) < 1,
+                  abs(node.position.y - self.center(of: coordinate).y) < 1 else { return }
+            node.run(.sequence([
+                .group([
+                    .scale(to: 1.18, duration: 0.12),
+                    .fadeAlpha(to: 0.55, duration: 0.12)
+                ]),
+                .group([
+                    .scale(to: 1, duration: 0.16),
+                    .fadeAlpha(to: 1, duration: 0.16)
+                ])
+            ]))
+        }
+    }
+
+    private func warpRobot(
+        via entrance: GridCoordinate,
+        to exit: GridCoordinate,
+        tempo: PlaybackTempo,
+        reduceMotion: Bool,
+        victory: Bool
+    ) {
+        let enterDuration = tempo.moveDuration(reduceMotion: reduceMotion) * 0.55
+        let warpDuration = reduceMotion ? 0.05 : 0.12
+        let arrive = center(of: exit)
+        let enter = center(of: entrance)
+        let goIn = SKAction.move(to: enter, duration: enterDuration)
+        goIn.timingMode = .easeIn
+        let vanish = reduceMotion
+            ? SKAction.wait(forDuration: warpDuration)
+            : SKAction.group([
+                .fadeOut(withDuration: warpDuration),
+                .scale(to: 0.55, duration: warpDuration)
+            ])
+        let snap = SKAction.run { [weak self] in
+            self?.robotNode.position = arrive
+            self?.robotNode.alpha = 1
+            self?.robotNode.setScale(1)
+            self?.applyFacing(self?.presented.robot.orientation ?? .north)
+        }
+        let appear = reduceMotion
+            ? SKAction.wait(forDuration: warpDuration)
+            : SKAction.group([
+                .fadeIn(withDuration: warpDuration),
+                .sequence([.scale(to: 1.12, duration: warpDuration * 0.5), .scale(to: 1, duration: warpDuration * 0.5)])
+            ])
+        robotNode.run(.sequence([goIn, vanish, snap, appear])) { [weak self] in
+            self?.endStep(victory: victory, reduceMotion: reduceMotion)
+        }
     }
 
     private func finishPlayback() {

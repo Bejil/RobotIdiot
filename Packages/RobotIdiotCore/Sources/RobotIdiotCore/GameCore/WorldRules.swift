@@ -75,6 +75,24 @@ public enum WorldRules {
         updated.metrics.moves += 1
         updated.metrics.executedInstructions += 1
         _ = collectBonusIfNeeded(at: destination, game: &updated)
+
+        // Entrée sur Q → téléportation vers la paire, sans retransfert à l'arrivée.
+        if let exit = level.portalPartner(of: destination), exit != destination {
+            updated.robot.position = exit
+            _ = collectBonusIfNeeded(at: exit, game: &updated)
+            refreshObjectives(&updated, level: level)
+            return .success(RuleApplication(
+                game: updated,
+                event: .teleported(
+                    from: origin,
+                    entrance: destination,
+                    exit: exit,
+                    forward: forward,
+                    command: command
+                )
+            ))
+        }
+
         refreshObjectives(&updated, level: level)
         return .success(RuleApplication(
             game: updated,
@@ -157,7 +175,9 @@ public enum WorldRules {
             return .failure(.nothingToPush)
         }
         let beyond = ahead.translated(by: game.robot.orientation)
-        guard game.grid.cell(at: beyond)?.allowsCrate == true else {
+        // Les caisses ne se poussent pas sur un portail et ne sont jamais téléportées.
+        guard game.grid.cell(at: beyond)?.allowsCrate == true,
+              !level.isPortal(beyond) else {
             return .failure(.pushBlocked(attempted: beyond))
         }
         var updated = game

@@ -51,6 +51,15 @@ final class AdsService: NSObject {
         super.init()
     }
 
+    /// Requête AdMob sans IDFA (npa=1) : pubs non personnalisées, pas d’ATT.
+    static func adRequest() -> Request {
+        let request = Request()
+        let extras = Extras()
+        extras.additionalParameters = ["npa": "1"]
+        request.register(extras)
+        return request
+    }
+
     /// Démarre le SDK uniquement après consentement UMP (`canRequestAds`).
     func start(completion: (() -> Void)? = nil) {
         guard Self.areEnabled else {
@@ -130,7 +139,7 @@ final class AdsService: NSObject {
         if Self.areEnabled {
             banner.heightAnchor.constraint(equalToConstant: AdSizeBanner.size.height).isActive = true
             if isReady {
-                banner.load(Request())
+                banner.load(Self.adRequest())
             }
         } else {
             banner.isHidden = true
@@ -141,7 +150,7 @@ final class AdsService: NSObject {
 
     func loadHomeBannerIfNeeded(_ banner: BannerView?) {
         guard Self.areEnabled, isReady, let banner else { return }
-        banner.load(Request())
+        banner.load(Self.adRequest())
     }
 
     // MARK: - Level success
@@ -341,7 +350,7 @@ final class AdsService: NSObject {
 
     private func loadLaunchInterstitial() {
         guard isReady, launchInterstitial == nil else { return }
-        InterstitialAd.load(with: AdUnit.launchInterstitial, request: Request()) { [weak self] ad, error in
+        InterstitialAd.load(with: AdUnit.launchInterstitial, request: Self.adRequest()) { [weak self] ad, error in
             Task { @MainActor in
                 if let error {
                     print("[Ads] launch load failed: \(error.localizedDescription)")
@@ -354,7 +363,7 @@ final class AdsService: NSObject {
 
     private func loadSuccessInterstitial() {
         guard isReady, successInterstitial == nil else { return }
-        InterstitialAd.load(with: AdUnit.levelSuccessInterstitial, request: Request()) { [weak self] ad, error in
+        InterstitialAd.load(with: AdUnit.levelSuccessInterstitial, request: Self.adRequest()) { [weak self] ad, error in
             Task { @MainActor in
                 if let error {
                     print("[Ads] success load failed: \(error.localizedDescription)")
@@ -367,7 +376,7 @@ final class AdsService: NSObject {
 
     private func loadErrorInterstitial() {
         guard isReady, errorInterstitial == nil else { return }
-        InterstitialAd.load(with: AdUnit.errorInterstitial, request: Request()) { [weak self] ad, error in
+        InterstitialAd.load(with: AdUnit.errorInterstitial, request: Self.adRequest()) { [weak self] ad, error in
             Task { @MainActor in
                 if let error {
                     print("[Ads] error load failed: \(error.localizedDescription)")
@@ -380,7 +389,7 @@ final class AdsService: NSObject {
 
     private func loadHelpRewarded() {
         guard isReady, helpRewarded == nil else { return }
-        RewardedInterstitialAd.load(with: AdUnit.helpRewardedInterstitial, request: Request()) { [weak self] ad, error in
+        RewardedInterstitialAd.load(with: AdUnit.helpRewardedInterstitial, request: Self.adRequest()) { [weak self] ad, error in
             Task { @MainActor in
                 if let error {
                     print("[Ads] rewarded load failed: \(error.localizedDescription)")

@@ -6,12 +6,15 @@ import RobotIdiotCore
 final class Soundscape {
     static let shared = Soundscape()
 
-    private let engine = AVAudioEngine()
-    private let effects = AVAudioPlayerNode()
-    private let music = AVAudioPlayerNode()
-    private let format: AVAudioFormat
+    /// Graphe audio créé à la demande : accéder à `mainMixerNode` trop tôt
+    /// peut faire abort le simulateur (RPC timeout AudioUnit au réveil).
+    private var engine: AVAudioEngine?
+    private var effects: AVAudioPlayerNode?
+    private var music: AVAudioPlayerNode?
+    private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
     private var tones: [String: AVAudioPCMBuffer] = [:]
     private var unavailable = false
+    private var graphReady = false
     private let lightHaptic = UIImpactFeedbackGenerator(style: .light)
     private let softHaptic = UIImpactFeedbackGenerator(style: .soft)
     private let mediumHaptic = UIImpactFeedbackGenerator(style: .medium)
@@ -27,13 +30,6 @@ final class Soundscape {
     private var duckRestoreWork: DispatchWorkItem?
 
     private init() {
-        format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
-        engine.attach(effects)
-        engine.attach(music)
-        engine.connect(effects, to: engine.mainMixerNode, format: format)
-        engine.connect(music, to: engine.mainMixerNode, format: format)
-        effects.volume = 0.58
-        music.volume = 0
         tones["tap"] = softTone(frequency: 540, seconds: 0.05, volume: 0.28, harmonic: 0.18)
         tones["ui"] = softTone(frequency: 920, seconds: 0.032, volume: 0.24, harmonic: 0.12)
         tones["toggle"] = sequence([640, 900], note: 0.04, volume: 0.22)
@@ -67,6 +63,27 @@ final class Soundscape {
         ) { [weak self] _ in
             self?.refreshMusic()
         }
+    }
+
+    private func ensureGraph() -> (AVAudioEngine, AVAudioPlayerNode, AVAudioPlayerNode)? {
+        if unavailable { return nil }
+        if graphReady, let engine, let effects, let music {
+            return (engine, effects, music)
+        }
+        let engine = AVAudioEngine()
+        let effects = AVAudioPlayerNode()
+        let music = AVAudioPlayerNode()
+        engine.attach(effects)
+        engine.attach(music)
+        engine.connect(effects, to: engine.mainMixerNode, format: format)
+        engine.connect(music, to: engine.mainMixerNode, format: format)
+        effects.volume = 0.58
+        music.volume = 0
+        self.engine = engine
+        self.effects = effects
+        self.music = music
+        graphReady = true
+        return (engine, effects, music)
     }
 
     /// Mur, buisson ou autre obstacle solide : le robot reste sur place.
@@ -115,7 +132,7 @@ final class Soundscape {
         pulse(resolved, force: forceHaptic)
         guard PlaySettings.sound, let buffer = tones[resolved] else { return }
         startIfNeeded()
-        guard engine.isRunning else { return }
+        guard engine?.isRunning == true, let effects else { return }
         if !effects.isPlaying { effects.play() }
         effects.scheduleBuffer(buffer, at: nil, options: [])
         duckMusicIfNeeded(for: resolved)
@@ -134,7 +151,7 @@ final class Soundscape {
             return
         }
         startIfNeeded()
-        guard engine.isRunning else { return }
+        guard engine?.isRunning == true, let music else { return }
         if music.isPlaying {
             fadeMusic(to: musicRestingVolume)
             return
@@ -146,7 +163,7 @@ final class Soundscape {
     }
 
     private func duckMusicIfNeeded(for name: String) {
-        guard music.isPlaying, PlaySettings.music else { return }
+        guard let music, music.isPlaying, PlaySettings.music else { return }
         switch name {
         case "success", "error", "collect", "bump", "spikes", "water", "lava":
             break
@@ -163,25 +180,26 @@ final class Soundscape {
     }
 
     private func fadeMusic(to volume: Float, thenStop: Bool = false) {
+        guard let music else { return }
         musicFadeTimer?.invalidate()
         let start = music.volume
         let steps = 10
         let stepDuration = 0.04
         var index = 0
         musicFadeTimer = Timer.scheduledTimer(withTimeInterval: stepDuration, repeats: true) { [weak self] timer in
-            guard let self else {
+            guard let self, let music = self.music else {
                 timer.invalidate()
                 return
             }
             index += 1
             let progress = Float(index) / Float(steps)
-            self.music.volume = start + (volume - start) * progress
+            music.volume = start + (volume - start) * progress
             guard index >= steps else { return }
             timer.invalidate()
             self.musicFadeTimer = nil
-            self.music.volume = volume
+            music.volume = volume
             if thenStop, volume <= 0.001 {
-                self.music.stop()
+                music.stop()
             }
         }
     }
@@ -271,6 +289,7 @@ final class Soundscape {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
             try session.setActive(true, options: [])
+            guard let (engine, _, _) = ensureGraph() else { return }
             if !engine.isRunning {
                 try engine.start()
             }

@@ -33,7 +33,11 @@ public enum CatalogInterpreter {
     ) -> CatalogRun {
         let source = program ?? level.solution.program
         let grid = level.cells
-        guard grid.count == 7, grid.allSatisfy({ $0.count == 7 }) else {
+        let width = level.width
+        let height = level.height
+        guard width > 0, height > 0,
+              grid.count == height,
+              grid.allSatisfy({ $0.count == width }) else {
             return CatalogRun(actions: 0, result: .invalidCommand("grille"))
         }
         guard let direction = ["N": 0, "E": 1, "S": 2, "W": 3][level.start.orientation] else {
@@ -45,6 +49,7 @@ public enum CatalogInterpreter {
         var crates = Set<CellPoint>()
         var plates: [CellPoint: String] = [:]
         var doors: [CellPoint: String] = [:]
+        var portalExit: [CellPoint: CellPoint] = [:]
         for mechanic in level.mechanics {
             let point = CellPoint(x: mechanic.x, y: mechanic.y)
             switch mechanic.type {
@@ -66,6 +71,12 @@ public enum CatalogInterpreter {
                 break
             }
         }
+        for link in level.portalLinks where link.portals.count == 2 {
+            let a = CellPoint(x: link.portals[0].x, y: link.portals[0].y)
+            let b = CellPoint(x: link.portals[1].x, y: link.portals[1].y)
+            portalExit[a] = b
+            portalExit[b] = a
+        }
 
         var machine = Machine(
             x: level.start.x,
@@ -81,10 +92,12 @@ public enum CatalogInterpreter {
         var frames = [Frame(instructions: source, position: 0, loop: false)]
         var seen = Set<Signature>()
         var actions = 0
+        var ticks = 0
+        let tickBudget = max(maxSteps * 20, 50_000)
         let allowed = Set(level.unlockedCommands)
 
         func tile(_ x: Int, _ y: Int) -> Character {
-            guard (0..<7).contains(x), (0..<7).contains(y) else { return "#" }
+            guard (0..<width).contains(x), (0..<height).contains(y) else { return "#" }
             return grid[y][x]
         }
         func isLethal(_ x: Int, _ y: Int) -> Bool {
@@ -131,6 +144,11 @@ public enum CatalogInterpreter {
                 var next = machine
                 next.x = destination.0
                 next.y = destination.1
+                let entrance = CellPoint(x: next.x, y: next.y)
+                if let exit = portalExit[entrance] {
+                    next.x = exit.x
+                    next.y = exit.y
+                }
                 return next
             case "RAMASSE":
                 guard machine.remainingKeys.contains(here) else { return nil }
@@ -155,7 +173,8 @@ public enum CatalogInterpreter {
             case "POUSSE":
                 guard machine.crates.contains(front) else { return nil }
                 let beyond = CellPoint(x: frontX + dx, y: frontY + dy)
-                guard free(beyond.x, beyond.y) else { return nil }
+                // Pas de poussée sur un portail.
+                guard free(beyond.x, beyond.y), tile(beyond.x, beyond.y) != "Q" else { return nil }
                 var next = machine
                 next.crates.remove(front)
                 next.crates.insert(beyond)
@@ -168,6 +187,10 @@ public enum CatalogInterpreter {
         }
 
         while !frames.isEmpty, actions <= maxSteps {
+            ticks += 1
+            if ticks > tickBudget {
+                return CatalogRun(actions: actions, result: .infiniteCycle)
+            }
             if reachedFlag() {
                 return CatalogRun(actions: actions, result: .victory)
             }
@@ -194,17 +217,12 @@ public enum CatalogInterpreter {
                 let aheadY = machine.y + dy
                 let ahead = CellPoint(x: aheadX, y: aheadY)
                 let aheadSafe = safe(aheadX, aheadY)
-                let hereTile = tile(machine.x, machine.y)
                 let passes: Bool
                 switch condition {
                 case "CASE_DEVANT_LIBRE", "SI_CASE_DEVANT_LIBRE":
                     passes = aheadSafe
                 case "OBSTACLE_DEVANT", "SI_OBSTACLE_DEVANT":
                     passes = !aheadSafe
-                case "SI_SUR_CERCLE":
-                    passes = hereTile == "c"
-                case "SI_SUR_LOSANGE":
-                    passes = hereTile == "l"
                 case "SI_CLE_DEVANT":
                     passes = keys.contains(ahead) && machine.remainingKeys.contains(ahead)
                 case "SI_CADENAS_DEVANT":

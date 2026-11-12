@@ -321,12 +321,20 @@ final class GameViewController: UIViewController {
     }
 
     private func configureEditor() {
-        editor.setAllowedCommands(level.allowedCommands)
+        let lockedPalette = (campaign != nil && CatalogCampaign.showsLockedAdventureButtons)
+            ? CatalogCampaign.adventureLockedCommands
+            : []
+        editor.setAllowedCommands(level.allowedCommands, lockedVisible: lockedPalette)
         editor.setProgramLimit(level.programConstraints)
         if let daily, daily.kind == .bug, let baseline = daily.baselineProgram {
             editor.enableSinglePrimitiveReplace(baseline: baseline)
         } else if let campaign, let saved = CampaignStore.shared.program(at: campaign) {
-            editor.replaceProgram(saved)
+            let locked = Set(CatalogCampaign.adventureLockedCommands)
+            if saved.containsAny(of: locked) {
+                presentLegacyLockedProgramAlert(saved: saved, at: campaign)
+            } else {
+                editor.replaceProgram(saved)
+            }
         }
         editor.onProgramChange = { [weak self] program in
             guard let self else { return }
@@ -344,6 +352,30 @@ final class GameViewController: UIViewController {
             self.editor.setErrorMessage(nil)
             self.updateControls()
         }
+    }
+
+    /// Brouillon ancien contenant SI/REPETE : on conserve le programme et on propose une réinitialisation.
+    private func presentLegacyLockedProgramAlert(saved: Program, at address: LevelAddress) {
+        let alert = UIAlertController(
+            title: "Programme incompatible",
+            message: "Ce brouillon utilise Si ou Répète, indisponibles en mode Aventure. Tu peux le réinitialiser ou le garder tel quel sans l’exécuter.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Réinitialiser", style: .destructive) { [weak self] _ in
+            guard let self else { return }
+            let empty = Program()
+            self.editor.replaceProgram(empty)
+            CampaignStore.shared.save(empty, at: address)
+            self.engine.reset(program: empty)
+            self.updateControls()
+        })
+        alert.addAction(UIAlertAction(title: "Garder", style: .cancel) { [weak self] _ in
+            guard let self else { return }
+            self.editor.replaceProgram(saved)
+            self.editor.setErrorMessage("Si et Répète sont verrouillés en Aventure. Réinitialise le programme pour jouer.")
+            self.updateControls()
+        })
+        present(alert, animated: true)
     }
 
     private func configureOverlay() {
@@ -1245,7 +1277,10 @@ final class GameViewController: UIViewController {
         guard presentedViewController == nil, commandIntro.isHidden, storyBeat.isHidden else { return }
         let taught = commandsTaughtBeforeThisLevel()
         var seen = Set<CommandType>()
+        let locked = Set(CatalogCampaign.adventureLockedCommands)
         let fresh = level.allowedCommands.filter { command in
+            // V14.1 : jamais d’intro pour SI/REPETE en Aventure.
+            guard !locked.contains(command) else { return false }
             guard !taught.contains(command), !PlaySettings.hasIntroduced(command), seen.insert(command).inserted else { return false }
             return true
         }
@@ -1605,6 +1640,17 @@ final class GameViewController: UIViewController {
                 Soundscape.shared.play("collect")
             } else {
                 statusLabel.text = forward ? "Le robot avance." : "Le robot recule."
+                if !wantsContinuous { Soundscape.shared.play("move") }
+            }
+        case .teleported:
+            let remaining = outcome.state.game.remainingCollectibles.count
+            let justCollected = remaining < bonusRemainingCount
+            bonusRemainingCount = remaining
+            if justCollected {
+                statusLabel.text = "Écrou récupéré !"
+                Soundscape.shared.play("collect")
+            } else {
+                statusLabel.text = "Le robot traverse un portail."
                 if !wantsContinuous { Soundscape.shared.play("move") }
             }
         case .turned(_, let direction, _):
@@ -2448,6 +2494,13 @@ private enum HelpCommandResolver {
             case .moved(_, let to, _, _), .enteredHazard(_, let to, _, _, _):
                 if path.last != to {
                     path.append(to)
+                }
+            case .teleported(_, let entrance, let exit, _, _):
+                if path.last != entrance {
+                    path.append(entrance)
+                }
+                if path.last != exit {
+                    path.append(exit)
                 }
             default:
                 break
