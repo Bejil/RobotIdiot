@@ -51,11 +51,12 @@ final class CatalogPackTests: XCTestCase {
         XCTAssertEqual(run.actions, level.solution.actionCount)
     }
 
-    func testRepeatStopsWhenTheFlagIsEntered() throws {
+    func testAdventureLevelSeventyOneUsesOnlyPrimitives() throws {
         let pack = try LevelPackLoader.loadBundled()
         let level = try XCTUnwrap(pack.levels.first { $0.id == "RI-071" })
-        XCTAssertTrue(level.solution.program.contains {
+        XCTAssertFalse(level.solution.program.contains {
             if case .repete = $0 { return true }
+            if case .si = $0 { return true }
             return false
         })
         let run = CatalogInterpreter.execute(level)
@@ -68,14 +69,10 @@ final class CatalogPackTests: XCTestCase {
         let campaign = pack.levels.filter { $0.world <= 10 }
         let repeats = campaign.filter { contains($0.solution.program, .repete) }
         let conditions = campaign.filter { contains($0.solution.program, .si) }
-        // Mondes 7–8 préservés ; 9–10 V13 portent aussi SI/REPETE sur une partie des grilles.
-        XCTAssertEqual(repeats.count, 22)
-        XCTAssertEqual(conditions.count, 22)
-        XCTAssertEqual(Set(repeats.map(\.world)), Set(8...10))
-        XCTAssertEqual(Set(conditions.map(\.world)), Set(7...10))
-        XCTAssertEqual(pack.levels.filter { $0.world == 7 && contains($0.solution.program, .si) }.count, 3)
-        XCTAssertEqual(pack.levels.filter { $0.world == 8 && contains($0.solution.program, .repete) }.count, 4)
-        for level in repeats + conditions {
+        // V14.1 Aventure : aucune solution de référence n'utilise SI/REPETE.
+        XCTAssertEqual(repeats.count, 0)
+        XCTAssertEqual(conditions.count, 0)
+        for level in pack.levels where level.world <= 10 {
             let run = CatalogInterpreter.execute(level)
             XCTAssertEqual(run.result, .victory, level.id)
             XCTAssertEqual(run.actions, level.solution.actionCount, level.id)

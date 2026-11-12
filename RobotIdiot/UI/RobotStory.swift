@@ -152,37 +152,37 @@ enum RobotStory {
             ]
         ),
         7: Chapter(
-            id: "enter-world-7",
-            ribbon: "Chapitre 7 · Boucle",
+            id: "enter-world-7-aventure",
+            ribbon: "Chapitre 7 · Veille",
             pages: [
                 Page(
-                    line: "Depuis mon extinction, quelque chose a tourné en rond dans mon noyau : un programme de veille qui répétait « attends-la ».",
+                    line: "Depuis mon extinction, un murmure restait allumé au fond de moi : « attends-la ». Des années, peut-être, sans bouger.",
                     aside: nil
                 ),
                 Page(
-                    line: "Des années, peut-être. Attendre une enfant devenue grande. Attendre une permission qui n’est jamais venue.",
+                    line: "Attendre une enfant devenue grande. Attendre une permission qui n’est jamais venue. L’attente a usé ma mémoire plus que le temps.",
                     aside: nil
                 ),
                 Page(
-                    line: "Toi, tu casses la boucle. Chaque programme que tu écris me prouve que je peux faire autre chose qu’attendre.",
+                    line: "Toi, tu me remets en marche pour de vrai. Chaque parcours que tu traces me prouve que je peux faire autre chose qu’attendre.",
                     aside: "Monde 7"
                 )
             ]
         ),
         8: Chapter(
-            id: "enter-world-8",
-            ribbon: "Chapitre 8 · Condition",
+            id: "enter-world-8-aventure",
+            ribbon: "Chapitre 8 · Promesse",
             pages: [
                 Page(
-                    line: "Nouveau souvenir : elle est revenue une fois. Plus grande. Elle a murmuré : « Si tu m’entends… je reviendrai quand je pourrai. »",
+                    line: "Nouveau souvenir : elle est revenue une fois. Plus grande. Elle a murmuré : « Je reviendrai quand je pourrai. »",
                     aside: nil
                 ),
                 Page(
-                    line: "Condition non remplie. Ou remplie trop tard. Je ne sais pas. Les « si » font mal quand on est une machine conçue pour obéir.",
+                    line: "Trop tôt, trop tard… je ne sais pas. Une promesse en suspens fait mal quand on est conçu pour obéir sans répondre.",
                     aside: nil
                 ),
                 Page(
-                    line: "Pourtant j’ai compris autre chose : choisir, ce n’est pas trahir. C’est exister un peu plus fort.",
+                    line: "Pourtant j’ai compris autre chose : avancer avec toi, ce n’est pas trahir. C’est exister un peu plus fort.",
                     aside: "Monde 8"
                 )
             ]

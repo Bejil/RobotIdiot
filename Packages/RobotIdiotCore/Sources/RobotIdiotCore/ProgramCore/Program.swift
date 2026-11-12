@@ -145,6 +145,18 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
         self.instructions = instructions
     }
 
+    /// Vrai si le programme contient au moins une des commandes listées (récursif).
+    public func containsAny(of commands: Set<CommandType>) -> Bool {
+        func walk(_ nodes: [Instruction]) -> Bool {
+            for node in nodes {
+                if commands.contains(node.command) { return true }
+                if walk(node.children) { return true }
+            }
+            return false
+        }
+        return walk(instructions)
+    }
+
     public var blockCount: Int {
         instructions.reduce(0) { $0 + $1.nodeCount }
     }

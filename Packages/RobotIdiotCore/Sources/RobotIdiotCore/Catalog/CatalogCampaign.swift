@@ -8,9 +8,18 @@ public enum CatalogCampaign {
     public static let worldCount = 15
     public static let levelsPerWorld = 10
     public static let formulaVersion = 7
-    /// Révision pack V14 (≤ 3 paires A–C) : conserve la progression, invalide les brouillons mondes 9–15.
-    public static let contentRevision = "V14-three-portal-pairs"
+    /// Révision pack V14.1 Aventure : SI/REPETE verrouillés partout ; conserve la progression.
+    public static let contentRevision = "V14.1-aventure"
     public static let layout = CampaignLayout(standardLevelCount: 10, includesFinale: false)
+
+    /// Commandes toujours verrouillées en Aventure (implémentation moteur conservée).
+    public static var adventureLockedCommands: [CommandType] {
+        pack.adventureCommandPolicy?.lockedCommandTypes ?? [.forever, .ifBlock]
+    }
+
+    public static var showsLockedAdventureButtons: Bool {
+        pack.adventureCommandPolicy?.showLockedButtonsInEditor ?? true
+    }
 
     public static let pack: LevelPack = {
         do {
@@ -43,7 +52,7 @@ public enum CatalogCampaign {
     private static func newlyUnlockedCommands(in world: Int) -> [String] {
         guard world > 1 else { return [] }
         let order = [
-            "RECULE", "RAMASSE", "UTILISE", "POUSSE", "ACTIVE", "SI", "REPETE"
+            "RECULE", "RAMASSE", "UTILISE", "POUSSE", "ACTIVE"
         ]
         let current = Set(pack.levels.filter { $0.world == world }.flatMap(\.unlockedCommands))
         let previous = Set(pack.levels.filter { $0.world == world - 1 }.flatMap(\.unlockedCommands))
@@ -62,10 +71,6 @@ public enum CatalogCampaign {
             return "Pousse les caisses pour libérer le chemin."
         case "ACTIVE":
             return "Active les interrupteurs pour débloquer le passage."
-        case "SI":
-            return "Décide avec Si selon ce qui se trouve devant toi."
-        case "REPETE":
-            return "Répète une séquence pour avancer plus efficacement."
         default:
             return raw
         }
@@ -75,6 +80,8 @@ public enum CatalogCampaign {
         switch world {
         case 1:
             return "Avance et tourne pour rejoindre le drapeau."
+        case 7, 8:
+            return "Maîtrise les commandes déjà acquises sur des parcours plus longs."
         case 9:
             return "Traverse tes premiers portails entre salles séparées."
         case 10:

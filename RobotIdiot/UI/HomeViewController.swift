@@ -473,10 +473,12 @@ final class HomeViewController: UIViewController {
         let address = CampaignRules.continueAddress(in: progress, layout: CatalogCampaign.layout)
         let finished = CatalogCampaign.level(at: address) == nil
         let starting = address.world == 1 && address.level == 1
-        let title = finished ? "Terminé" : (starting ? "Démarrer" : "Continuer")
+        let title = finished ? "Terminé" : (starting ? "Aventure" : "Continuer")
+        let mark = finished ? "play" : (starting ? "book" : "play")
         let place = finished || progress.records.isEmpty ? nil : PlayerCopy.campaignTitle(address)
         guard var configuration = continueButton.configuration else { return }
         configuration.title = title
+        configuration.image = GameArt.fitted(GameArt.mark(mark), side: 26)
         configuration.subtitle = place
         configuration.subtitleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming

@@ -9,7 +9,7 @@ final class V13PortalCampaignTests: XCTestCase {
 
     func testSeventyPortalLevelsWithExpectedGrids() {
         XCTAssertEqual(portalLevels.count, 70)
-        XCTAssertEqual(CatalogCampaign.pack.schemaVersion, "14.0")
+        XCTAssertEqual(CatalogCampaign.pack.schemaVersion, "14.1")
         XCTAssertEqual(CatalogCampaign.pack.levels.count, 150)
         for level in portalLevels {
             let expected = level.world <= 10 ? 7 : 8

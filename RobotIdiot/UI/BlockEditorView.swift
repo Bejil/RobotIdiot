@@ -43,6 +43,8 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     private var ancestorIDs: Set<UUID> = []
     private var insertionParentID: UUID?
     private var allowed: [CommandType] = CommandType.movement
+    /// Commandes visibles mais non insérables (SI/REPETE en Aventure V14.1).
+    private var lockedVisible: [CommandType] = []
     private var constraintsLimit: ProgramConstraints = .flat
     private var textDraft: String?
     private var displayedLineIDs: [UUID?] = []
@@ -80,8 +82,9 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         nil
     }
 
-    func setAllowedCommands(_ commands: [CommandType]) {
+    func setAllowedCommands(_ commands: [CommandType], lockedVisible locked: [CommandType] = []) {
         allowed = commands
+        lockedVisible = locked.filter { !commands.contains($0) }
         rebuildPalette()
         refreshHint()
     }
@@ -509,7 +512,7 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
             .pickUp, .use, .push, .activate,
             .forever, .ifBlock
         ]
-        return preferred.filter { allowed.contains($0) }
+        return preferred.filter { allowed.contains($0) || lockedVisible.contains($0) }
     }
 
     private func rebuildPalette() {
@@ -534,7 +537,12 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         }
         suggestionItems = []
         for command in paletteCommands {
-            palette.addArrangedSubview(paletteButton(command))
+            if lockedVisible.contains(command) {
+                // V14.1 Aventure : SI/REPETE restent des placeholders verrouillés, sans libellé de commande.
+                palette.addArrangedSubview(lockedCommandPlaceholder())
+            } else {
+                palette.addArrangedSubview(paletteButton(command))
+            }
         }
         syncPalettePlaceholders()
         refreshPaletteButtonSizing()
@@ -576,9 +584,25 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         return button
     }
 
+    /// Emplacement réservé (pointillés + cadenas), sans révéler SI/REPETE.
+    private func lockedCommandPlaceholder() -> UIView {
+        let slot = PalettePlaceholderSlot()
+        slot.tag = Self.palettePlaceholderTag
+        slot.isAccessibilityElement = true
+        slot.accessibilityLabel = "Commande verrouillée"
+        slot.isUserInteractionEnabled = true
+        let tap = UITapGestureRecognizer(target: self, action: #selector(lockedPlaceholderTapped))
+        slot.addGestureRecognizer(tap)
+        return slot
+    }
+
     private func refreshHint() {
         if modeControl.selectedSegmentIndex == 1 {
-            hintLabel.text = "Une commande par ligne. Deux espaces de plus pour entrer dans Répète ou Si."
+            if allowed.contains(.forever) || allowed.contains(.ifBlock) {
+                hintLabel.text = "Une commande par ligne. Deux espaces de plus pour entrer dans Répète ou Si."
+            } else {
+                hintLabel.text = "Une commande par ligne. Utilise les commandes déjà débloquées."
+            }
             return
         }
         if allowed.contains(.push) {
@@ -602,6 +626,10 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         insertionParentID = nil
         refreshChrome()
         refreshVisibleCells()
+    }
+
+    @objc private func lockedPlaceholderTapped() {
+        setErrorMessage("Cette commande n’est pas disponible en mode Aventure.")
     }
 
     @objc private func addCommand(_ sender: UIButton) {

@@ -73,8 +73,9 @@ final class CampaignStore {
             // Les programmes des niveaux déjà réussis ne sont plus conservés.
             purgeCompletedProgramsLocked()
             if archive.contentRevision != CatalogCampaign.contentRevision {
-                // V13 : garder la progression, invalider les brouillons des niveaux remplacés (9–15).
-                archive.programs.removeAll { $0.address.world >= 9 }
+                // V14.1 : garder progression/étoiles ; retirer les brouillons contenant SI/REPETE.
+                let locked = Set(CatalogCampaign.adventureLockedCommands)
+                archive.programs.removeAll { $0.program.containsAny(of: locked) }
                 archive.contentRevision = CatalogCampaign.contentRevision
             }
             persistLocked()

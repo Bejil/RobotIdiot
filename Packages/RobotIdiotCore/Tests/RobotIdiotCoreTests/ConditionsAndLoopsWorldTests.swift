@@ -64,15 +64,15 @@ final class ConditionsAndLoopsWorldTests: XCTestCase {
         XCTAssertEqual(CatalogInterpreter.execute(source).result, .infiniteCycle)
     }
 
-    func testConstraintsAreReachableAndForceTheNewCommand() throws {
+    func testConstraintsAreReachableWithoutControlFlowUnlocks() throws {
         for source in worldLevels {
             let level = CatalogCampaign.playableLevel(source)
             let reference = CatalogCampaign.referenceProgram(for: source)
             XCTAssertEqual(ProgramValidator.issues(in: reference, level: level), [], source.id)
-            XCTAssertTrue(
-                source.unlockedCommands.contains("REPETE") || source.unlockedCommands.contains("SI"),
-                source.id
-            )
+            // V14.1 Aventure : SI/REPETE restent verrouillés aux mondes 7–8.
+            XCTAssertFalse(source.unlockedCommands.contains("REPETE"), source.id)
+            XCTAssertFalse(source.unlockedCommands.contains("SI"), source.id)
+            XCTAssertFalse(reference.containsAny(of: [.forever, .ifBlock]), source.id)
         }
     }
 

@@ -1,0 +1,75 @@
+{
+  "reference": "/Users/michaelblin/Desktop/Robot_Idiot_V14_Rollback_Verification_Complet/Robot_Idiot_150_Niveaux_V14.json",
+  "referenceSha256": "23fc0cb49fe81d3e824a5dc16666b72f99bf08e62891c4142592a14d1eb730d5",
+  "referenceSummary": {
+    "schemaVersion": "14.0",
+    "levels": 150,
+    "worlds": {
+      "1": 10,
+      "2": 10,
+      "3": 10,
+      "4": 10,
+      "5": 10,
+      "6": 10,
+      "7": 10,
+      "8": 10,
+      "9": 10,
+      "10": 10,
+      "11": 10,
+      "12": 10,
+      "13": 10,
+      "14": 10,
+      "15": 10
+    },
+    "portalPairsDistribution": {
+      "0": 80,
+      "1": 1,
+      "2": 1,
+      "3": 68
+    },
+    "portalPairsTotal": 207,
+    "doors": 223,
+    "bonusLevels": 45,
+    "scoreMetric": "executedPrimitiveActions"
+  },
+  "referenceErrors": [],
+  "referenceWarnings": [],
+  "candidate": "/Users/michaelblin/Desktop/Git/RobotIdiot/Packages/RobotIdiotCore/Sources/RobotIdiotCore/Resources/robot_idiot_100_levels_v7.json",
+  "candidateSha256": "23fc0cb49fe81d3e824a5dc16666b72f99bf08e62891c4142592a14d1eb730d5",
+  "candidateSummary": {
+    "schemaVersion": "14.0",
+    "levels": 150,
+    "worlds": {
+      "1": 10,
+      "2": 10,
+      "3": 10,
+      "4": 10,
+      "5": 10,
+      "6": 10,
+      "7": 10,
+      "8": 10,
+      "9": 10,
+      "10": 10,
+      "11": 10,
+      "12": 10,
+      "13": 10,
+      "14": 10,
+      "15": 10
+    },
+    "portalPairsDistribution": {
+      "0": 80,
+      "1": 1,
+      "2": 1,
+      "3": 68
+    },
+    "portalPairsTotal": 207,
+    "doors": 223,
+    "bonusLevels": 45,
+    "scoreMetric": "executedPrimitiveActions"
+  },
+  "candidateErrors": [],
+  "candidateWarnings": [],
+  "identicalBytes": true,
+  "identicalJson": true,
+  "differences": []
+}

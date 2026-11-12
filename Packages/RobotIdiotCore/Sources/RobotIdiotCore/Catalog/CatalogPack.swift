@@ -1,6 +1,6 @@
 import Foundation
 
-/// Pack officiel (schéma 14.0 : portails Q / BoardPortal, ≤ 3 paires A–C).
+/// Pack officiel (schéma 14.1 Aventure : SI/REPETE verrouillés, portails ≤ 3 paires A–C).
 /// L'axe Y du fichier augmente vers le bas. Cette orientation n'est pas inversée ici.
 public struct LevelPack: Codable, Equatable, Sendable {
     public var schemaVersion: String
@@ -9,9 +9,83 @@ public struct LevelPack: Codable, Equatable, Sendable {
     public var coordinateSystem: String
     public var commandRules: [String: String]
     public var levels: [CatalogLevel]
+    /// Politique Aventure V14.1 : SI/REPETE visibles mais jamais débloqués.
+    public var adventureCommandPolicy: AdventureCommandPolicy?
 
-    public static let supportedSchemaVersion = "14.0"
+    public static let supportedSchemaVersion = "14.1"
     public static let documentedCoordinateSystem = "x increases right, y increases down, zero indexed"
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, game, gridLegend, coordinateSystem, commandRules, levels, adventureCommandPolicy
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try container.decode(String.self, forKey: .schemaVersion)
+        game = try container.decode(String.self, forKey: .game)
+        gridLegend = try container.decode([String: String].self, forKey: .gridLegend)
+        coordinateSystem = try container.decode(String.self, forKey: .coordinateSystem)
+        commandRules = try container.decode([String: String].self, forKey: .commandRules)
+        levels = try container.decode([CatalogLevel].self, forKey: .levels)
+        adventureCommandPolicy = try container.decodeIfPresent(AdventureCommandPolicy.self, forKey: .adventureCommandPolicy)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(game, forKey: .game)
+        try container.encode(gridLegend, forKey: .gridLegend)
+        try container.encode(coordinateSystem, forKey: .coordinateSystem)
+        try container.encode(commandRules, forKey: .commandRules)
+        try container.encode(levels, forKey: .levels)
+        try container.encodeIfPresent(adventureCommandPolicy, forKey: .adventureCommandPolicy)
+    }
+}
+
+/// Règles de déblocage du mode Aventure (V14.1).
+public struct AdventureCommandPolicy: Codable, Equatable, Sendable {
+    public var mode: String
+    public var availableCommands: [String]
+    public var lockedCommands: [String]
+    public var lockedInEveryWorld: Bool
+    public var showLockedButtonsInEditor: Bool
+    public var allowLockedCommandsInEditor: Bool
+    public var allowLockedCommandsInAdventureRuntime: Bool
+    public var scoringMetric: String?
+
+    public var lockedCommandTypes: [CommandType] {
+        lockedCommands.compactMap(CommandType.init(rawValue:))
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mode, availableCommands, lockedCommands, lockedInEveryWorld
+        case showLockedButtonsInEditor, allowLockedCommandsInEditor
+        case allowLockedCommandsInAdventureRuntime, scoringMetric
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        mode = try container.decodeIfPresent(String.self, forKey: .mode) ?? "adventure"
+        availableCommands = try container.decodeIfPresent([String].self, forKey: .availableCommands) ?? []
+        lockedCommands = try container.decodeIfPresent([String].self, forKey: .lockedCommands) ?? ["REPETE", "SI"]
+        lockedInEveryWorld = try container.decodeIfPresent(Bool.self, forKey: .lockedInEveryWorld) ?? true
+        showLockedButtonsInEditor = try container.decodeIfPresent(Bool.self, forKey: .showLockedButtonsInEditor) ?? true
+        allowLockedCommandsInEditor = try container.decodeIfPresent(Bool.self, forKey: .allowLockedCommandsInEditor) ?? false
+        allowLockedCommandsInAdventureRuntime = try container.decodeIfPresent(Bool.self, forKey: .allowLockedCommandsInAdventureRuntime) ?? false
+        scoringMetric = try container.decodeIfPresent(String.self, forKey: .scoringMetric)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(mode, forKey: .mode)
+        try container.encode(availableCommands, forKey: .availableCommands)
+        try container.encode(lockedCommands, forKey: .lockedCommands)
+        try container.encode(lockedInEveryWorld, forKey: .lockedInEveryWorld)
+        try container.encode(showLockedButtonsInEditor, forKey: .showLockedButtonsInEditor)
+        try container.encode(allowLockedCommandsInEditor, forKey: .allowLockedCommandsInEditor)
+        try container.encode(allowLockedCommandsInAdventureRuntime, forKey: .allowLockedCommandsInAdventureRuntime)
+        try container.encodeIfPresent(scoringMetric, forKey: .scoringMetric)
+    }
 }
 
 public struct CatalogLevel: Codable, Equatable, Sendable {
@@ -28,6 +102,8 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
     public var objective: Objective
     public var family: String
     public var unlockedCommands: [String]
+    /// Commande nouvellement présentée (nil en V14.1 pour les mondes 7–15).
+    public var newCommand: String?
     public var mechanics: [Mechanic]
     public var obstacles: Obstacles
     public var solution: CatalogSolution
@@ -40,7 +116,7 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case id, world, worldLevel, globalLevel, name, width, height, grid
-        case start, finish, objective, family, unlockedCommands, mechanics
+        case start, finish, objective, family, unlockedCommands, newCommand, mechanics
         case obstacles, solution, generation, difficulty, rewards, starTargets
         case portalLinks
     }
@@ -60,6 +136,7 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
         objective = try container.decode(Objective.self, forKey: .objective)
         family = try container.decode(String.self, forKey: .family)
         unlockedCommands = try container.decode([String].self, forKey: .unlockedCommands)
+        newCommand = try container.decodeIfPresent(String.self, forKey: .newCommand)
         mechanics = try container.decode([Mechanic].self, forKey: .mechanics)
         obstacles = try container.decode(Obstacles.self, forKey: .obstacles)
         solution = try container.decode(CatalogSolution.self, forKey: .solution)
@@ -85,6 +162,7 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
         try container.encode(objective, forKey: .objective)
         try container.encode(family, forKey: .family)
         try container.encode(unlockedCommands, forKey: .unlockedCommands)
+        try container.encodeIfPresent(newCommand, forKey: .newCommand)
         try container.encode(mechanics, forKey: .mechanics)
         try container.encode(obstacles, forKey: .obstacles)
         try container.encode(solution, forKey: .solution)
