@@ -63,6 +63,14 @@ public enum ExecutionFault: Error, Hashable, Sendable, Codable {
 
 public enum SimulationEvent: Hashable, Sendable, Codable {
     case moved(from: GridCoordinate, to: GridCoordinate, forward: Bool, command: CommandType)
+    /// Déplacement entrant sur un portail puis téléportation vers la paire (même coût d'action).
+    case teleported(
+        from: GridCoordinate,
+        entrance: GridCoordinate,
+        exit: GridCoordinate,
+        forward: Bool,
+        command: CommandType
+    )
     case turned(from: Direction, to: Direction, command: CommandType)
     case pickedUp(CarriedItem, at: GridCoordinate)
     case collectedBonus(LevelCollectible, at: GridCoordinate)

@@ -127,6 +127,27 @@ public struct ValidationMetadata: Codable, Hashable, Sendable {
     }
 }
 
+/// Paire de portails jouable (coordonnées déjà dans le repère moteur).
+public struct LevelPortalLink: Codable, Hashable, Sendable, Identifiable {
+    public var id: String { linkId }
+    public var linkId: String
+    public var endpoints: [GridCoordinate]
+    public var visualVariant: String
+
+    public init(linkId: String, endpoints: [GridCoordinate], visualVariant: String) {
+        self.linkId = linkId
+        self.endpoints = endpoints
+        self.visualVariant = visualVariant
+    }
+
+    public func partner(of coordinate: GridCoordinate) -> GridCoordinate? {
+        guard endpoints.count == 2 else { return nil }
+        if endpoints[0] == coordinate { return endpoints[1] }
+        if endpoints[1] == coordinate { return endpoints[0] }
+        return nil
+    }
+}
+
 public struct Level: Codable, Hashable, Sendable {
     public var id: String
     public var version: Int
@@ -145,6 +166,8 @@ public struct Level: Codable, Hashable, Sendable {
     public var validation: ValidationMetadata
     /// Bonus facultatifs (ex. BoardBolt), affichés en overlay sans remplacer la tuile.
     public var collectibles: [LevelCollectible]
+    /// Portails bidirectionnels (V13). Entrée sur une extrémité → sortie sur l'autre.
+    public var portalLinks: [LevelPortalLink]
 
     public init(
         id: String,
@@ -162,7 +185,8 @@ public struct Level: Codable, Hashable, Sendable {
         programConstraints: ProgramConstraints,
         scoringRules: ScoringRules,
         validation: ValidationMetadata,
-        collectibles: [LevelCollectible] = []
+        collectibles: [LevelCollectible] = [],
+        portalLinks: [LevelPortalLink] = []
     ) {
         self.id = id
         self.version = version
@@ -180,6 +204,68 @@ public struct Level: Codable, Hashable, Sendable {
         self.scoringRules = scoringRules
         self.validation = validation
         self.collectibles = collectibles
+        self.portalLinks = portalLinks
+    }
+
+    public func portalPartner(of coordinate: GridCoordinate) -> GridCoordinate? {
+        for link in portalLinks {
+            if let partner = link.partner(of: coordinate) {
+                return partner
+            }
+        }
+        return nil
+    }
+
+    public func isPortal(_ coordinate: GridCoordinate) -> Bool {
+        portalLinks.contains { $0.endpoints.contains(coordinate) }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, version, seed, generatorVersion, worldNumber, levelNumber, difficulty
+        case theme, grid, initialRobot, objectives, allowedCommands, programConstraints
+        case scoringRules, validation, collectibles, portalLinks
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        version = try container.decode(Int.self, forKey: .version)
+        seed = try container.decode(UInt64.self, forKey: .seed)
+        generatorVersion = try container.decode(Int.self, forKey: .generatorVersion)
+        worldNumber = try container.decode(Int.self, forKey: .worldNumber)
+        levelNumber = try container.decode(Int.self, forKey: .levelNumber)
+        difficulty = try container.decode(Double.self, forKey: .difficulty)
+        theme = try container.decode(ThemeIdentifier.self, forKey: .theme)
+        grid = try container.decode(Grid.self, forKey: .grid)
+        initialRobot = try container.decode(RobotState.self, forKey: .initialRobot)
+        objectives = try container.decode([Objective].self, forKey: .objectives)
+        allowedCommands = try container.decode([CommandType].self, forKey: .allowedCommands)
+        programConstraints = try container.decode(ProgramConstraints.self, forKey: .programConstraints)
+        scoringRules = try container.decode(ScoringRules.self, forKey: .scoringRules)
+        validation = try container.decode(ValidationMetadata.self, forKey: .validation)
+        collectibles = try container.decodeIfPresent([LevelCollectible].self, forKey: .collectibles) ?? []
+        portalLinks = try container.decodeIfPresent([LevelPortalLink].self, forKey: .portalLinks) ?? []
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(version, forKey: .version)
+        try container.encode(seed, forKey: .seed)
+        try container.encode(generatorVersion, forKey: .generatorVersion)
+        try container.encode(worldNumber, forKey: .worldNumber)
+        try container.encode(levelNumber, forKey: .levelNumber)
+        try container.encode(difficulty, forKey: .difficulty)
+        try container.encode(theme, forKey: .theme)
+        try container.encode(grid, forKey: .grid)
+        try container.encode(initialRobot, forKey: .initialRobot)
+        try container.encode(objectives, forKey: .objectives)
+        try container.encode(allowedCommands, forKey: .allowedCommands)
+        try container.encode(programConstraints, forKey: .programConstraints)
+        try container.encode(scoringRules, forKey: .scoringRules)
+        try container.encode(validation, forKey: .validation)
+        try container.encode(collectibles, forKey: .collectibles)
+        try container.encode(portalLinks, forKey: .portalLinks)
     }
 
     public var placedObjects: [PlacedObject] {

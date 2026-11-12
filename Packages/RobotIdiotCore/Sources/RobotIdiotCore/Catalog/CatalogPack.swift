@@ -1,6 +1,6 @@
 import Foundation
 
-/// Pack officiel `schemaVersion` 7.0.
+/// Pack officiel (schéma 13.0 : portails Q / BoardPortal).
 /// L'axe Y du fichier augmente vers le bas. Cette orientation n'est pas inversée ici.
 public struct LevelPack: Codable, Equatable, Sendable {
     public var schemaVersion: String
@@ -10,7 +10,7 @@ public struct LevelPack: Codable, Equatable, Sendable {
     public var commandRules: [String: String]
     public var levels: [CatalogLevel]
 
-    public static let supportedSchemaVersion = "7.0"
+    public static let supportedSchemaVersion = "13.0"
     public static let documentedCoordinateSystem = "x increases right, y increases down, zero indexed"
 }
 
@@ -35,11 +35,14 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
     public var difficulty: Difficulty
     public var rewards: CatalogRewards?
     public var starTargets: CatalogStarTargets?
+    /// Paires de portails bidirectionnels (V13). Absent sur les mondes 1–8.
+    public var portalLinks: [CatalogPortalLink]
 
     private enum CodingKeys: String, CodingKey {
         case id, world, worldLevel, globalLevel, name, width, height, grid
         case start, finish, objective, family, unlockedCommands, mechanics
         case obstacles, solution, generation, difficulty, rewards, starTargets
+        case portalLinks
     }
 
     public init(from decoder: Decoder) throws {
@@ -64,6 +67,7 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
         difficulty = try container.decode(Difficulty.self, forKey: .difficulty)
         rewards = try container.decodeIfPresent(CatalogRewards.self, forKey: .rewards)
         starTargets = try container.decodeIfPresent(CatalogStarTargets.self, forKey: .starTargets)
+        portalLinks = try container.decodeIfPresent([CatalogPortalLink].self, forKey: .portalLinks) ?? []
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -88,6 +92,9 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
         try container.encode(difficulty, forKey: .difficulty)
         try container.encodeIfPresent(rewards, forKey: .rewards)
         try container.encodeIfPresent(starTargets, forKey: .starTargets)
+        if !portalLinks.isEmpty {
+            try container.encode(portalLinks, forKey: .portalLinks)
+        }
     }
 
     public struct Start: Codable, Equatable, Sendable {
@@ -128,19 +135,22 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
         public var x: Int
         public var y: Int
         public var linkId: String?
+        public var visualVariant: String?
 
         private enum CodingKeys: String, CodingKey {
             case type
             case x
             case y
             case linkId
+            case visualVariant
         }
 
-        public init(type: String, x: Int, y: Int, linkId: String? = nil) {
+        public init(type: String, x: Int, y: Int, linkId: String? = nil, visualVariant: String? = nil) {
             self.type = type
             self.x = x
             self.y = y
             self.linkId = linkId
+            self.visualVariant = visualVariant
         }
 
         public init(from decoder: Decoder) throws {
@@ -149,6 +159,7 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
             x = try container.decode(Int.self, forKey: .x)
             y = try container.decode(Int.self, forKey: .y)
             linkId = try container.decodeIfPresent(String.self, forKey: .linkId)
+            visualVariant = try container.decodeIfPresent(String.self, forKey: .visualVariant)
         }
 
         public func encode(to encoder: Encoder) throws {
@@ -157,6 +168,19 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
             try container.encode(x, forKey: .x)
             try container.encode(y, forKey: .y)
             try container.encodeIfPresent(linkId, forKey: .linkId)
+            try container.encodeIfPresent(visualVariant, forKey: .visualVariant)
+        }
+    }
+
+    public struct CatalogPortalLink: Codable, Equatable, Sendable {
+        public var linkId: String
+        public var portals: [PortalCoordinate]
+        public var visualVariant: String
+        public var directionality: String?
+
+        public struct PortalCoordinate: Codable, Equatable, Sendable {
+            public var x: Int
+            public var y: Int
         }
     }
 
@@ -168,6 +192,23 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
         public var seed: Int
         public var attempt: Int
         public var generatorVersion: String
+
+        private enum CodingKeys: String, CodingKey {
+            case seed, attempt, generatorVersion
+        }
+
+        public init(seed: Int, attempt: Int, generatorVersion: String) {
+            self.seed = seed
+            self.attempt = attempt
+            self.generatorVersion = generatorVersion
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            seed = try container.decode(Int.self, forKey: .seed)
+            attempt = try container.decodeIfPresent(Int.self, forKey: .attempt) ?? 0
+            generatorVersion = try container.decode(String.self, forKey: .generatorVersion)
+        }
     }
 
     public struct Difficulty: Codable, Equatable, Sendable {
@@ -183,6 +224,28 @@ public struct CatalogLevel: Codable, Equatable, Sendable {
         public var moveActions: Int
         public var maxConsecutiveMovesSameDirection: Int
         public var optimalActionCount: Int?
+
+        private enum CodingKeys: String, CodingKey {
+            case worldTier, solutionActionCount, walkablePathLength, turnsOnIntendedPath
+            case maximumStraightRun, detourCount, deadEnds, wallCount, turns, moveActions
+            case maxConsecutiveMovesSameDirection, optimalActionCount
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            worldTier = try container.decode(Int.self, forKey: .worldTier)
+            solutionActionCount = try container.decode(Int.self, forKey: .solutionActionCount)
+            walkablePathLength = try container.decodeIfPresent(Int.self, forKey: .walkablePathLength) ?? 0
+            turnsOnIntendedPath = try container.decodeIfPresent(Int.self, forKey: .turnsOnIntendedPath) ?? 0
+            maximumStraightRun = try container.decodeIfPresent(Int.self, forKey: .maximumStraightRun) ?? 0
+            detourCount = try container.decodeIfPresent(Int.self, forKey: .detourCount) ?? 0
+            deadEnds = try container.decodeIfPresent(Int.self, forKey: .deadEnds) ?? 0
+            wallCount = try container.decodeIfPresent(Int.self, forKey: .wallCount) ?? 0
+            turns = try container.decodeIfPresent(Int.self, forKey: .turns) ?? 0
+            moveActions = try container.decodeIfPresent(Int.self, forKey: .moveActions) ?? 0
+            maxConsecutiveMovesSameDirection = try container.decodeIfPresent(Int.self, forKey: .maxConsecutiveMovesSameDirection) ?? 0
+            optimalActionCount = try container.decodeIfPresent(Int.self, forKey: .optimalActionCount)
+        }
     }
 
     var cells: [[Character]] {
@@ -370,7 +433,7 @@ public enum LevelPackLoader {
 }
 
 public enum LevelPackChecker {
-    public static let symbols: Set<Character> = Set("gBRLTPOWF^>v<KUADC")
+    public static let symbols: Set<Character> = Set("gBRLTPOWF^>v<KUADCQ")
     public static let orientations = ["N": "^", "E": ">", "S": "v", "W": "<"]
     public static let knownCommands: Set<String> = [
         "AVANCE", "RECULE", "TOURNE_GAUCHE", "TOURNE_DROITE",
@@ -381,8 +444,10 @@ public enum LevelPackChecker {
         "BoardLock": "U",
         "BoardPlate": "A",
         "BoardDoor": "D",
-        "BoardCrate": "C"
+        "BoardCrate": "C",
+        "BoardPortal": "Q"
     ]
+    public static let portalVariants: Set<String> = ["A", "B", "C", "D", "E"]
     public static let blockingSymbols: Set<Character> = Set("BRLTPOW")
 
     public static func issues(in pack: LevelPack) -> [LevelPackIssue] {
@@ -495,9 +560,9 @@ public enum LevelPackChecker {
             report("drapeau", "F est en \(flags[0]) et finish en \(level.finish.x),\(level.finish.y)")
         }
 
-        let portals = level.grid.joined().filter(\.isNumber)
-        if !portals.isEmpty {
-            report("portail", "le pack validé n'en place aucun, trouvé \(portals)")
+        let numericPortals = level.grid.joined().filter(\.isNumber)
+        if !numericPortals.isEmpty {
+            report("portail", "anciens symboles numériques interdits, trouvé \(numericPortals)")
         }
         for mechanic in level.mechanics {
             guard let symbol = mechanicSymbols[mechanic.type] else {
@@ -512,12 +577,19 @@ public enum LevelPackChecker {
             if String(placed) != symbol {
                 report("mécanisme", "\(mechanic.type) en \(mechanic.x),\(mechanic.y) vaut \(placed) au lieu de \(symbol)")
             }
-            if mechanic.type == "BoardPlate" || mechanic.type == "BoardDoor" {
+            if mechanic.type == "BoardPlate" || mechanic.type == "BoardDoor" || mechanic.type == "BoardPortal" {
                 if mechanic.linkId?.isEmpty != false {
                     report("mécanisme", "\(mechanic.type) sans linkId en \(mechanic.x),\(mechanic.y)")
                 }
             }
+            if mechanic.type == "BoardPortal" {
+                let variant = mechanic.visualVariant ?? ""
+                if !portalVariants.contains(variant) {
+                    report("portail", "variante \(variant.isEmpty ? "absente" : variant) en \(mechanic.x),\(mechanic.y)")
+                }
+            }
         }
+        issues.append(contentsOf: portalLinkIssues(in: level, gridOK: gridOK))
         let plateLinks = Set(level.mechanics.compactMap { $0.type == "BoardPlate" ? $0.linkId : nil })
         let doorLinks = Set(level.mechanics.compactMap { $0.type == "BoardDoor" ? $0.linkId : nil })
         if plateLinks != doorLinks {
@@ -570,6 +642,64 @@ public enum LevelPackChecker {
 
     private static func inBounds(_ x: Int, _ y: Int, width: Int, height: Int) -> Bool {
         (0..<width).contains(x) && (0..<height).contains(y)
+    }
+
+    private static func portalLinkIssues(in level: CatalogLevel, gridOK: Bool) -> [LevelPackIssue] {
+        var issues: [LevelPackIssue] = []
+        func report(_ rule: String, _ observed: String) {
+            issues.append(LevelPackIssue(levelID: level.id, rule: rule, observed: observed))
+        }
+
+        let qCells: [(Int, Int)] = {
+            guard gridOK else { return [] }
+            var found: [(Int, Int)] = []
+            for (y, row) in level.grid.enumerated() {
+                for (x, symbol) in row.enumerated() where symbol == "Q" {
+                    found.append((x, y))
+                }
+            }
+            return found
+        }()
+        let portalMechanics = level.mechanics.filter { $0.type == "BoardPortal" }
+        if qCells.count != portalMechanics.count {
+            report("portail", "Q=\(qCells.count) / BoardPortal=\(portalMechanics.count)")
+        }
+
+        var covered = Set<String>()
+        for link in level.portalLinks {
+            if link.portals.count != 2 {
+                report("portail", "\(link.linkId) a \(link.portals.count) extrémités au lieu de 2")
+                continue
+            }
+            if !portalVariants.contains(link.visualVariant) {
+                report("portail", "\(link.linkId) variante \(link.visualVariant)")
+            }
+            let a = link.portals[0]
+            let b = link.portals[1]
+            for point in [a, b] {
+                guard inBounds(point.x, point.y, width: level.width, height: level.height), gridOK else {
+                    report("portail", "\(link.linkId) hors grille \(point.x),\(point.y)")
+                    continue
+                }
+                let tile = level.grid[point.y][level.grid[point.y].index(level.grid[point.y].startIndex, offsetBy: point.x)]
+                if tile != "Q" {
+                    report("portail", "\(link.linkId) en \(point.x),\(point.y) vaut \(tile)")
+                }
+                covered.insert("\(point.x),\(point.y)")
+            }
+            let matching = portalMechanics.filter { $0.linkId == link.linkId }
+            if matching.count != 2 {
+                report("portail", "\(link.linkId) a \(matching.count) BoardPortal au lieu de 2")
+            }
+        }
+
+        if !level.portalLinks.isEmpty || !qCells.isEmpty {
+            let expected = Set(qCells.map { "\($0.0),\($0.1)" })
+            if expected != covered {
+                report("portail", "couverture Q \(expected.sorted()) / liens \(covered.sorted())")
+            }
+        }
+        return issues
     }
 
     private static let allowedSIConditions: Set<String> = [

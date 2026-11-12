@@ -7,5 +7,5 @@ xcuserdata/
 *.log
 
 # Backups / packs intermédiaires locaux (level design)
-Tools/level_design/*_backup.json
+Tools/level_design/*backup*.json
 Tools/level_design/Robot_Idiot_V9_50_Nouveaux_Niveaux.json

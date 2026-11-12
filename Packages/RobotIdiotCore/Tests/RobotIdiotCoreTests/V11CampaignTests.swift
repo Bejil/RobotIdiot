@@ -48,6 +48,8 @@ final class V11CampaignTests: XCTestCase {
     }
 
     func testBonusReferenceProgramsWinWhenPresent() throws {
+        // Les bonus des mondes 11–15 sont couverts par V13PortalCampaignTests (champ `v13`).
+        // Ce test ne s’applique plus qu’aux packs qui exposent encore `v11`.
         let url = try XCTUnwrap(
             Bundle.module.url(forResource: "robot_idiot_100_levels_v7", withExtension: "json")
         )
@@ -55,6 +57,9 @@ final class V11CampaignTests: XCTestCase {
         let file = try JSONDecoder().decode(V11PackFile.self, from: data)
         let bonusLevels = file.levels.filter {
             ($0.v11?.bonusReferenceProgram?.isEmpty == false)
+        }
+        if bonusLevels.isEmpty {
+            return
         }
         XCTAssertEqual(bonusLevels.count, 15)
 

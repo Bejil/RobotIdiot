@@ -8,6 +8,8 @@ public enum CatalogCampaign {
     public static let worldCount = 15
     public static let levelsPerWorld = 10
     public static let formulaVersion = 7
+    /// Révision pack V13 (portails) : conserve la progression, invalide les brouillons mondes 9–15.
+    public static let contentRevision = "V13-portals"
     public static let layout = CampaignLayout(standardLevelCount: 10, includesFinale: false)
 
     public static let pack: LevelPack = {
@@ -74,19 +76,19 @@ public enum CatalogCampaign {
         case 1:
             return "Avance et tourne pour rejoindre le drapeau."
         case 9:
-            return "Combine toutes les commandes déjà apprises."
+            return "Traverse tes premiers portails entre salles séparées."
         case 10:
-            return "Maîtrise l’ensemble des outils sur des défis plus durs."
+            return "Reviens par les portails pour activer chaque mécanisme."
         case 11:
-            return "Résous des dépendances sur une grille plus vaste."
+            return "Choisis ta paire de portails sur une grille plus vaste."
         case 12:
-            return "Enchaîne mécanismes et conditions sans te tromper."
+            return "Respecte l’ordre des clés, portes et téléportations."
         case 13:
-            return "Vise la précision : chaque action compte."
+            return "Emprunte la bonne bifurcation de portails."
         case 14:
-            return "Traverse des labyrinthes où tout est lié."
+            return "Atteins la zone cachée via une autre paire de portails."
         case 15:
-            return "Synthétise tout ce que tu sais pour la dernière manche."
+            return "Enchaîne tous les retours entre zones pour finir."
         default:
             return "Explore le monde et trouve le bon programme."
         }
@@ -183,6 +185,14 @@ public enum CatalogCampaign {
                 amount: item.amount
             )
         }
+        let portals = source.portalLinks.compactMap { link -> LevelPortalLink? in
+            guard link.portals.count == 2 else { return nil }
+            return LevelPortalLink(
+                linkId: link.linkId,
+                endpoints: link.portals.map { flipped($0.x, $0.y) },
+                visualVariant: link.visualVariant
+            )
+        }
         var level = Level(
             id: source.id,
             version: 1,
@@ -213,7 +223,8 @@ public enum CatalogCampaign {
                 referenceNote: ""
             ),
             validation: ValidationMetadata(status: .handcrafted, notes: notes),
-            collectibles: collectibles
+            collectibles: collectibles,
+            portalLinks: portals
         )
         if let stars = source.starTargets {
             let without = stars.withoutBonus.threeStarsMax

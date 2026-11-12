@@ -1607,6 +1607,17 @@ final class GameViewController: UIViewController {
                 statusLabel.text = forward ? "Le robot avance." : "Le robot recule."
                 if !wantsContinuous { Soundscape.shared.play("move") }
             }
+        case .teleported:
+            let remaining = outcome.state.game.remainingCollectibles.count
+            let justCollected = remaining < bonusRemainingCount
+            bonusRemainingCount = remaining
+            if justCollected {
+                statusLabel.text = "Écrou récupéré !"
+                Soundscape.shared.play("collect")
+            } else {
+                statusLabel.text = "Le robot traverse un portail."
+                if !wantsContinuous { Soundscape.shared.play("move") }
+            }
         case .turned(_, let direction, _):
             statusLabel.text = "Le robot regarde vers \(PlayerCopy.directionPhrase(direction))."
             if !wantsContinuous { Soundscape.shared.play("turn") }
@@ -2448,6 +2459,13 @@ private enum HelpCommandResolver {
             case .moved(_, let to, _, _), .enteredHazard(_, let to, _, _, _):
                 if path.last != to {
                     path.append(to)
+                }
+            case .teleported(_, let entrance, let exit, _, _):
+                if path.last != entrance {
+                    path.append(entrance)
+                }
+                if path.last != exit {
+                    path.append(exit)
                 }
             default:
                 break

@@ -15,11 +15,19 @@ struct CampaignArchive: Codable {
     var progress: CampaignProgress
     var levels: [ArchivedLevel]
     var programs: [StoredProgram]
+    /// Aligné sur `CatalogCampaign.contentRevision` pour invalider les brouillons sans reset total.
+    var contentRevision: String
 
-    init(progress: CampaignProgress, levels: [ArchivedLevel], programs: [StoredProgram]) {
+    init(
+        progress: CampaignProgress,
+        levels: [ArchivedLevel],
+        programs: [StoredProgram],
+        contentRevision: String = CatalogCampaign.contentRevision
+    ) {
         self.progress = progress
         self.levels = levels
         self.programs = programs
+        self.contentRevision = contentRevision
     }
 
     init(from decoder: Decoder) throws {
@@ -27,6 +35,7 @@ struct CampaignArchive: Codable {
         progress = try container.decode(CampaignProgress.self, forKey: .progress)
         levels = try container.decodeIfPresent([ArchivedLevel].self, forKey: .levels) ?? []
         programs = try container.decodeIfPresent([StoredProgram].self, forKey: .programs) ?? []
+        contentRevision = try container.decodeIfPresent(String.self, forKey: .contentRevision) ?? ""
     }
 
     func encode(to encoder: Encoder) throws {
@@ -34,12 +43,14 @@ struct CampaignArchive: Codable {
         try container.encode(progress, forKey: .progress)
         try container.encode(levels, forKey: .levels)
         try container.encode(programs, forKey: .programs)
+        try container.encode(contentRevision, forKey: .contentRevision)
     }
 
     private enum CodingKeys: String, CodingKey {
         case progress
         case levels
         case programs
+        case contentRevision
     }
 }
 
@@ -61,6 +72,11 @@ final class CampaignStore {
             archive = decoded
             // Les programmes des niveaux déjà réussis ne sont plus conservés.
             purgeCompletedProgramsLocked()
+            if archive.contentRevision != CatalogCampaign.contentRevision {
+                // V13 : garder la progression, invalider les brouillons des niveaux remplacés (9–15).
+                archive.programs.removeAll { $0.address.world >= 9 }
+                archive.contentRevision = CatalogCampaign.contentRevision
+            }
             persistLocked()
         } else {
             // Nouvelle formule / pack : progression effacée → les intros de commandes recommencent.
@@ -75,7 +91,8 @@ final class CampaignStore {
         CampaignArchive(
             progress: CampaignProgress(campaignSeed: 1, formulaVersion: CatalogCampaign.formulaVersion),
             levels: [],
-            programs: []
+            programs: [],
+            contentRevision: CatalogCampaign.contentRevision
         )
     }
 
