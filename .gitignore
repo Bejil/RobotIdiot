@@ -9,3 +9,6 @@ xcuserdata/
 # Backups / packs intermédiaires locaux (level design)
 Tools/level_design/*backup*.json
 Tools/level_design/Robot_Idiot_V9_50_Nouveaux_Niveaux.json
+# Doublons locaux du pack quotidiens (sources déjà dans Resources)
+Tools/level_design/quotidiens_v14_1/robot_idiot_daily_*.json
+Tools/level_design/quotidiens_v14_1/Robot_Idiot_150_Niveaux_V14_1_Aventure_REFERENCE_NON_MODIFIE.json
