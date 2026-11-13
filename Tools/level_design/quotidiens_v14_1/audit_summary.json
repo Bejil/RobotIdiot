@@ -1,0 +1,25 @@
+{
+  "source": "Robot_Idiot_200_Defis_Quotidiens.zip (V7-derived), campaign V14.1 JSON",
+  "auditDate": "2026-11-13",
+  "dailyChallenges": 100,
+  "dailyBugs": 100,
+  "campaignLevels": 150,
+  "dailyLevelsWithOldControlFlow": 40,
+  "totalDailyReferenceProgramsReplaced": 44,
+  "originalSICommandsInDailySolutions": 60,
+  "originalRepeatCommandsInDailySolutions": 40,
+  "reworkedBugPrograms": 100,
+  "dailyWinningPrimitiveSequencesReplayed": 100,
+  "dailyBugFailureAndRepairReplayed": 100,
+  "bugUniqueFixAtCorruptedLine": 100,
+  "dailyUnlockedCommandPolicyMatchesCampaignV14_1": true,
+  "campaignSolutionsPrimitiveOnly": 150,
+  "campaignScoresActionCountsConsistent": 150,
+  "campaignReferenceLongerThan3StarThreshold": [],
+  "importantLimits": [
+    "Daily exact shortest witness inherited from V7 solver plus geometry symmetry and added blocking tiles; not re-proved independently here",
+    "Campaign reference solutions structurally checked against V14.1; full 150-level portal-aware replay must be run inside Swift/compatible simulator",
+    "Offline simulation validates daily data only, not iOS UIKit app execution or persistence",
+    "Any alternate winning single-edit repair remains acceptable under original game rules"
+  ]
+}

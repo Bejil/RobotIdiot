@@ -263,8 +263,15 @@ final class DailyHubViewController: UIViewController {
     }
 
     @objc private func openChallenge() {
-        guard let level = DailyCatalog.playableLevel(id: selection.challengeId) else { return }
+        guard var level = DailyCatalog.playableLevel(id: selection.challengeId),
+              let source = DailyCatalog.catalogLevel(id: selection.challengeId) else { return }
         bounce(challengeCard)
+        // V14.1 : uniquement les primitives du pack ; SI/REPETE jamais exposés en quotidien.
+        let allowed = DailyCatalog.commandTypes(from: source.unlockedCommands)
+            .filter { $0 != .ifBlock && $0 != .forever }
+        if !allowed.isEmpty {
+            level.allowedCommands = allowed
+        }
         let context = DailyPlayContext(
             kind: .challenge,
             civilDate: selection.civilDate,
@@ -284,9 +291,11 @@ final class DailyHubViewController: UIViewController {
         bounce(bugCard)
         var playable = level
         let allowed = DailyCatalog.commandTypes(from: bug.availableCommands)
+            .filter { $0 != .ifBlock && $0 != .forever }
         if !allowed.isEmpty {
             playable.allowedCommands = allowed
         }
+        // Ne jamais exposer referenceProgram / intendedBugLineForQA / winningReplacement.
         let baseline = DailyCatalog.program(from: bug.bugProgram)
         let context = DailyPlayContext(
             kind: .bug,

@@ -5,14 +5,63 @@ final class DailyCatalogTests: XCTestCase {
     func testBundledDailyPacksDecodeWithUniqueIDs() throws {
         let challenges = try DailyCatalog.loadChallengesBundled()
         let bugs = try DailyCatalog.loadBugsBundled()
+        let config = try DailyCatalog.loadConfigBundled()
         XCTAssertEqual(challenges.levels.count, 100)
         XCTAssertEqual(bugs.bugs.count, 100)
         XCTAssertEqual(Set(challenges.levels.map(\.id)).count, 100)
         XCTAssertEqual(Set(bugs.bugs.map(\.id)).count, 100)
+        XCTAssertEqual(config.timezone, "Europe/Paris")
+        XCTAssertEqual(config.epochDate, "2026-11-04")
+        XCTAssertEqual(config.challengeRewardBolts, 2)
+        XCTAssertEqual(config.bugRewardBolts, 1)
         for world in 1...10 {
             XCTAssertEqual(DailyCatalog.challenges(forTier: world).count, 10, "défi palier \(world)")
             XCTAssertEqual(DailyCatalog.bugs(forTier: world).count, 10, "bug palier \(world)")
         }
+    }
+
+    func testV14_1DailyProgramsHaveNoControlFlow() throws {
+        let challenges = try DailyCatalog.loadChallengesBundled()
+        let bugs = try DailyCatalog.loadBugsBundled()
+        let forbidden = Set(["SI", "REPETE"])
+        for level in challenges.levels {
+            XCTAssertTrue(forbidden.isDisjoint(with: Set(level.unlockedCommands)), level.id)
+            assertNoControlFlow(level.solution.program, id: level.id)
+        }
+        for bug in bugs.bugs {
+            XCTAssertTrue(forbidden.isDisjoint(with: Set(bug.availableCommands)), bug.id)
+            assertNoControlFlow(bug.bugProgram, id: bug.id)
+            assertNoControlFlow(bug.referenceProgram, id: bug.id)
+        }
+    }
+
+    func testBUG095TurnReplacedByAdvanceWins() throws {
+        let challenges = try DailyCatalog.loadChallengesBundled()
+        let bugs = try DailyCatalog.loadBugsBundled()
+        let bug = try XCTUnwrap(bugs.bugs.first { $0.id == "BUG-095" })
+        XCTAssertEqual(bug.boardRef, "DAILY-095")
+        XCTAssertEqual(bug.world, 10)
+        XCTAssertEqual(bug.validation.winningReplacement, "AVANCE")
+        let board = try XCTUnwrap(challenges.levels.first { $0.id == bug.boardRef })
+        let original = try XCTUnwrap(
+            DailySelection.primitive(at: bug.intendedBugLineForQA, in: bug.bugProgram)
+        )
+        XCTAssertEqual(original.commandName, "TOURNE_DROITE")
+        let fixed = try XCTUnwrap(
+            DailySelection.replacePrimitive(
+                in: bug.bugProgram,
+                at: bug.intendedBugLineForQA,
+                with: "AVANCE"
+            )
+        )
+        XCTAssertNotEqual(
+            CatalogInterpreter.execute(board, program: bug.bugProgram).result,
+            .victory
+        )
+        XCTAssertEqual(
+            CatalogInterpreter.execute(board, program: fixed).result,
+            .victory
+        )
     }
 
     func testEveryDailyChallengeSolutionWins() throws {
@@ -159,6 +208,20 @@ final class DailyCatalogTests: XCTestCase {
                     walk(body)
                 case .si(_, let body):
                     walk(body)
+                default:
+                    break
+                }
+            }
+        }
+        walk(program)
+    }
+
+    private func assertNoControlFlow(_ program: [CatalogInstruction], id: String) {
+        func walk(_ nodes: [CatalogInstruction]) {
+            for node in nodes {
+                switch node {
+                case .repete, .si:
+                    XCTFail("\(id) contient SI/REPETE")
                 default:
                     break
                 }

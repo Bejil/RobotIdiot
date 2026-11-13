@@ -3,6 +3,8 @@ import UIKit
 import RobotIdiotCore
 
 final class HomeViewController: UIViewController {
+    private static let homeActionHeight: CGFloat = 64
+
     private let backdrop = HomeBurstView()
     private let badge: UIImageView = {
         let view = UIImageView(image: UIImage(named: "HomeHero"))
@@ -14,6 +16,7 @@ final class HomeViewController: UIViewController {
     private let logo = UIImageView(image: UIImage(named: "HomeLogo"))
     private let confetti = UIImageView(image: UIImage(named: "HomeConfetti"))
     private let continueButton = AppTheme.filledButton(title: "Continuer", systemImage: "play.fill", prominent: true)
+    private let expertButton = AppTheme.filledButton(title: "Mode expert", systemImage: "crown.fill", prominent: false)
     private let campaignButton = UIButton(type: .custom)
     private let dailyButton = UIButton(type: .custom)
     private let dailySubtitleLabel = UILabel()
@@ -50,6 +53,8 @@ final class HomeViewController: UIViewController {
 
         styleMain(continueButton, mark: "play", radius: 30)
         continueButton.addTarget(self, action: #selector(continueCampaign), for: .touchUpInside)
+        configureExpertButton()
+        expertButton.addTarget(self, action: #selector(openExpertMode), for: .touchUpInside)
         campaignButton.addTarget(self, action: #selector(openCampaign), for: .touchUpInside)
 
         let stage = UIView()
@@ -99,26 +104,32 @@ final class HomeViewController: UIViewController {
 
         let banner = AdsService.shared.makeHomeBanner(rootViewController: self)
         bannerView = banner
-        let actions = UIStackView(arrangedSubviews: [continueRow, dailyButton, banner])
+        let actions = UIStackView(arrangedSubviews: [continueRow, expertButton, dailyButton, banner])
         actions.axis = .vertical
         actions.spacing = 12
-        actions.setCustomSpacing(22, after: dailyButton)
+        actions.setCustomSpacing(24, after: dailyButton)
         actions.alignment = .fill
         actions.translatesAutoresizingMaskIntoConstraints = false
 
         let titleBox = UIView()
         titleBox.translatesAutoresizingMaskIntoConstraints = false
+        titleBox.clipsToBounds = false
         logo.translatesAutoresizingMaskIntoConstraints = false
         confetti.translatesAutoresizingMaskIntoConstraints = false
         titleBox.addSubview(confetti)
         titleBox.addSubview(logo)
 
-        let column = UIStackView(arrangedSubviews: [titleBox, stage, actions])
+        stage.clipsToBounds = false
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .vertical)
+        spacer.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+
+        let column = UIStackView(arrangedSubviews: [titleBox, spacer, stage, actions])
         column.axis = .vertical
         column.alignment = .center
-        column.spacing = 8
-        column.setCustomSpacing(-18, after: stage)
-        column.setCustomSpacing(22, after: actions)
+        column.spacing = 0
+        // Bas du robot très légèrement sous le haut du premier bouton.
+        column.setCustomSpacing(0, after: stage)
         column.translatesAutoresizingMaskIntoConstraints = false
 
         let scroll = UIScrollView()
@@ -126,9 +137,11 @@ final class HomeViewController: UIViewController {
         scroll.translatesAutoresizingMaskIntoConstraints = false
         scroll.alwaysBounceVertical = true
         scroll.showsVerticalScrollIndicator = false
+        scroll.clipsToBounds = false
         backdrop.translatesAutoresizingMaskIntoConstraints = false
         let canvas = UIView()
         canvas.translatesAutoresizingMaskIntoConstraints = false
+        canvas.clipsToBounds = false
         view.addSubview(backdrop)
         view.addSubview(scroll)
         scroll.addSubview(canvas)
@@ -139,7 +152,7 @@ final class HomeViewController: UIViewController {
             scroll.topAnchor.constraint(equalTo: guide.topAnchor),
             scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scroll.bottomAnchor.constraint(equalTo: guide.bottomAnchor),
 
             canvas.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor),
             canvas.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor),
@@ -148,9 +161,9 @@ final class HomeViewController: UIViewController {
             canvas.heightAnchor.constraint(greaterThanOrEqualTo: scroll.frameLayoutGuide.heightAnchor),
 
             column.centerXAnchor.constraint(equalTo: canvas.centerXAnchor),
-            column.centerYAnchor.constraint(equalTo: canvas.centerYAnchor),
-            column.topAnchor.constraint(greaterThanOrEqualTo: canvas.topAnchor, constant: 8),
-            column.bottomAnchor.constraint(lessThanOrEqualTo: canvas.bottomAnchor, constant: -8),
+            // Titre calé en haut, pub en bas de la safe zone.
+            column.topAnchor.constraint(equalTo: canvas.topAnchor),
+            column.bottomAnchor.constraint(equalTo: canvas.bottomAnchor),
             column.widthAnchor.constraint(equalTo: canvas.widthAnchor, constant: -40).prioritized(UILayoutPriority(750)),
             column.widthAnchor.constraint(lessThanOrEqualToConstant: 440),
             column.leadingAnchor.constraint(greaterThanOrEqualTo: canvas.leadingAnchor, constant: 20),
@@ -169,21 +182,31 @@ final class HomeViewController: UIViewController {
 
             stage.widthAnchor.constraint(equalTo: column.widthAnchor),
             stage.heightAnchor.constraint(equalToConstant: 250),
+            spacer.widthAnchor.constraint(equalToConstant: 1),
+            spacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
             backdrop.topAnchor.constraint(equalTo: view.topAnchor),
             backdrop.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             backdrop.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             backdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             badge.centerXAnchor.constraint(equalTo: stage.centerXAnchor),
-            badge.bottomAnchor.constraint(equalTo: stage.bottomAnchor, constant: 16),
-            badge.widthAnchor.constraint(equalToConstant: 230),
+            badge.bottomAnchor.constraint(equalTo: stage.bottomAnchor, constant: 18),
+            badge.widthAnchor.constraint(equalToConstant: 268),
             badge.heightAnchor.constraint(equalTo: badge.widthAnchor, multiplier: 1.18),
 
             actions.widthAnchor.constraint(equalTo: column.widthAnchor),
-            continueButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 68),
-            campaignButton.widthAnchor.constraint(equalTo: campaignButton.heightAnchor),
-            dailyButton.heightAnchor.constraint(equalToConstant: 64)
+            continueButton.heightAnchor.constraint(equalToConstant: Self.homeActionHeight),
+            expertButton.heightAnchor.constraint(equalToConstant: Self.homeActionHeight),
+            dailyButton.heightAnchor.constraint(equalToConstant: Self.homeActionHeight),
+            continueHolder.heightAnchor.constraint(equalToConstant: Self.homeActionHeight),
+            campaignButton.heightAnchor.constraint(equalToConstant: Self.homeActionHeight),
+            campaignButton.widthAnchor.constraint(equalTo: campaignButton.heightAnchor)
         ])
 
+        titleBox.layer.zPosition = 0
+        stage.layer.zPosition = 1
+        actions.layer.zPosition = 2
+        column.bringSubviewToFront(stage)
+        column.bringSubviewToFront(actions)
         installSheet()
     }
 
@@ -304,7 +327,33 @@ final class HomeViewController: UIViewController {
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 18, bottom: 14, trailing: 18)
         button.configuration = configuration
         button.contentHorizontalAlignment = .center
-        button.heightAnchor.constraint(greaterThanOrEqualToConstant: 62).isActive = true
+    }
+
+    private func configureExpertButton() {
+        guard var configuration = expertButton.configuration else { return }
+        configuration.title = "Mode expert"
+        configuration.image = UIImage(
+            systemName: "crown.fill",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold)
+        )
+        configuration.imagePlacement = .leading
+        configuration.imagePadding = 10
+        configuration.baseBackgroundColor = AppTheme.interaction
+        configuration.baseForegroundColor = AppTheme.line
+        configuration.background.strokeWidth = 0
+        configuration.background.cornerRadius = 26
+        configuration.titleAlignment = .center
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 18, bottom: 14, trailing: 18)
+        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = AppTheme.font(18, .heavy, textStyle: .headline)
+            return outgoing
+        }
+        expertButton.configuration = configuration
+        expertButton.contentHorizontalAlignment = .center
+        expertButton.layer.shadowOpacity = 0.35
+        expertButton.isEnabled = true
+        expertButton.accessibilityLabel = "Mode expert"
     }
 
     private func configureSquare(_ button: UIButton, mark: String, fill: UIColor, tint: UIColor, label: String) {
@@ -416,7 +465,7 @@ final class HomeViewController: UIViewController {
         confetti.alpha = 0
         badge.alpha = 0
         badge.transform = CGAffineTransform(translationX: 0, y: 28).scaledBy(x: 0.7, y: 0.7)
-        let mains = [continueButton, dailyButton]
+        let mains = [continueButton, expertButton, dailyButton]
         let squares = [campaignButton]
         (mains + squares).forEach {
             $0.alpha = 0
@@ -565,6 +614,19 @@ final class HomeViewController: UIViewController {
                 GameViewController(level: level, campaign: address),
                 animated: true
             )
+        }
+    }
+
+    @objc private func openExpertMode() {
+        let progress = CampaignStore.shared.progress()
+        let unlocked = CampaignRules.unlockedWorld(in: progress, layout: CatalogCampaign.layout)
+        guard unlocked >= 7 else {
+            ChartedConfirmAlertView.presentNotice(
+                from: self,
+                ribbon: "Mode expert",
+                message: "Réservé à partir du monde 7, pour ceux qui ont déjà découvert et maîtrisé toutes les commandes."
+            )
+            return
         }
     }
 
