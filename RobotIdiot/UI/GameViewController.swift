@@ -1225,7 +1225,7 @@ final class GameViewController: UIViewController {
         hideFullscreenOverlay(helpAlert)
         helpCommandsAlert.present(kind: kind, level: level)
         showFullscreenOverlay(helpCommandsAlert)
-        boardScene.showHelpTrail(coordinates: HelpCommandResolver.pathCoordinates(kind: kind, level: level))
+        boardScene.showHelpTrail(HelpCommandResolver.helpTrail(kind: kind, level: level))
     }
 
     @objc private func clearAllCommands() {
@@ -2410,6 +2410,17 @@ private struct HelpCommandRow {
     let condition: ConditionType?
 }
 
+/// Parcours d’aide découpé en segments : une téléportation coupe le trait.
+struct HelpTrailPath: Equatable {
+    var segments: [[GridCoordinate]]
+
+    static let empty = HelpTrailPath(segments: [])
+
+    var isEmpty: Bool { segments.allSatisfy(\.isEmpty) }
+
+    var allCoordinates: [GridCoordinate] { segments.flatMap { $0 } }
+}
+
 private enum HelpCommandResolver {
     static func hintRows(for level: Level) -> [HelpCommandRow] {
         let commands = openingCommands(for: level)
@@ -2429,12 +2440,12 @@ private enum HelpCommandResolver {
         }
     }
 
-    static func pathCoordinates(kind: HelpRevealKind, level: Level) -> [GridCoordinate] {
+    static func helpTrail(kind: HelpRevealKind, level: Level) -> HelpTrailPath {
         switch kind {
         case .hint:
             return path(level: level, commands: hintRows(for: level).map(\.command))
         case .solution:
-            guard let program = referenceProgram(for: level) else { return [] }
+            guard let program = referenceProgram(for: level) else { return .empty }
             return path(level: level, program: program)
         }
     }
@@ -2468,44 +2479,58 @@ private enum HelpCommandResolver {
         return nil
     }
 
-    private static func path(level: Level, commands: [CommandType]) -> [GridCoordinate] {
+    private static func path(level: Level, commands: [CommandType]) -> HelpTrailPath {
         var game = GameState.initial(from: level)
-        var path = [game.robot.position]
+        var segments: [[GridCoordinate]] = [[game.robot.position]]
         for command in commands {
             guard case .success(let applied) = WorldRules.apply(command: command, to: game, level: level) else {
                 break
             }
             game = applied.game
-            if path.last != game.robot.position {
-                path.append(game.robot.position)
-            }
+            append(event: applied.event, into: &segments)
         }
-        return path
+        return HelpTrailPath(segments: sanitize(segments))
     }
 
-    private static func path(level: Level, program: Program) -> [GridCoordinate] {
+    private static func path(level: Level, program: Program) -> HelpTrailPath {
         var engine = SimulationEngine(level: level, program: program)
-        var path = [engine.state.game.robot.position]
+        var segments: [[GridCoordinate]] = [[engine.state.game.robot.position]]
         var steps = 0
         while !engine.state.status.isTerminal, steps < 96 {
             let outcome = engine.step()
             steps += 1
-            switch outcome.event {
-            case .moved(_, let to, _, _), .enteredHazard(_, let to, _, _, _):
-                if path.last != to {
-                    path.append(to)
-                }
-            case .teleported(_, let entrance, let exit, _, _):
-                if path.last != entrance {
-                    path.append(entrance)
-                }
-                if path.last != exit {
-                    path.append(exit)
-                }
-            default:
-                break
-            }
+            guard let event = outcome.event else { continue }
+            append(event: event, into: &segments)
         }
-        return path
+        return HelpTrailPath(segments: sanitize(segments))
+    }
+
+    private static func append(event: SimulationEvent, into segments: inout [[GridCoordinate]]) {
+        switch event {
+        case .moved(_, let to, _, _), .enteredHazard(_, let to, _, _, _):
+            appendVisit(to, into: &segments)
+        case .pushed(_, let robotDestination, _):
+            // `from` de l’événement = case de la caisse, où le robot arrive après la poussée.
+            appendVisit(robotDestination, into: &segments)
+        case .teleported(_, let entrance, let exit, _, _):
+            appendVisit(entrance, into: &segments)
+            segments.append([exit])
+        default:
+            break
+        }
+    }
+
+    private static func appendVisit(_ coordinate: GridCoordinate, into segments: inout [[GridCoordinate]]) {
+        if segments.isEmpty {
+            segments = [[coordinate]]
+            return
+        }
+        if segments[segments.count - 1].last != coordinate {
+            segments[segments.count - 1].append(coordinate)
+        }
+    }
+
+    private static func sanitize(_ segments: [[GridCoordinate]]) -> [[GridCoordinate]] {
+        segments.filter { !$0.isEmpty }
     }
 }

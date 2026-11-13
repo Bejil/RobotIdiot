@@ -341,7 +341,10 @@ final class HomeViewController: UIViewController {
         dailyButton.layer.shadowRadius = 0
         dailyButton.layer.shadowOffset = CGSize(width: 0, height: 4)
 
-        let image = UIImageView(image: GameArt.fitted(GameArt.mark("spark"), side: 26))
+        let image = UIImageView(image: UIImage(
+            systemName: "star.fill",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .bold)
+        ))
         image.tintColor = tint
         image.contentMode = .scaleAspectFit
         image.isUserInteractionEnabled = false
@@ -474,11 +477,17 @@ final class HomeViewController: UIViewController {
         let finished = CatalogCampaign.level(at: address) == nil
         let starting = address.world == 1 && address.level == 1
         let title = finished ? "Terminé" : (starting ? "Aventure" : "Continuer")
-        let mark = finished ? "play" : (starting ? "book" : "play")
         let place = finished || progress.records.isEmpty ? nil : PlayerCopy.campaignTitle(address)
         guard var configuration = continueButton.configuration else { return }
         configuration.title = title
-        configuration.image = GameArt.fitted(GameArt.mark(mark), side: 26)
+        if starting {
+            configuration.image = UIImage(
+                systemName: "book.pages.fill",
+                withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .bold)
+            )
+        } else {
+            configuration.image = GameArt.fitted(GameArt.mark("play"), side: 26)
+        }
         configuration.subtitle = place
         configuration.subtitleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
@@ -524,8 +533,20 @@ final class HomeViewController: UIViewController {
             row.trailingAnchor.constraint(equalTo: pill.trailingAnchor, constant: -10),
             pill.heightAnchor.constraint(equalToConstant: 32)
         ])
+#if DEBUG
+        pill.isUserInteractionEnabled = true
+        pill.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(debugFillBolts)))
+        pill.accessibilityHint = "Toucher pour obtenir 99 écrous (debug)."
+#endif
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: pill)
     }
+
+#if DEBUG
+    @objc private func debugFillBolts() {
+        BoltWallet.shared.debugSetBalance(99)
+        refreshBoltBadge()
+    }
+#endif
 
     @objc private func continueCampaign() {
         generationTicket += 1
