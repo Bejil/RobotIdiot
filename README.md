@@ -2,7 +2,7 @@
 
 Jeu iOS de programmation visuelle : tu construis un programme, un petit robot l’exécute sur une grille vue de dessus, et tu dois atteindre le drapeau.
 
-**Robot Idiot** mêle puzzle, logique et progression. Les commandes se débloquent monde après monde : d’abord avancer et tourner, puis les boucles, les conditions, les clés, les interrupteurs et les caisses. En parallèle de la campagne, deux missions quotidiennes figées proposent un **niveau du jour** et un **bug du jour**.
+**Robot Idiot** mêle puzzle, logique et progression. Les commandes se débloquent monde après monde : d’abord avancer et tourner, puis les clés, les interrupteurs, les caisses et les portails. En parallèle de la campagne, deux missions quotidiennes figées proposent un **niveau du jour** et un **bug du jour**. Le **Mode Expert** (Le Laboratoire) offre un entraînement séparé à `SI` / `REPETE`.
 
 | | |
 | --- | --- |
@@ -10,7 +10,7 @@ Jeu iOS de programmation visuelle : tu construis un programme, un petit robot l�
 | Bundle ID | `com.michaelblin.RobotIdiot` |
 | Version | 1.0 |
 | Cœur de jeu | package Swift local `RobotIdiotCore` |
-| Contenu | 100 niveaux campagne · 100 défis · 100 bugs · catalogue V7 |
+| Contenu | 150 niveaux campagne (V14.1) · 100 défis · 100 bugs · 40 simulations Expert |
 
 ---
 
@@ -21,7 +21,7 @@ Le joueur assemble un programme (blocs ou pseudo-texte) à partir des commandes 
 Objectif principal : **amener le robot jusqu’au drapeau**.  
 Objectifs secondaires : ramasser des **écrous** (bonus optionnels), viser les **étoiles** selon une solution de référence, et dépenser les écrous pour des **aides**.
 
-L’app reste jouable hors ligne pour la campagne et les défis du jour. La publicité AdMob et le consentement UMP s’activent lorsque le réseau et le consentement le permettent.
+L’app reste jouable hors ligne pour la campagne, les défis du jour et le Mode Expert. La publicité AdMob et le consentement UMP s’activent lorsque le réseau et le consentement le permettent.
 
 ---
 
@@ -32,12 +32,13 @@ L’app reste jouable hors ligne pour la campagne et les défis du jour. La publ
 3. Lancer l’exécution, observer le robot, corriger, recommencer.
 4. Atteindre le drapeau pour valider le niveau, collecter les écrous et progresser.
 5. Ouvrir **Défis du jour** pour le niveau et le bug figés de la journée.
+6. Ouvrir **Mode Expert** (Le Laboratoire) pour l’entraînement `SI` / `REPETE` (à partir du monde 7 ; libre en DEBUG).
 
 ### Commandes
 
 | Commande | Rôle |
 | --- | --- |
-| `AVANCE` / tours | Déplacements de base |
+| `AVANCE` / `RECULE` / tours | Déplacements de base |
 | `REPETE` | Boucle infinie (corps répété tant que le programme tourne) |
 | `SI` + condition | Branche conditionnelle sur l’état courant |
 | `RAMASSE` | Prend la clé sur la case du robot |
@@ -46,6 +47,10 @@ L’app reste jouable hors ligne pour la campagne et les défis du jour. La publ
 | `ACTIVE` | Bascule un interrupteur (et la porte liée) |
 
 Les commandes proposées viennent du niveau (`allowedCommands`) : l’éditeur n’affiche que ce qui est débloqué.
+
+En **Aventure V14.1**, `SI` et `REPETE` restent visibles mais **verrouillés** : les solutions de référence n’utilisent que des primitives. Ces blocs se pratiquent dans le Mode Expert.
+
+L’éditeur de blocs permet de **réordonner** les commandes par drag-and-drop (avant / après / dans un `SI` ou `REPETE`, avec aperçu de l’emplacement).
 
 ### Économie d’écrous
 
@@ -64,8 +69,24 @@ Deux missions figées chaque jour civil (**fuseau Europe/Paris**), choisies selo
 | **Bug du jour** | Programme déjà posé : **une seule** substitution de commande primitive | +1 écrou |
 
 - Catalogue fixe : **100 défis** + **100 bugs** (10 par palier), plateaux distincts.
+- Pack **V14.1** : missions en **primitives seulement** (pas de `SI` / `REPETE` à écrire).
 - Sélection et statut de victoire persistés localement (`DailyStore`) : rouvrir l’app le même jour ne change pas les missions.
 - Accès depuis l’accueil → hub **Défis du jour**.
+
+### Mode Expert — Le Laboratoire
+
+Entraînement séparé de l’Aventure, sans carte des mondes : une séquence linéaire de **40 simulations** (`EX-001` … `EX-040`).
+
+| | |
+| --- | --- |
+| Accès | Accueil → Mode Expert (débloqué à partir du **monde 7** ; sans restriction en DEBUG) |
+| Progression | Victoire + au moins 1 étoile pour ouvrir la suivante |
+| Contrôles | Primitives dès le début ; `REPETE` puis `SI` et conditions se débloquent au fil des simulations |
+| Persistance | `ExpertStore` (indépendant de la campagne) |
+| UI | Tutoriel charté, hub (continuer / historique / maîtrise %), étoiles et score Expert |
+
+Fichiers : `robot_idiot_expert_simulations_40.json`, `robot_idiot_expert_tutorial_fr.json`, `robot_idiot_expert_config.json`.  
+Outils / validation : `Tools/level_design/expert_v1/` (`verify_expert.py`, etc.).
 
 ### Publicité
 
@@ -96,18 +117,19 @@ Le projet sépare volontairement **règles** et **présentation**.
 
 ```
 RobotIdiot/                     Application iOS (UIKit + SpriteKit)
-├── UI/                         Accueil, campagne, défis, éditeur, réglages, pubs
+├── UI/                         Accueil, campagne, défis, Expert, éditeur, réglages, pubs
 ├── Board/                      Rendu SpriteKit (BoardScene)
-├── Resources/                  Pack campagne V7 + packs quotidiens (JSON)
+├── Resources/                  Pack campagne + quotidiens + Expert (JSON)
 └── Assets.xcassets             Thèmes par monde, commandes, UI
 
 Packages/RobotIdiotCore/        Cœur pur (pas d’UIKit / SpriteKit)
 ├── GameCore/                   Level, GameState, grille, règles
 ├── SimulationEngine/           Interpréteur pas à pas
-├── Catalog/                    Pack V7, campagne, défis du jour, récompenses
+├── Catalog/                    Campagne, défis du jour, Expert, récompenses
 ├── Generation/                 Générateur / solveur (outils)
-└── Tests/                      Tests unitaires Mac (dont DailyCatalog)
+└── Tests/                      Tests unitaires Mac (campagne, Daily, Expert…)
 
+Tools/level_design/             Pipelines de packs (quotidiens, Expert, etc.)
 PrivacyPolicies.html            Politique de confidentialité
 ARCHITECTURE.md                 Décisions techniques détaillées
 ```
@@ -121,6 +143,7 @@ ARCHITECTURE.md                 Décisions techniques détaillées
 - **Victoire = interruption** : les commandes après le drapeau ne s’exécutent pas.
 - **Les étoiles** comparent à une solution de référence vérifiée, sans prétendre à l’optimalité absolue.
 - **Défis figés** : la sélection du jour est déterministe (date Paris + palier) et ne change plus une fois mémorisée.
+- **Expert isolé** : progression et programmes Expert ne mélangent pas la sauvegarde Aventure.
 
 Détails et historique des phases : voir [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
@@ -128,13 +151,14 @@ Détails et historique des phases : voir [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ## Contenu
 
-### Campagne (V7)
+### Campagne (V14.1 Aventure)
 
-- **10 mondes × 10 niveaux** (100 grilles)
-- Introduction progressive des mécaniques (navigation → boucles → conditions → clés → interrupteurs → caisses, puis mélanges)
-- Thèmes visuels par familles de mécaniques (`laboratory`, `orchard`, `night`, `foundry`)
-- Assets dédiés par monde (sols, obstacles, drapeaux, écrous…)
-- Fichier source : `RobotIdiot/Resources/robot_idiot_100_levels_v7.json` (aussi embarqué dans le package core)
+- **15 mondes × 10 niveaux** (150 grilles)
+- Mondes 1–10 en 7×7 ; mondes 11–15 en 8×8
+- Introduction progressive des mécaniques (navigation → clés → interrupteurs → caisses → portails, etc.)
+- `SI` / `REPETE` **verrouillés** dans l’éditeur Aventure (boutons visibles mais non utilisables)
+- Thèmes visuels par familles de mécaniques
+- Fichier source : `robot_idiot_100_levels_v7.json` (nom historique ; pack V14.1 à 150 niveaux, aussi embarqué dans le package core)
 
 Chaque niveau du pack a été validé par simulation : le programme de référence atteint le drapeau.
 
@@ -146,6 +170,14 @@ Chaque niveau du pack a été validé par simulation : le programme de référen
 | `robot_idiot_daily_bugs_100.json` | 100 bugs (référence plateau + programme bugué + commandes dispo) |
 | `robot_idiot_daily_config.json` | Fuseau, époque, paliers, montants de récompense |
 
+### Pack Expert
+
+| Fichier | Contenu |
+| --- | --- |
+| `robot_idiot_expert_simulations_40.json` | 40 simulations du Laboratoire |
+| `robot_idiot_expert_tutorial_fr.json` | Tutoriel Expert (5 pages) |
+| `robot_idiot_expert_config.json` | Navigation, déblocages, scoring |
+
 ---
 
 ## Stack technique
@@ -156,7 +188,7 @@ Chaque niveau du pack a été validé par simulation : le programme de référen
 | Cœur | Swift Package `RobotIdiotCore` (iOS 17+ / macOS 14+) |
 | Pubs | [Google Mobile Ads](https://github.com/googleads/swift-package-manager-google-mobile-ads) |
 | Consentement | [Google User Messaging Platform](https://github.com/googleads/swift-package-manager-google-user-messaging-platform) |
-| Persistance | `UserDefaults` (progression, réglages, écrous, aides, défis du jour) |
+| Persistance | `UserDefaults` (progression, réglages, écrous, aides, défis du jour, Expert) |
 
 Xcode ouvre `RobotIdiot.xcodeproj`. Le package local et les dépendances SPM sont résolus automatiquement.
 
@@ -198,7 +230,13 @@ Les règles et le moteur se testent **sans simulateur** :
 swift test --package-path Packages/RobotIdiotCore
 ```
 
-Couverture typique : simulation, programmes, boucles / conditions, interactions, campagne, pack V7, récompenses, **sélection et catalogues quotidiens**.
+Couverture typique : simulation, programmes, boucles / conditions, interactions, campagne V14.1, pack niveaux, récompenses, **sélection et catalogues quotidiens**, **catalogue Expert**.
+
+Validation outils Expert :
+
+```sh
+python3 Tools/level_design/expert_v1/verify_expert.py
+```
 
 ---
 
@@ -206,7 +244,7 @@ Couverture typique : simulation, programmes, boucles / conditions, interactions,
 
 - Politique : [`PrivacyPolicies.html`](PrivacyPolicies.html)
 - Contact : `michou855@hotmail.com`
-- Données de jeu locales (progression, réglages, écrous, défis du jour)
+- Données de jeu locales (progression, réglages, écrous, défis du jour, Mode Expert)
 - Publicité Google AdMob + éventuelle collecte associée (identifiants pub, IP approximative, interactions)
 - Formulaire de consentement UMP au lancement lorsque requis (EEE, etc.)
 - Entrée **Options de confidentialité** dans les Réglages si UMP l’exige
@@ -221,11 +259,12 @@ Pour App Store Connect, héberger / prévisualiser la page HTML (par ex. via Git
 | --- | --- |
 | Règles de déplacement / objets | `Packages/.../GameCore/WorldRules.swift` |
 | Exécution du programme | `Packages/.../SimulationEngine/` |
-| Pack de niveaux campagne | `Catalog/` + JSON V7 |
+| Pack de niveaux campagne | `Catalog/` + `robot_idiot_100_levels_v7.json` (V14.1) |
 | Défis / bugs du jour | `DailyCatalog.swift`, `DailySelection.swift`, `DailyStore.swift`, `DailyHubViewController.swift` |
+| Mode Expert | `ExpertCatalog.swift`, `ExpertStore.swift`, `ExpertHubViewController.swift`, `Tools/level_design/expert_v1/` |
 | Layout iPad / Duo | `GameViewController` (`shouldUseSideBySideLayout`, `verticalFold`) |
 | Plateau et animations | `RobotIdiot/Board/BoardScene.swift` |
-| Éditeur / partie | `RobotIdiot/UI/GameViewController.swift` |
+| Éditeur / partie | `BlockEditorView.swift`, `GameViewController.swift` |
 | Campagne / déblocages | `CampaignStore.swift`, `WorldMapViewController.swift` |
 | Écrous & aides | `BoltWallet.swift`, `HelpUnlockStore.swift` |
 | Pubs & consentement | `AdsService.swift`, `AdsConsentManager.swift` |
