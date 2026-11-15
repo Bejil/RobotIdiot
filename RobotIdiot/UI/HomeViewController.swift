@@ -304,6 +304,7 @@ final class HomeViewController: UIViewController {
             AppTheme.apply(to: navigation)
         }
         refreshContinueTitle()
+        refreshExpertSubtitle()
         refreshDailySubtitle()
         refreshBoltBadge()
     }
@@ -343,17 +344,40 @@ final class HomeViewController: UIViewController {
         configuration.background.strokeWidth = 0
         configuration.background.cornerRadius = 26
         configuration.titleAlignment = .center
-        configuration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 18, bottom: 14, trailing: 18)
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 18, bottom: 10, trailing: 18)
         configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
             outgoing.font = AppTheme.font(18, .heavy, textStyle: .headline)
+            return outgoing
+        }
+        configuration.subtitleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = AppTheme.font(12, .bold, textStyle: .caption1)
+            outgoing.foregroundColor = AppTheme.line.withAlphaComponent(0.8)
             return outgoing
         }
         expertButton.configuration = configuration
         expertButton.contentHorizontalAlignment = .center
         expertButton.layer.shadowOpacity = 0.35
         expertButton.isEnabled = true
-        expertButton.accessibilityLabel = "Mode expert"
+        expertButton.accessibilityHint = "Apprends à rendre ton robot autonome"
+        refreshExpertSubtitle()
+    }
+
+    private func refreshExpertSubtitle() {
+        let store = ExpertStore.shared
+        let done = store.masteryCount
+        let total = ExpertCatalog.totalSimulations
+        let subtitle: String
+        if done >= total {
+            subtitle = "Laboratoire maîtrisé"
+        } else {
+            subtitle = "\(done) / \(total) simulations"
+        }
+        guard var configuration = expertButton.configuration else { return }
+        configuration.subtitle = subtitle
+        expertButton.configuration = configuration
+        expertButton.accessibilityLabel = "Mode expert, \(subtitle)"
     }
 
     private func configureSquare(_ button: UIButton, mark: String, fill: UIColor, tint: UIColor, label: String) {
@@ -618,6 +642,7 @@ final class HomeViewController: UIViewController {
     }
 
     @objc private func openExpertMode() {
+#if !DEBUG
         let progress = CampaignStore.shared.progress()
         let unlocked = CampaignRules.unlockedWorld(in: progress, layout: CatalogCampaign.layout)
         guard unlocked >= 7 else {
@@ -628,6 +653,8 @@ final class HomeViewController: UIViewController {
             )
             return
         }
+#endif
+        navigationController?.pushViewController(ExpertHubViewController(), animated: true)
     }
 
     @objc private func openCampaign() {

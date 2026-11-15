@@ -26,6 +26,11 @@ public enum ConditionEvaluator {
             return !door.isActive && door.link == nil
         case .crateAhead:
             return cellAhead(game)?.containsCrate == true
+        case .keyHere:
+            return game.grid.cell(at: game.robot.position)?.objects.contains { $0.kind == ObjectKind.key } == true
+        case .onPlate:
+            let plates = game.grid.cell(at: game.robot.position)?.mechanisms.filter { $0.kind == MechanismKind.plate } ?? []
+            return plates.contains { !$0.isActive }
         }
     }
 

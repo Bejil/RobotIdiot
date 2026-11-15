@@ -102,6 +102,8 @@ enum PlayerCopy {
         case .keyAhead: return "clé devant"
         case .lockAhead: return "cadenas devant"
         case .crateAhead: return "caisse devant"
+        case .keyHere: return "clé ici"
+        case .onPlate: return "sur bouton"
         }
     }
 

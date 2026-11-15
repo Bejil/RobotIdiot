@@ -1,0 +1,6610 @@
+{
+  "schemaVersion": "expert-lab/1.0",
+  "packId": "robot-idiot-expert-laboratory-v1",
+  "mode": "expert",
+  "locale": "fr-FR",
+  "displayPolicy": {
+    "noWorldMap": true,
+    "hideInternalLevelNumbers": true,
+    "entryPoint": "Continuer l’entraînement",
+    "progress": "completedUnique/40",
+    "archive": "Historique des simulations",
+    "fixedLevelsOnly": true,
+    "generateRuntime": false
+  },
+  "scoring": {
+    "metric": "writtenBlocks",
+    "count": "Count each AST command node once, including SI, REPETE and their nested children, ignoring execution multiplicity",
+    "threeStars": "writtenBlocks <= starTargets.threeStarsMax",
+    "twoStars": "writtenBlocks <= starTargets.twoStarsMax",
+    "oneStar": "successfulProgram",
+    "neverBlockOnStarRating": true,
+    "noBlockLimit": true,
+    "referenceOptimalityCaution": "Reference scores are validated but not mathematically proven global minimum written program."
+  },
+  "progression": {
+    "simulations": 40,
+    "unlockRule": "Complete current simulation with any star rating to unlock next",
+    "firstUnlocked": "EX-001",
+    "beginUnlockedCommands": [
+      "REPETE"
+    ],
+    "unlockSIAt": "EX-009",
+    "beginPrimitiveCommands": [
+      "AVANCE",
+      "RECULE",
+      "TOURNE_GAUCHE",
+      "TOURNE_DROITE",
+      "RAMASSE",
+      "UTILISE",
+      "POUSSE",
+      "ACTIVE"
+    ],
+    "noAdventureSaveChanges": true,
+    "noSharedStars": true,
+    "unlockCrateSensorAt": "EX-030"
+  },
+  "controlRules": {
+    "REPETE": "Infinite; stop immediately on reaching flag, explicit failure, user stop, or safety watchdog",
+    "SI": "Executes body only when condition true; reevaluates each time execution visits the SI",
+    "availableConditions": [
+      "OBSTACLE_DEVANT",
+      "CLE_ICI",
+      "CADENAS_DEVANT",
+      "SUR_BOUTON",
+      "CAISSE_DEVANT"
+    ],
+    "conditionsAreFreeSensors": true,
+    "movementAndObjectRules": "Follow V14.1 interactionRules, including keys/locks, plates/doors, portal orientation, crate-portal exclusion."
+  },
+  "simulations": [
+    {
+      "id": "EX-001",
+      "name": "Le premier automatisme",
+      "mode": "expert",
+      "width": 7,
+      "height": 7,
+      "grid": [
+        "FRWBWWR",
+        "ggBTBRO",
+        "WggOOPP",
+        "TRggPRP",
+        "RWWg<TW",
+        "WPOWPTB",
+        "WWTOPPO"
+      ],
+      "start": {
+        "x": 4,
+        "y": 4,
+        "orientation": "W"
+      },
+      "finish": {
+        "x": 0,
+        "y": 0
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 1,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_DROITE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_GAUCHE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 5,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE"
+        ],
+        "executedActions": 15,
+        "loopIterations": 4,
+        "conditionObservations": {},
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 15,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "REPETE",
+      "designPattern": "periodic-motif",
+      "teachingHint": "Une boucle répète tes instructions jusqu’à l’arrivée.",
+      "sequence": 1,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 5,
+        "twoStarsMax": 7,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE"
+      ],
+      "unlockedConditions": [],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": "repeat"
+    },
+    {
+      "id": "EX-002",
+      "name": "Un pas de côté",
+      "mode": "expert",
+      "width": 7,
+      "height": 7,
+      "grid": [
+        "WPvTRRB",
+        "TWggTRR",
+        "WPRggPg",
+        "PWPTggB",
+        "RggTOgF",
+        "POggPOR",
+        "POWgRPT"
+      ],
+      "start": {
+        "x": 2,
+        "y": 0,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 6,
+        "y": 4
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 2,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_GAUCHE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_DROITE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 5,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE"
+        ],
+        "executedActions": 15,
+        "loopIterations": 4,
+        "conditionObservations": {},
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 15,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "REPETE",
+      "designPattern": "periodic-motif",
+      "teachingHint": "",
+      "sequence": 2,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 5,
+        "twoStarsMax": 7,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE"
+      ],
+      "unlockedConditions": [],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-003",
+      "name": "Avancer, tourner, recommencer",
+      "mode": "expert",
+      "width": 7,
+      "height": 7,
+      "grid": [
+        "OOTOTgF",
+        "WWRWRgg",
+        "RPPOggB",
+        "WWgOgWP",
+        "WRTggPT",
+        "OOBgBPT",
+        "TOT^POg"
+      ],
+      "start": {
+        "x": 3,
+        "y": 6,
+        "orientation": "N"
+      },
+      "finish": {
+        "x": 6,
+        "y": 0
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 3,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_DROITE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_GAUCHE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE"
+        ],
+        "executedActions": 14,
+        "loopIterations": 3,
+        "conditionObservations": {},
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 14,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "REPETE",
+      "designPattern": "periodic-motif",
+      "teachingHint": "",
+      "sequence": 3,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE"
+      ],
+      "unlockedConditions": [],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-004",
+      "name": "Le rythme inversé",
+      "mode": "expert",
+      "width": 7,
+      "height": 7,
+      "grid": [
+        "OOTvPOB",
+        "WgTgWPT",
+        "BOBggOT",
+        "gPBTgWO",
+        "PWPPggT",
+        "OPgBOgB",
+        "PTWOBgF"
+      ],
+      "start": {
+        "x": 3,
+        "y": 0,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 6,
+        "y": 6
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 4,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_GAUCHE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_DROITE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE"
+        ],
+        "executedActions": 14,
+        "loopIterations": 3,
+        "conditionObservations": {},
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 14,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "REPETE",
+      "designPattern": "periodic-motif",
+      "teachingHint": "",
+      "sequence": 4,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE"
+      ],
+      "unlockedConditions": [],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-005",
+      "name": "Un détour régulier",
+      "mode": "expert",
+      "width": 7,
+      "height": 7,
+      "grid": [
+        "gBgBWOW",
+        "OBTRPWT",
+        "BOWWTBT",
+        "ROROTRv",
+        "WRTRggg",
+        "OTgggRP",
+        "FggBORB"
+      ],
+      "start": {
+        "x": 6,
+        "y": 3,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 0,
+        "y": 6
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 5,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_DROITE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_GAUCHE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 14,
+        "loopIterations": 3,
+        "conditionObservations": {},
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 14,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "REPETE",
+      "designPattern": "periodic-motif",
+      "teachingHint": "",
+      "sequence": 5,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE"
+      ],
+      "unlockedConditions": [],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-006",
+      "name": "Le mouvement miroir",
+      "mode": "expert",
+      "width": 7,
+      "height": 7,
+      "grid": [
+        "BPBBPPB",
+        "FggWROW",
+        "OPgggBB",
+        "PRRWggg",
+        "TPWWTO^",
+        "PTWRTBP",
+        "OPOBBTW"
+      ],
+      "start": {
+        "x": 6,
+        "y": 4,
+        "orientation": "N"
+      },
+      "finish": {
+        "x": 0,
+        "y": 1
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 1,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_GAUCHE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_DROITE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 14,
+        "loopIterations": 3,
+        "conditionObservations": {},
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 14,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "REPETE",
+      "designPattern": "periodic-motif",
+      "teachingHint": "",
+      "sequence": 6,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE"
+      ],
+      "unlockedConditions": [],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-007",
+      "name": "La séquence cachée",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "RgRRBBBW",
+        "FgTBBWBB",
+        "BgggRPRP",
+        "WBPggggP",
+        "TWPTOg<R",
+        "BWTBOWWP",
+        "TPROTTBO",
+        "TOWTOWTT"
+      ],
+      "start": {
+        "x": 6,
+        "y": 4,
+        "orientation": "W"
+      },
+      "finish": {
+        "x": 0,
+        "y": 1
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 2,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_DROITE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_GAUCHE"
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE"
+        ],
+        "executedActions": 15,
+        "loopIterations": 3,
+        "conditionObservations": {},
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 15,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "REPETE",
+      "designPattern": "periodic-motif",
+      "teachingHint": "",
+      "sequence": 7,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE"
+      ],
+      "unlockedConditions": [],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-008",
+      "name": "Pilote automatique",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "BBTBOOOR",
+        "FTWPgBgg",
+        "ggBgRTgO",
+        "RgROWTTW",
+        "PggBWWRR",
+        "gRgBORRg",
+        "BTggWOOg",
+        "TPR^PTWR"
+      ],
+      "start": {
+        "x": 3,
+        "y": 7,
+        "orientation": "N"
+      },
+      "finish": {
+        "x": 0,
+        "y": 1
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 3,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_GAUCHE"
+              },
+              {
+                "command": "AVANCE"
+              },
+              {
+                "command": "TOURNE_DROITE"
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE"
+        ],
+        "executedActions": 15,
+        "loopIterations": 3,
+        "conditionObservations": {},
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 15,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "REPETE",
+      "designPattern": "periodic-motif",
+      "teachingHint": "",
+      "sequence": 8,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE"
+      ],
+      "unlockedConditions": [],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-009",
+      "name": "Réagir sans réfléchir",
+      "mode": "expert",
+      "width": 7,
+      "height": 7,
+      "grid": [
+        "TOOgTPB",
+        "gTTTTPT",
+        "TggggRT",
+        "TgFRgTT",
+        "gggBgTB",
+        "PggPgPP",
+        "OggB^TT"
+      ],
+      "start": {
+        "x": 4,
+        "y": 6,
+        "orientation": "N"
+      },
+      "finish": {
+        "x": 2,
+        "y": 3
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 5,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 4,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 19,
+        "loopIterations": 15,
+        "conditionObservations": {
+          "OBSTACLE_DEVANT": {
+            "false": 11,
+            "true": 4
+          }
+        },
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 9,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "SI",
+      "designPattern": "reactive-turn",
+      "teachingHint": "Une condition se vérifie à chaque passage. Si elle est vraie, le robot réagit.",
+      "sequence": 9,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 4,
+        "twoStarsMax": 6,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": "if"
+    },
+    {
+      "id": "EX-010",
+      "name": "Contourner les obstacles",
+      "mode": "expert",
+      "width": 7,
+      "height": 7,
+      "grid": [
+        "TTgggRT",
+        "TWgOgWB",
+        "TBgFgRO",
+        "OPWBgPg",
+        "TggOgPO",
+        "gg>OgPT",
+        "RggggOT"
+      ],
+      "start": {
+        "x": 2,
+        "y": 5,
+        "orientation": "E"
+      },
+      "finish": {
+        "x": 3,
+        "y": 2
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 7,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 4,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE"
+        ],
+        "executedActions": 26,
+        "loopIterations": 18,
+        "conditionObservations": {
+          "OBSTACLE_DEVANT": {
+            "true": 8,
+            "false": 10
+          }
+        },
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 12,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "SI",
+      "designPattern": "reactive-turn",
+      "teachingHint": "",
+      "sequence": 10,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 4,
+        "twoStarsMax": 6,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-011",
+      "name": "Le mur décide",
+      "mode": "expert",
+      "width": 7,
+      "height": 7,
+      "grid": [
+        "ggggggF",
+        "gWBRPRT",
+        "gggggg<",
+        "RBOOWBT",
+        "TWggRPB",
+        "TROPgBT",
+        "ROgWBgP"
+      ],
+      "start": {
+        "x": 6,
+        "y": 2,
+        "orientation": "W"
+      },
+      "finish": {
+        "x": 6,
+        "y": 0
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 4,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 4,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 16,
+        "loopIterations": 14,
+        "conditionObservations": {
+          "OBSTACLE_DEVANT": {
+            "false": 12,
+            "true": 2
+          }
+        },
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 16,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "SI",
+      "designPattern": "reactive-turn",
+      "teachingHint": "",
+      "sequence": 11,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 4,
+        "twoStarsMax": 6,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-012",
+      "name": "La trajectoire imprévue",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "WWOOTWRW",
+        "BTTBgggg",
+        "BBTBgORg",
+        "RBWOgW<g",
+        "BBTPgRgg",
+        "PgPOgWWO",
+        "OBWOgFgg",
+        "WWBPgggg"
+      ],
+      "start": {
+        "x": 6,
+        "y": 3,
+        "orientation": "W"
+      },
+      "finish": {
+        "x": 5,
+        "y": 6
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 9,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 4,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 28,
+        "loopIterations": 20,
+        "conditionObservations": {
+          "OBSTACLE_DEVANT": {
+            "true": 8,
+            "false": 12
+          }
+        },
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 16,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "SI",
+      "designPattern": "reactive-turn",
+      "teachingHint": "",
+      "sequence": 12,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 4,
+        "twoStarsMax": 6,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-013",
+      "name": "Le virage automatique",
+      "mode": "expert",
+      "width": 7,
+      "height": 7,
+      "grid": [
+        "ggggggB",
+        "^ROWggO",
+        "OWBOggP",
+        "PgFgBgW",
+        "RgggggT",
+        "WPBOBOR",
+        "PRTPOWP"
+      ],
+      "start": {
+        "x": 0,
+        "y": 1,
+        "orientation": "N"
+      },
+      "finish": {
+        "x": 2,
+        "y": 3
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 6,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 4,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE"
+        ],
+        "executedActions": 21,
+        "loopIterations": 16,
+        "conditionObservations": {
+          "OBSTACLE_DEVANT": {
+            "false": 11,
+            "true": 5
+          }
+        },
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 18,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "SI",
+      "designPattern": "reactive-turn",
+      "teachingHint": "",
+      "sequence": 13,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 4,
+        "twoStarsMax": 6,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-014",
+      "name": "Le passage en spirale",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "WBWWOTTB",
+        "BgPTPgBB",
+        "OBgggggg",
+        "OWgTggvg",
+        "WPTPRORg",
+        "FOPPPgOg",
+        "gRBOOOWg",
+        "gggggggg"
+      ],
+      "start": {
+        "x": 6,
+        "y": 3,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 0,
+        "y": 5
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 4,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 4,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 26,
+        "loopIterations": 20,
+        "conditionObservations": {
+          "OBSTACLE_DEVANT": {
+            "true": 6,
+            "false": 14
+          }
+        },
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 18,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "SI",
+      "designPattern": "reactive-turn",
+      "teachingHint": "",
+      "sequence": 14,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 4,
+        "twoStarsMax": 6,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-015",
+      "name": "Le robot s’adapte",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "WPBggOWB",
+        "WRROPWWB",
+        "TgRBTBBB",
+        "POPRgBPW",
+        "gggggggg",
+        "gBTBPBRg",
+        "gBFggBvg",
+        "gggggTgg"
+      ],
+      "start": {
+        "x": 6,
+        "y": 6,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 2,
+        "y": 6
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 5,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 4,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 29,
+        "loopIterations": 22,
+        "conditionObservations": {
+          "OBSTACLE_DEVANT": {
+            "false": 15,
+            "true": 7
+          }
+        },
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 22,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "SI",
+      "designPattern": "reactive-turn",
+      "teachingHint": "",
+      "sequence": 15,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 4,
+        "twoStarsMax": 6,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-016",
+      "name": "Chercher une ouverture",
+      "mode": "expert",
+      "width": 7,
+      "height": 7,
+      "grid": [
+        "RBRWBTT",
+        "BFRWOBO",
+        "RgRgggg",
+        "BgO<PRg",
+        "BgBWPWg",
+        "BgBRPPg",
+        "Ogggggg"
+      ],
+      "start": {
+        "x": 3,
+        "y": 3,
+        "orientation": "W"
+      },
+      "finish": {
+        "x": 1,
+        "y": 1
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [],
+      "visualThemeWorld": 8,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 4,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 23,
+        "loopIterations": 18,
+        "conditionObservations": {
+          "OBSTACLE_DEVANT": {
+            "true": 5,
+            "false": 13
+          }
+        },
+        "events": {},
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 23,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "SI",
+      "designPattern": "reactive-turn",
+      "teachingHint": "",
+      "sequence": 16,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 4,
+        "twoStarsMax": 6,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-017",
+      "name": "Une serrure sur la route",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "POBOTTOO",
+        "PWTPBggg",
+        "WgWTRFgg",
+        "gOWWBOPU",
+        "OPgTRORg",
+        "WgggggBg",
+        "OgPPT>Pg",
+        "ggggKggg"
+      ],
+      "start": {
+        "x": 5,
+        "y": 6,
+        "orientation": "E"
+      },
+      "finish": {
+        "x": 5,
+        "y": 2
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardKey",
+          "x": 4,
+          "y": 7
+        },
+        {
+          "type": "BoardLock",
+          "x": 7,
+          "y": 3
+        }
+      ],
+      "visualThemeWorld": 7,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 8,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE"
+        ],
+        "executedActions": 31,
+        "loopIterations": 22,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 21,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 21,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 7,
+            "false": 15
+          }
+        },
+        "events": {
+          "key": 1,
+          "lock": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 18,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "key-lock",
+      "teachingHint": "Le robot peut reconnaître une clé et un cadenas.",
+      "sequence": 17,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 8,
+        "twoStarsMax": 11,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": "key"
+    },
+    {
+      "id": "EX-018",
+      "name": "La clé au bon moment",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "RRBTBTgg",
+        "RgOBBOBg",
+        "OBRgROPW",
+        "gggggggU",
+        "gFPRRWTg",
+        "TRggggPg",
+        "RWgPB>Pg",
+        "OggggggK"
+      ],
+      "start": {
+        "x": 5,
+        "y": 6,
+        "orientation": "E"
+      },
+      "finish": {
+        "x": 1,
+        "y": 4
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardKey",
+          "x": 7,
+          "y": 7
+        },
+        {
+          "type": "BoardLock",
+          "x": 7,
+          "y": 3
+        }
+      ],
+      "visualThemeWorld": 8,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 8,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE"
+        ],
+        "executedActions": 34,
+        "loopIterations": 24,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 23,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 23,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 8,
+            "false": 16
+          }
+        },
+        "events": {
+          "key": 1,
+          "lock": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 21,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "key-lock",
+      "teachingHint": "",
+      "sequence": 18,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 8,
+        "twoStarsMax": 11,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-019",
+      "name": "La clé répétée",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "TRgggggg",
+        "BTKWTBPg",
+        "ROgT>RWU",
+        "PRgOgPFg",
+        "RBgggOgg",
+        "ORPBPOgg",
+        "TWBBPPRT",
+        "ORBWOTWW"
+      ],
+      "start": {
+        "x": 4,
+        "y": 2,
+        "orientation": "E"
+      },
+      "finish": {
+        "x": 6,
+        "y": 3
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardKey",
+          "x": 2,
+          "y": 1
+        },
+        {
+          "type": "BoardLock",
+          "x": 7,
+          "y": 2
+        }
+      ],
+      "visualThemeWorld": 6,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 8,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 30,
+        "loopIterations": 21,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 20,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 20,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 7,
+            "false": 14
+          }
+        },
+        "events": {
+          "key": 1,
+          "lock": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 25,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "key-lock",
+      "teachingHint": "",
+      "sequence": 19,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 8,
+        "twoStarsMax": 11,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-020",
+      "name": "Le passage verrouillé",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "WORRWRPP",
+        "ggKgggWP",
+        "gTRTWgTO",
+        "gRRTRgRR",
+        "ggvOBgTO",
+        "TORPRgBR",
+        "gggFRgWB",
+        "gggUggPO"
+      ],
+      "start": {
+        "x": 2,
+        "y": 4,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 3,
+        "y": 6
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardKey",
+          "x": 2,
+          "y": 1
+        },
+        {
+          "type": "BoardLock",
+          "x": 3,
+          "y": 7
+        }
+      ],
+      "visualThemeWorld": 9,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 8,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 34,
+        "loopIterations": 25,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 24,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 24,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 7,
+            "false": 18
+          }
+        },
+        "events": {
+          "key": 1,
+          "lock": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 27,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "key-lock",
+      "teachingHint": "",
+      "sequence": 20,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 8,
+        "twoStarsMax": 11,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-021",
+      "name": "La porte automatique",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "ggAggggg",
+        "ggRTWOPg",
+        "ggRgggW^",
+        "gOOgOgOW",
+        "gORFBgPP",
+        "gggDggBB",
+        "WRWOWWRT",
+        "WggRPWTg"
+      ],
+      "start": {
+        "x": 7,
+        "y": 2,
+        "orientation": "N"
+      },
+      "finish": {
+        "x": 3,
+        "y": 4
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPlate",
+          "x": 2,
+          "y": 0,
+          "linkId": "EXPERT-7500-1"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 3,
+          "y": 5,
+          "linkId": "EXPERT-7500-1"
+        }
+      ],
+      "visualThemeWorld": 6,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 33,
+        "loopIterations": 26,
+        "conditionObservations": {
+          "SUR_BOUTON": {
+            "false": 25,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "false": 20,
+            "true": 6
+          }
+        },
+        "events": {
+          "plate": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 23,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "plate-door",
+      "teachingHint": "Un bouton peut être activé automatiquement.",
+      "sequence": 21,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": "plate"
+    },
+    {
+      "id": "EX-022",
+      "name": "Activer sans s’arrêter",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "TBORWWTT",
+        "TBPRgBgP",
+        "gggggAgg",
+        "g>gggggg",
+        "gRgRWWOW",
+        "DROFgORR",
+        "gggggPPO",
+        "BTPPPOBT"
+      ],
+      "start": {
+        "x": 1,
+        "y": 3,
+        "orientation": "E"
+      },
+      "finish": {
+        "x": 3,
+        "y": 5
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPlate",
+          "x": 5,
+          "y": 2,
+          "linkId": "EXPERT-5500-1"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 0,
+          "y": 5,
+          "linkId": "EXPERT-5500-1"
+        }
+      ],
+      "visualThemeWorld": 11,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE"
+        ],
+        "executedActions": 31,
+        "loopIterations": 24,
+        "conditionObservations": {
+          "SUR_BOUTON": {
+            "false": 23,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "false": 18,
+            "true": 6
+          }
+        },
+        "events": {
+          "plate": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 24,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "plate-door",
+      "teachingHint": "",
+      "sequence": 22,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-023",
+      "name": "L’interrupteur caché",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "BW>ggggB",
+        "BWOPWRgT",
+        "PTOBTPgg",
+        "ggggRWgg",
+        "DFggBOgB",
+        "gWPBgRgW",
+        "ggggggAP",
+        "TTPPPWWO"
+      ],
+      "start": {
+        "x": 2,
+        "y": 0,
+        "orientation": "E"
+      },
+      "finish": {
+        "x": 1,
+        "y": 4
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPlate",
+          "x": 6,
+          "y": 6,
+          "linkId": "EXPERT-6500-1"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 0,
+          "y": 4,
+          "linkId": "EXPERT-6500-1"
+        }
+      ],
+      "visualThemeWorld": 12,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 32,
+        "loopIterations": 25,
+        "conditionObservations": {
+          "SUR_BOUTON": {
+            "false": 24,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "false": 19,
+            "true": 6
+          }
+        },
+        "events": {
+          "plate": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 24,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "plate-door",
+      "teachingHint": "",
+      "sequence": 23,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-024",
+      "name": "Détecter le bouton",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "Fggggggg",
+        "BPOTWgTg",
+        "PPOWOTBg",
+        "ggggRTWD",
+        "gW>OOWOg",
+        "gWBBPRWg",
+        "gggAgggg",
+        "TRWPBTRR"
+      ],
+      "start": {
+        "x": 2,
+        "y": 4,
+        "orientation": "E"
+      },
+      "finish": {
+        "x": 0,
+        "y": 0
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPlate",
+          "x": 3,
+          "y": 6,
+          "linkId": "EXPERT-4503-1"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 7,
+          "y": 3,
+          "linkId": "EXPERT-4503-1"
+        }
+      ],
+      "visualThemeWorld": 10,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 33,
+        "loopIterations": 26,
+        "conditionObservations": {
+          "SUR_BOUTON": {
+            "false": 25,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 6,
+            "false": 20
+          }
+        },
+        "events": {
+          "plate": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 33,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "plate-door",
+      "teachingHint": "",
+      "sequence": 24,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-025",
+      "name": "Les deux serrures",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "ggggKgOT",
+        "gggvRgRP",
+        "TPTPWgBB",
+        "gggRBgOP",
+        "gRgPWgBO",
+        "gBFPRUWO",
+        "UggKggRR",
+        "OOPTTBTR"
+      ],
+      "start": {
+        "x": 3,
+        "y": 1,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 2,
+        "y": 5
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardKey",
+          "x": 4,
+          "y": 0
+        },
+        {
+          "type": "BoardLock",
+          "x": 5,
+          "y": 5
+        },
+        {
+          "type": "BoardKey",
+          "x": 3,
+          "y": 6
+        },
+        {
+          "type": "BoardLock",
+          "x": 0,
+          "y": 6
+        }
+      ],
+      "visualThemeWorld": 9,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 8,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 39,
+        "loopIterations": 27,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 25,
+            "true": 2
+          },
+          "CADENAS_DEVANT": {
+            "false": 25,
+            "true": 2
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 8,
+            "false": 19
+          }
+        },
+        "events": {
+          "key": 2,
+          "lock": 2
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 19,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "double-keys",
+      "teachingHint": "",
+      "sequence": 25,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 8,
+        "twoStarsMax": 11,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-026",
+      "name": "Deux clés, une logique",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "gggUggTB",
+        "gPBOPKRR",
+        "gBggFgPW",
+        "gOgTOgPO",
+        "gOgggUWg",
+        "KPWBBRWP",
+        "gggvPTOB",
+        "TWPWRWRW"
+      ],
+      "start": {
+        "x": 3,
+        "y": 6,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 4,
+        "y": 2
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardKey",
+          "x": 0,
+          "y": 5
+        },
+        {
+          "type": "BoardLock",
+          "x": 3,
+          "y": 0
+        },
+        {
+          "type": "BoardKey",
+          "x": 5,
+          "y": 1
+        },
+        {
+          "type": "BoardLock",
+          "x": 5,
+          "y": 4
+        }
+      ],
+      "visualThemeWorld": 8,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 8,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 36,
+        "loopIterations": 25,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 23,
+            "true": 2
+          },
+          "CADENAS_DEVANT": {
+            "false": 23,
+            "true": 2
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 7,
+            "false": 18
+          }
+        },
+        "events": {
+          "key": 2,
+          "lock": 2
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 24,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "double-keys",
+      "teachingHint": "",
+      "sequence": 26,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 8,
+        "twoStarsMax": 11,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-027",
+      "name": "Les portes jumelles",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "ggAgggOP",
+        "gOTBTgWR",
+        "gFggTDBT",
+        "gOBgPgPO",
+        "DgggOARO",
+        "PBBWRgBW",
+        "WTBTWgBR",
+        ">gggggOW"
+      ],
+      "start": {
+        "x": 0,
+        "y": 7,
+        "orientation": "E"
+      },
+      "finish": {
+        "x": 1,
+        "y": 2
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPlate",
+          "x": 5,
+          "y": 4,
+          "linkId": "EXPERT-4450-1"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 5,
+          "y": 2,
+          "linkId": "EXPERT-4450-1"
+        },
+        {
+          "type": "BoardPlate",
+          "x": 2,
+          "y": 0,
+          "linkId": "EXPERT-4450-2"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 0,
+          "y": 4,
+          "linkId": "EXPERT-4450-2"
+        }
+      ],
+      "visualThemeWorld": 11,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 36,
+        "loopIterations": 28,
+        "conditionObservations": {
+          "SUR_BOUTON": {
+            "false": 26,
+            "true": 2
+          },
+          "OBSTACLE_DEVANT": {
+            "false": 22,
+            "true": 6
+          }
+        },
+        "events": {
+          "plate": 2
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 25,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "double-plates",
+      "teachingHint": "",
+      "sequence": 27,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-028",
+      "name": "Deux boutons à retrouver",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "ggggggAg",
+        "<OWTTBOg",
+        "ORBDggTg",
+        "PBPgTgTg",
+        "PBRgFgTD",
+        "POggPRRg",
+        "WWRAgggg",
+        "BBWOBWRT"
+      ],
+      "start": {
+        "x": 0,
+        "y": 1,
+        "orientation": "W"
+      },
+      "finish": {
+        "x": 4,
+        "y": 4
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPlate",
+          "x": 6,
+          "y": 0,
+          "linkId": "EXPERT-3250-1"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 7,
+          "y": 4,
+          "linkId": "EXPERT-3250-1"
+        },
+        {
+          "type": "BoardPlate",
+          "x": 3,
+          "y": 6,
+          "linkId": "EXPERT-3250-2"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 3,
+          "y": 2,
+          "linkId": "EXPERT-3250-2"
+        }
+      ],
+      "visualThemeWorld": 10,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE"
+        ],
+        "executedActions": 37,
+        "loopIterations": 27,
+        "conditionObservations": {
+          "SUR_BOUTON": {
+            "false": 25,
+            "true": 2
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 8,
+            "false": 19
+          }
+        },
+        "events": {
+          "plate": 2
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 28,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "double-plates",
+      "teachingHint": "",
+      "sequence": 28,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-029",
+      "name": "Clé et commande",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "OBOgOWWB",
+        "ggggggTT",
+        "KOvggPBT",
+        "gRTRRTgW",
+        "gWPggDgg",
+        "gBgggFWg",
+        "gRTTWBOg",
+        "ggAggggU"
+      ],
+      "start": {
+        "x": 2,
+        "y": 2,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 5,
+        "y": 5
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardKey",
+          "x": 0,
+          "y": 2
+        },
+        {
+          "type": "BoardPlate",
+          "x": 2,
+          "y": 7,
+          "linkId": "EXPERT-5663-1"
+        },
+        {
+          "type": "BoardLock",
+          "x": 7,
+          "y": 7
+        },
+        {
+          "type": "BoardDoor",
+          "x": 5,
+          "y": 4,
+          "linkId": "EXPERT-5663-1"
+        }
+      ],
+      "visualThemeWorld": 12,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 10,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 42,
+        "loopIterations": 30,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 29,
+            "true": 1
+          },
+          "SUR_BOUTON": {
+            "false": 29,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 29,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 9,
+            "false": 21
+          }
+        },
+        "events": {
+          "key": 1,
+          "plate": 1,
+          "lock": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 31,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "key-plate-lock",
+      "teachingHint": "",
+      "sequence": 29,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 10,
+        "twoStarsMax": 13,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-030",
+      "name": "Passages successifs",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "gAggggCg",
+        "gT>ggPgO",
+        "KggggPgR",
+        "WWORTOUR",
+        "ggFPWRgW",
+        "gTgORPgO",
+        "ggggDggB",
+        "BBOTRWBg"
+      ],
+      "start": {
+        "x": 2,
+        "y": 1,
+        "orientation": "E"
+      },
+      "finish": {
+        "x": 2,
+        "y": 4
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardKey",
+          "x": 0,
+          "y": 2
+        },
+        {
+          "type": "BoardPlate",
+          "x": 1,
+          "y": 0,
+          "linkId": "EXPERT-6869-1"
+        },
+        {
+          "type": "BoardLock",
+          "x": 6,
+          "y": 3
+        },
+        {
+          "type": "BoardDoor",
+          "x": 4,
+          "y": 6,
+          "linkId": "EXPERT-6869-1"
+        },
+        {
+          "type": "BoardCrate",
+          "x": 6,
+          "y": 0
+        }
+      ],
+      "visualThemeWorld": 13,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CAISSE_DEVANT",
+                "body": [
+                  {
+                    "command": "POUSSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 12,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "ACTIVE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "POUSSE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 42,
+        "loopIterations": 30,
+        "conditionObservations": {
+          "CAISSE_DEVANT": {
+            "false": 29,
+            "true": 1
+          },
+          "CLE_ICI": {
+            "false": 29,
+            "true": 1
+          },
+          "SUR_BOUTON": {
+            "false": 29,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 29,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "false": 22,
+            "true": 8
+          }
+        },
+        "events": {
+          "key": 1,
+          "plate": 1,
+          "crate": 1,
+          "lock": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 33,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "key-plate-lock-with-crate",
+      "teachingHint": "Ton robot peut détecter et pousser une caisse.",
+      "sequence": 30,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 12,
+        "twoStarsMax": 16,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON",
+        "CAISSE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": "crate"
+    },
+    {
+      "id": "EX-031",
+      "name": "Réflexes croisés",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "WOOOWggP",
+        "PPBOOggW",
+        "ggDgBgKg",
+        "gBFgW<gg",
+        "gBggOWgR",
+        "gTgggRgW",
+        "gWTWBBgW",
+        "UggAgggT"
+      ],
+      "start": {
+        "x": 5,
+        "y": 3,
+        "orientation": "W"
+      },
+      "finish": {
+        "x": 2,
+        "y": 3
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardKey",
+          "x": 6,
+          "y": 2
+        },
+        {
+          "type": "BoardPlate",
+          "x": 3,
+          "y": 7,
+          "linkId": "EXPERT-8050-1"
+        },
+        {
+          "type": "BoardLock",
+          "x": 0,
+          "y": 7
+        },
+        {
+          "type": "BoardDoor",
+          "x": 2,
+          "y": 2,
+          "linkId": "EXPERT-8050-1"
+        }
+      ],
+      "visualThemeWorld": 14,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 10,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "AVANCE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 43,
+        "loopIterations": 31,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 30,
+            "true": 1
+          },
+          "SUR_BOUTON": {
+            "false": 30,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 30,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 9,
+            "false": 22
+          }
+        },
+        "events": {
+          "key": 1,
+          "plate": 1,
+          "lock": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 29,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "key-plate-lock",
+      "teachingHint": "",
+      "sequence": 31,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 10,
+        "twoStarsMax": 13,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON",
+        "CAISSE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-032",
+      "name": "La routine complète",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "OWPRTBOg",
+        "UgggggAC",
+        "gWPOWTRg",
+        "gBWggg^g",
+        "gPOggKgg",
+        "gOPBPPPP",
+        "gRFgggOB",
+        "ggDgggRO"
+      ],
+      "start": {
+        "x": 6,
+        "y": 3,
+        "orientation": "N"
+      },
+      "finish": {
+        "x": 2,
+        "y": 6
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardKey",
+          "x": 5,
+          "y": 4
+        },
+        {
+          "type": "BoardPlate",
+          "x": 6,
+          "y": 1,
+          "linkId": "EXPERT-9296-1"
+        },
+        {
+          "type": "BoardLock",
+          "x": 0,
+          "y": 1
+        },
+        {
+          "type": "BoardDoor",
+          "x": 2,
+          "y": 7,
+          "linkId": "EXPERT-9296-1"
+        },
+        {
+          "type": "BoardCrate",
+          "x": 7,
+          "y": 1
+        }
+      ],
+      "visualThemeWorld": 15,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CAISSE_DEVANT",
+                "body": [
+                  {
+                    "command": "POUSSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 12,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "POUSSE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "ACTIVE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 45,
+        "loopIterations": 32,
+        "conditionObservations": {
+          "CAISSE_DEVANT": {
+            "false": 31,
+            "true": 1
+          },
+          "CLE_ICI": {
+            "false": 31,
+            "true": 1
+          },
+          "SUR_BOUTON": {
+            "false": 31,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 31,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 9,
+            "false": 23
+          }
+        },
+        "events": {
+          "key": 1,
+          "crate": 1,
+          "plate": 1,
+          "lock": 1
+        },
+        "portalTraversals": {},
+        "shortestPrimitiveOnlyActions": 32,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "INTERACTIONS",
+      "designPattern": "key-plate-lock-with-crate",
+      "teachingHint": "",
+      "sequence": 32,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 12,
+        "twoStarsMax": 16,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON",
+        "CAISSE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-033",
+      "name": "La porte après le saut",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "OFOOOggg",
+        "OgOOOK>g",
+        "OUOOOgOO",
+        "OgOOOgOO",
+        "QgOOOgOO",
+        "OOOOOgOO",
+        "OOOOOQOO",
+        "OOOOOOOO"
+      ],
+      "start": {
+        "x": 6,
+        "y": 1,
+        "orientation": "E"
+      },
+      "finish": {
+        "x": 1,
+        "y": 0
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPortal",
+          "x": 5,
+          "y": 6,
+          "linkId": "expert-portal-4000",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPortal",
+          "x": 0,
+          "y": 4,
+          "linkId": "expert-portal-4000",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardKey",
+          "x": 5,
+          "y": 1
+        },
+        {
+          "type": "BoardLock",
+          "x": 1,
+          "y": 2
+        }
+      ],
+      "visualThemeWorld": 11,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 8,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 22,
+        "loopIterations": 15,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 14,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 14,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "false": 10,
+            "true": 5
+          }
+        },
+        "events": {
+          "key": 1,
+          "lock": 1
+        },
+        "portalTraversals": {
+          "expert-portal-4000": 1
+        },
+        "shortestPrimitiveOnlyActions": 16,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "PORTALS",
+      "designPattern": "portal-key-lock",
+      "teachingHint": "Un portail conserve l’orientation du robot.",
+      "sequence": 33,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 8,
+        "twoStarsMax": 11,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON",
+        "CAISSE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": "portal"
+    },
+    {
+      "id": "EX-034",
+      "name": "Le passage télécommandé",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "OOOOOOvO",
+        "OQOOOOgO",
+        "OgggAggO",
+        "OOOOOOOO",
+        "OOOOOOOO",
+        "OOOOOOOO",
+        "OOggDgOO",
+        "OOQOOFOO"
+      ],
+      "start": {
+        "x": 6,
+        "y": 0,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 5,
+        "y": 7
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPortal",
+          "x": 1,
+          "y": 1,
+          "linkId": "expert-portal-7600",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPortal",
+          "x": 2,
+          "y": 7,
+          "linkId": "expert-portal-7600",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPlate",
+          "x": 4,
+          "y": 2,
+          "linkId": "expert-door-7600"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 4,
+          "y": 6,
+          "linkId": "expert-door-7600"
+        }
+      ],
+      "visualThemeWorld": 14,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE"
+        ],
+        "executedActions": 18,
+        "loopIterations": 13,
+        "conditionObservations": {
+          "SUR_BOUTON": {
+            "false": 12,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "false": 9,
+            "true": 4
+          }
+        },
+        "events": {
+          "plate": 1
+        },
+        "portalTraversals": {
+          "expert-portal-7600": 1
+        },
+        "shortestPrimitiveOnlyActions": 18,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "PORTALS",
+      "designPattern": "portal-plate-door",
+      "teachingHint": "",
+      "sequence": 34,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON",
+        "CAISSE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-035",
+      "name": "Une clé de l’autre côté",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "OOOOOOOO",
+        "ODggOOOO",
+        "OgOgOOOO",
+        "OgOgOOOO",
+        "OgOFOOOO",
+        "OgOOOQOO",
+        "OQOOOgOO",
+        "OOOOOAgv"
+      ],
+      "start": {
+        "x": 7,
+        "y": 7,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 3,
+        "y": 4
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPortal",
+          "x": 5,
+          "y": 5,
+          "linkId": "expert-portal-2800",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPortal",
+          "x": 1,
+          "y": 6,
+          "linkId": "expert-portal-2800",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPlate",
+          "x": 5,
+          "y": 7,
+          "linkId": "expert-door-2800"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 1,
+          "y": 1,
+          "linkId": "expert-door-2800"
+        }
+      ],
+      "visualThemeWorld": 10,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 19,
+        "loopIterations": 14,
+        "conditionObservations": {
+          "SUR_BOUTON": {
+            "false": 13,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 4,
+            "false": 10
+          }
+        },
+        "events": {
+          "plate": 1
+        },
+        "portalTraversals": {
+          "expert-portal-2800": 1
+        },
+        "shortestPrimitiveOnlyActions": 19,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "PORTALS",
+      "designPattern": "portal-plate-door",
+      "teachingHint": "",
+      "sequence": 35,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON",
+        "CAISSE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-036",
+      "name": "Saut dimensionnel",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "OOOOOOOO",
+        "OOOOOOOO",
+        "OOOOOOOO",
+        "QOOOQgKO",
+        "gOOOOOgO",
+        "gOOOOvgO",
+        "gOOFOOOO",
+        "UgggOOOO"
+      ],
+      "start": {
+        "x": 5,
+        "y": 5,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 3,
+        "y": 6
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPortal",
+          "x": 4,
+          "y": 3,
+          "linkId": "expert-portal-1600",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPortal",
+          "x": 0,
+          "y": 3,
+          "linkId": "expert-portal-1600",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardKey",
+          "x": 6,
+          "y": 3
+        },
+        {
+          "type": "BoardLock",
+          "x": 0,
+          "y": 7
+        }
+      ],
+      "visualThemeWorld": 9,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 8,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE"
+        ],
+        "executedActions": 21,
+        "loopIterations": 13,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 12,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 12,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 6,
+            "false": 7
+          }
+        },
+        "events": {
+          "key": 1,
+          "lock": 1
+        },
+        "portalTraversals": {
+          "expert-portal-1600": 1
+        },
+        "shortestPrimitiveOnlyActions": 21,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "PORTALS",
+      "designPattern": "portal-key-lock",
+      "teachingHint": "",
+      "sequence": 36,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 8,
+        "twoStarsMax": 11,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON",
+        "CAISSE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-037",
+      "name": "L’itinéraire autonome",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "OOOOOOOO",
+        "OOOFgggO",
+        "OOOOOOgO",
+        "OKg^OOUO",
+        "OgOOOOgO",
+        "OQOQgggO",
+        "OOOOOOOO",
+        "OOOOOOOO"
+      ],
+      "start": {
+        "x": 3,
+        "y": 3,
+        "orientation": "N"
+      },
+      "finish": {
+        "x": 3,
+        "y": 1
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPortal",
+          "x": 1,
+          "y": 5,
+          "linkId": "expert-portal-8800",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPortal",
+          "x": 3,
+          "y": 5,
+          "linkId": "expert-portal-8800",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardKey",
+          "x": 1,
+          "y": 3
+        },
+        {
+          "type": "BoardLock",
+          "x": 6,
+          "y": 3
+        }
+      ],
+      "visualThemeWorld": 15,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 8,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 21,
+        "loopIterations": 14,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 13,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 13,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 5,
+            "false": 9
+          }
+        },
+        "events": {
+          "key": 1,
+          "lock": 1
+        },
+        "portalTraversals": {
+          "expert-portal-8800": 1
+        },
+        "shortestPrimitiveOnlyActions": 21,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "PORTALS",
+      "designPattern": "portal-key-lock",
+      "teachingHint": "",
+      "sequence": 37,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 8,
+        "twoStarsMax": 11,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON",
+        "CAISSE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-038",
+      "name": "Examen du laboratoire",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "OgggDgOO",
+        "OQOOOgOO",
+        "OOOOOFOO",
+        "OOQOOOOO",
+        "OOgOOOOO",
+        "OOgOOOOO",
+        "OOgOO>OO",
+        "OOAgggOO"
+      ],
+      "start": {
+        "x": 5,
+        "y": 6,
+        "orientation": "E"
+      },
+      "finish": {
+        "x": 5,
+        "y": 2
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPortal",
+          "x": 2,
+          "y": 3,
+          "linkId": "expert-portal-10000",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPortal",
+          "x": 1,
+          "y": 1,
+          "linkId": "expert-portal-10000",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPlate",
+          "x": 2,
+          "y": 7,
+          "linkId": "expert-door-10000"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 4,
+          "y": 0,
+          "linkId": "expert-door-10000"
+        }
+      ],
+      "visualThemeWorld": 9,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_DROITE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 21,
+        "loopIterations": 15,
+        "conditionObservations": {
+          "SUR_BOUTON": {
+            "false": 14,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 5,
+            "false": 10
+          }
+        },
+        "events": {
+          "plate": 1
+        },
+        "portalTraversals": {
+          "expert-portal-10000": 1
+        },
+        "shortestPrimitiveOnlyActions": 21,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "PORTALS",
+      "designPattern": "portal-plate-door",
+      "teachingHint": "",
+      "sequence": 38,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON",
+        "CAISSE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-039",
+      "name": "Le détour impossible",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "OOOOOOOO",
+        "AgggQOOO",
+        "gOOOOOOO",
+        "ggvOOOOQ",
+        "OOOOOOOg",
+        "OOOOOOOg",
+        "OOOOOOOg",
+        "OOOFgggD"
+      ],
+      "start": {
+        "x": 2,
+        "y": 3,
+        "orientation": "S"
+      },
+      "finish": {
+        "x": 3,
+        "y": 7
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPortal",
+          "x": 4,
+          "y": 1,
+          "linkId": "expert-portal-5200",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPortal",
+          "x": 7,
+          "y": 3,
+          "linkId": "expert-portal-5200",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPlate",
+          "x": 0,
+          "y": 1,
+          "linkId": "expert-door-5200"
+        },
+        {
+          "type": "BoardDoor",
+          "x": 7,
+          "y": 7,
+          "linkId": "expert-door-5200"
+        }
+      ],
+      "visualThemeWorld": 12,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "SUR_BOUTON",
+                "body": [
+                  {
+                    "command": "ACTIVE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_DROITE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 6,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "ACTIVE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_DROITE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 22,
+        "loopIterations": 16,
+        "conditionObservations": {
+          "SUR_BOUTON": {
+            "false": 15,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 5,
+            "false": 11
+          }
+        },
+        "events": {
+          "plate": 1
+        },
+        "portalTraversals": {
+          "expert-portal-5200": 1
+        },
+        "shortestPrimitiveOnlyActions": 22,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "PORTALS",
+      "designPattern": "portal-plate-door",
+      "teachingHint": "",
+      "sequence": 39,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 6,
+        "twoStarsMax": 8,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON",
+        "CAISSE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    },
+    {
+      "id": "EX-040",
+      "name": "Deux salles, un programme",
+      "mode": "expert",
+      "width": 8,
+      "height": 8,
+      "grid": [
+        "OOOOggg^",
+        "OOOOgOOO",
+        "OOOOgOOO",
+        "FggOKOOO",
+        "OOgOgOOO",
+        "OOUOgOOO",
+        "OOgOgOOO",
+        "QggOgQOO"
+      ],
+      "start": {
+        "x": 7,
+        "y": 0,
+        "orientation": "N"
+      },
+      "finish": {
+        "x": 0,
+        "y": 3
+      },
+      "objective": {
+        "type": "reach_flag",
+        "requiresItemHeld": false
+      },
+      "mechanics": [
+        {
+          "type": "BoardPortal",
+          "x": 5,
+          "y": 7,
+          "linkId": "expert-portal-6402",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardPortal",
+          "x": 0,
+          "y": 7,
+          "linkId": "expert-portal-6402",
+          "visualVariant": "A"
+        },
+        {
+          "type": "BoardKey",
+          "x": 4,
+          "y": 3
+        },
+        {
+          "type": "BoardLock",
+          "x": 2,
+          "y": 5
+        }
+      ],
+      "visualThemeWorld": 13,
+      "reference": {
+        "program": [
+          {
+            "command": "REPETE",
+            "body": [
+              {
+                "command": "SI",
+                "condition": "CLE_ICI",
+                "body": [
+                  {
+                    "command": "RAMASSE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "CADENAS_DEVANT",
+                "body": [
+                  {
+                    "command": "UTILISE"
+                  }
+                ]
+              },
+              {
+                "command": "SI",
+                "condition": "OBSTACLE_DEVANT",
+                "body": [
+                  {
+                    "command": "TOURNE_GAUCHE"
+                  }
+                ]
+              },
+              {
+                "command": "AVANCE"
+              }
+            ]
+          }
+        ],
+        "writtenBlocks": 8,
+        "scoringMetric": "writtenBlocks",
+        "optimality": "VERIFIED_REFERENCE_NOT_PROVEN_MINIMUM",
+        "expandedCommands": [
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "RAMASSE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "UTILISE",
+          "AVANCE",
+          "AVANCE",
+          "AVANCE",
+          "TOURNE_GAUCHE",
+          "AVANCE",
+          "AVANCE"
+        ],
+        "executedActions": 26,
+        "loopIterations": 19,
+        "conditionObservations": {
+          "CLE_ICI": {
+            "false": 18,
+            "true": 1
+          },
+          "CADENAS_DEVANT": {
+            "false": 18,
+            "true": 1
+          },
+          "OBSTACLE_DEVANT": {
+            "true": 5,
+            "false": 14
+          }
+        },
+        "events": {
+          "key": 1,
+          "lock": 1
+        },
+        "portalTraversals": {
+          "expert-portal-6402": 1
+        },
+        "shortestPrimitiveOnlyActions": 26,
+        "primitiveOnlyOptimality": "EXACT_BFS_OFFLINE_MODEL",
+        "writtenBlockOptimality": "BEST_KNOWN_VALIDATED_NOT_PROVEN",
+        "replayedAfterOrdering": true
+      },
+      "skill": "PORTALS",
+      "designPattern": "portal-key-lock",
+      "teachingHint": "",
+      "sequence": 40,
+      "showLevelNumber": false,
+      "starTargets": {
+        "metric": "writtenBlocks",
+        "threeStarsMax": 8,
+        "twoStarsMax": 11,
+        "oneStar": "anySuccess",
+        "optimality": "REFERENCE_NOT_PROVEN_WRITTEN_MINIMUM"
+      },
+      "initiallyAvailableCommands": [
+        "AVANCE",
+        "RECULE",
+        "TOURNE_GAUCHE",
+        "TOURNE_DROITE",
+        "RAMASSE",
+        "UTILISE",
+        "POUSSE",
+        "ACTIVE"
+      ],
+      "unlockedControlCommands": [
+        "REPETE",
+        "SI"
+      ],
+      "unlockedConditions": [
+        "OBSTACLE_DEVANT",
+        "CLE_ICI",
+        "CADENAS_DEVANT",
+        "SUR_BOUTON",
+        "CAISSE_DEVANT"
+      ],
+      "expertScoringIndependence": "No change to adventure stars, which are executedPrimitiveActions",
+      "progressDisplay": {
+        "showLevelNumber": false,
+        "label": "Simulation en cours",
+        "singleNextButton": true
+      },
+      "microTutorialKey": null
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "simulations": 40,
+  "referenceWins": 40,
+  "uniqueGrids": 40,
+  "minimumPrimitiveOnlyBFSVerified": 40,
+  "writtenBlockGlobalOptimalityProven": false,
+  "gamesPreserved": "Adventure and Dailies not modified",
+  "conditionsStart": "EX-009",
+  "keysStart": "EX-017",
+  "plateSensorStart": "EX-021",
+  "crateSensorStart": "EX-030",
+  "portalsStart": "EX-033",
+  "oneStarForWin": true,
+  "allLevelsIndependentOfAdventureStars": true,
+  "artifactSHA256": "d89a8c9f748908b172c446d42553aa2ae5205c352c7a7fda91f6d81c2d400672"
+}

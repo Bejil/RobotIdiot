@@ -124,6 +124,8 @@ public struct SafetyLimits: Equatable, Sendable {
     }
 
     public static let standard = SafetyLimits(maxInstructionSteps: 10_000)
+    /// Mode Expert : plafond ≥ `maxInterpretationSteps` du config (20 000).
+    public static let expert = SafetyLimits(maxInstructionSteps: 20_000)
 }
 
 public struct ExecutionState: Codable, Hashable, Sendable {

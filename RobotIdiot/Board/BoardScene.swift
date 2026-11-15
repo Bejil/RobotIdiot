@@ -93,9 +93,12 @@ final class BoardScene: SKScene {
     }
 
     /// La bordure de murs n'est pas une tuile : le bord du 7×7 est la seule limite.
-    /// Les niveaux du pack gardent chaque mur dessiné à sa place.
+    /// Les niveaux du pack gardent chaque mur / objectif dessiné à sa place
+    /// (pas de buissons décoratifs aux coins qui masqueraient un Goal en extrémité).
     private var isHandcraftedPackLevel: Bool {
-        level.id.hasPrefix("RI-") || level.id.hasPrefix("DAILY-")
+        level.id.hasPrefix("RI-")
+            || level.id.hasPrefix("DAILY-")
+            || level.id.hasPrefix("EX-")
     }
 
     private func playfield() -> (minX: Int, maxX: Int, minY: Int, maxY: Int) {
@@ -127,6 +130,10 @@ final class BoardScene: SKScene {
         guard last > 0 else { return }
         for (x, y) in [(0, 0), (last, 0), (0, last), (last, last)] {
             let logical = GridCoordinate(x: x - columnShift, y: y - rowShift)
+            // Ne jamais peindre un buisson sur l’objectif (souvent un coin en Mode Expert).
+            if level.objectives.contains(where: { $0.kind == .reachFlag && $0.position == logical }) {
+                continue
+            }
             guard presented.grid.cell(at: logical)?.terrain == .floor else { continue }
             let spot = displayCenter(x: x, y: y)
             let bush = textured(.bush, side: tileSpan)
@@ -328,6 +335,8 @@ final class BoardScene: SKScene {
                 let spot = displayCenter(x: x, y: y)
                 tile.name = isGoal ? "goal-ground" : "ground-\(x)-\(y)"
                 tile.position = spot
+                // Goal au même plan que le sol : les halos (`attachGoalShine`, z ≥ 0.42)
+                // doivent rester au-dessus, comme en Aventure / quotidien.
                 tile.zPosition = terrain?.blocksMovement == true ? 0.4 : 0
                 addChild(tile)
                 if isGoal {

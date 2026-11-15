@@ -1,0 +1,41 @@
+id,name,phase,size,referenceBlocks,bestPrimitiveActions,referenceExecutedActions,loops,conditionTrue,conditionFalse,interactionEvents,portalJumps,star3Threshold,star2Threshold
+EX-001,Le premier automatisme,1,7×7,5,15,15,4,0,0,{},0,5,7
+EX-002,Un pas de côté,1,7×7,5,15,15,4,0,0,{},0,5,7
+EX-003,"Avancer, tourner, recommencer",1,7×7,6,14,14,3,0,0,{},0,6,8
+EX-004,Le rythme inversé,1,7×7,6,14,14,3,0,0,{},0,6,8
+EX-005,Un détour régulier,1,7×7,6,14,14,3,0,0,{},0,6,8
+EX-006,Le mouvement miroir,1,7×7,6,14,14,3,0,0,{},0,6,8
+EX-007,La séquence cachée,1,8×8,6,15,15,3,0,0,{},0,6,8
+EX-008,Pilote automatique,1,8×8,6,15,15,3,0,0,{},0,6,8
+EX-009,Réagir sans réfléchir,2,7×7,4,9,19,15,4,11,{},0,4,6
+EX-010,Contourner les obstacles,2,7×7,4,12,26,18,8,10,{},0,4,6
+EX-011,Le mur décide,2,7×7,4,16,16,14,2,12,{},0,4,6
+EX-012,La trajectoire imprévue,2,8×8,4,16,28,20,8,12,{},0,4,6
+EX-013,Le virage automatique,2,7×7,4,18,21,16,5,11,{},0,4,6
+EX-014,Le passage en spirale,2,8×8,4,18,26,20,6,14,{},0,4,6
+EX-015,Le robot s’adapte,2,8×8,4,22,29,22,7,15,{},0,4,6
+EX-016,Chercher une ouverture,2,7×7,4,23,23,18,5,13,{},0,4,6
+EX-017,Une serrure sur la route,3,8×8,8,18,31,22,9,57,"{""key"": 1, ""lock"": 1}",0,8,11
+EX-018,La clé au bon moment,3,8×8,8,21,34,24,10,62,"{""key"": 1, ""lock"": 1}",0,8,11
+EX-019,La clé répétée,3,8×8,8,25,30,21,9,54,"{""key"": 1, ""lock"": 1}",0,8,11
+EX-020,Le passage verrouillé,3,8×8,8,27,34,25,9,66,"{""key"": 1, ""lock"": 1}",0,8,11
+EX-021,La porte automatique,3,8×8,6,23,33,26,7,45,"{""plate"": 1}",0,6,8
+EX-022,Activer sans s’arrêter,3,8×8,6,24,31,24,7,41,"{""plate"": 1}",0,6,8
+EX-023,L’interrupteur caché,3,8×8,6,24,32,25,7,43,"{""plate"": 1}",0,6,8
+EX-024,Détecter le bouton,3,8×8,6,33,33,26,7,45,"{""plate"": 1}",0,6,8
+EX-025,Les deux serrures,4,8×8,8,19,39,27,12,69,"{""key"": 2, ""lock"": 2}",0,8,11
+EX-026,"Deux clés, une logique",4,8×8,8,24,36,25,11,64,"{""key"": 2, ""lock"": 2}",0,8,11
+EX-027,Les portes jumelles,4,8×8,6,25,36,28,8,48,"{""plate"": 2}",0,6,8
+EX-028,Deux boutons à retrouver,4,8×8,6,28,37,27,10,44,"{""plate"": 2}",0,6,8
+EX-029,Clé et commande,4,8×8,10,31,42,30,12,108,"{""key"": 1, ""plate"": 1, ""lock"": 1}",0,10,13
+EX-030,Passages successifs,4,8×8,12,33,42,30,12,138,"{""key"": 1, ""plate"": 1, ""crate"": 1, ""lock"": 1}",0,12,16
+EX-031,Réflexes croisés,4,8×8,10,29,43,31,12,112,"{""key"": 1, ""plate"": 1, ""lock"": 1}",0,10,13
+EX-032,La routine complète,4,8×8,12,32,45,32,13,147,"{""key"": 1, ""crate"": 1, ""plate"": 1, ""lock"": 1}",0,12,16
+EX-033,La porte après le saut,5,8×8,8,16,22,15,7,38,"{""key"": 1, ""lock"": 1}",1,8,11
+EX-034,Le passage télécommandé,5,8×8,6,18,18,13,5,21,"{""plate"": 1}",1,6,8
+EX-035,Une clé de l’autre côté,5,8×8,6,19,19,14,5,23,"{""plate"": 1}",1,6,8
+EX-036,Saut dimensionnel,5,8×8,8,21,21,13,8,31,"{""key"": 1, ""lock"": 1}",1,8,11
+EX-037,L’itinéraire autonome,5,8×8,8,21,21,14,7,35,"{""key"": 1, ""lock"": 1}",1,8,11
+EX-038,Examen du laboratoire,5,8×8,6,21,21,15,6,24,"{""plate"": 1}",1,6,8
+EX-039,Le détour impossible,5,8×8,6,22,22,16,6,26,"{""plate"": 1}",1,6,8
+EX-040,"Deux salles, un programme",5,8×8,8,26,26,19,7,50,"{""key"": 1, ""lock"": 1}",1,8,11

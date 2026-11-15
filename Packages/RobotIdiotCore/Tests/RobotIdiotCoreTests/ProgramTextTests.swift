@@ -96,6 +96,42 @@ final class ProgramTextTests: XCTestCase {
         XCTAssertEqual(program.instructions.map(\.command), [.forever, .moveForward])
     }
 
+    func testRelocateInsertsBetweenLoopHeaderAndNestedIf() {
+        let nestedIf = Instruction(command: .ifBlock, condition: .obstacleAhead, children: [])
+        let loop = Instruction(command: .forever, children: [nestedIf])
+        let move = Instruction(command: .moveForward)
+        var program = Program(instructions: [loop, move])
+
+        XCTAssertTrue(program.relocate(move.id, to: .before(nestedIf.id)))
+        XCTAssertEqual(program.instructions.count, 1)
+        XCTAssertEqual(program.instructions[0].children.map(\.command), [.moveForward, .ifBlock])
+    }
+
+    func testRelocateExtractsFromIfBeforeAndAfterAndIntoAnotherIf() {
+        let body = Instruction(command: .moveForward)
+        let firstIf = Instruction(command: .ifBlock, condition: .obstacleAhead, children: [body])
+        let secondIf = Instruction(command: .ifBlock, condition: .crateAhead, children: [])
+        let tail = Instruction(command: .turnLeft)
+        var program = Program(instructions: [firstIf, secondIf, tail])
+
+        XCTAssertTrue(program.relocate(body.id, to: .before(firstIf.id)))
+        XCTAssertEqual(program.instructions.map(\.command), [.moveForward, .ifBlock, .ifBlock, .turnLeft])
+        XCTAssertTrue(program.instructions[1].children.isEmpty)
+
+        XCTAssertTrue(program.relocate(body.id, to: .into(firstIf.id)))
+        XCTAssertEqual(program.instructions[0].children.map(\.id), [body.id])
+
+        XCTAssertTrue(program.relocate(body.id, to: .after(firstIf.id)))
+        XCTAssertEqual(program.instructions.map(\.command), [.ifBlock, .moveForward, .ifBlock, .turnLeft])
+
+        XCTAssertTrue(program.relocate(body.id, to: .into(secondIf.id)))
+        XCTAssertEqual(program.instructions.map(\.command), [.ifBlock, .ifBlock, .turnLeft])
+        XCTAssertEqual(program.instructions[1].children.map(\.command), [.moveForward])
+
+        XCTAssertTrue(program.relocate(body.id, to: .after(tail.id)))
+        XCTAssertEqual(program.instructions.map(\.command), [.ifBlock, .ifBlock, .turnLeft, .moveForward])
+    }
+
     func testAdoptedLinesKeepTheExistingIdentifiers() {
         let program = Program(instructions: [
             Instruction(command: .moveForward),

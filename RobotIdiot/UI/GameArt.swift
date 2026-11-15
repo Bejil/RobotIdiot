@@ -408,7 +408,7 @@ enum GameArt {
 
     enum BoardPiece: String {
         case grassA, grassB, stone, slab, goal, bush, shutter, cracked
-        case hero, flag, crate, key, bolt, door, doorOpen, lock, plate, plateOn
+        case hero, crate, key, bolt, door, doorOpen, lock, plate, plateOn
         case water, lava, spikes
     }
 
@@ -459,8 +459,6 @@ enum GameArt {
             return "BoardLock"
         case .plate, .plateOn:
             return "BoardPlate"
-        case .flag:
-            return "BoardFlag"
         case .hero, .doorOpen:
             return ""
         }
@@ -531,19 +529,6 @@ enum GameArt {
                 AppTheme.line.setStroke()
                 bulb.lineWidth = s * 0.035
                 bulb.stroke()
-            case .flag:
-                AppTheme.line.setFill()
-                UIBezierPath(roundedRect: CGRect(x: s * 0.22, y: s * 0.1, width: s * 0.1, height: s * 0.78), cornerRadius: 4).fill()
-                AppTheme.coral.setFill()
-                let cloth = UIBezierPath()
-                cloth.move(to: CGPoint(x: s * 0.32, y: s * 0.12))
-                cloth.addLine(to: CGPoint(x: s * 0.92, y: s * 0.34))
-                cloth.addLine(to: CGPoint(x: s * 0.32, y: s * 0.56))
-                cloth.close()
-                cloth.fill()
-                AppTheme.line.setStroke()
-                cloth.lineWidth = s * 0.045
-                cloth.stroke()
             case .crate:
                 crate(in: CGRect(x: s * 0.12, y: s * 0.12, width: s * 0.76, height: s * 0.76), weight: s * 0.05, fill: UIColor(hex: 0xE08A3C))
             case .key:

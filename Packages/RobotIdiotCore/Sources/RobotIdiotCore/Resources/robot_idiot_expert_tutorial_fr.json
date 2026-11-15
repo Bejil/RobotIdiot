@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "expert-tutorial/1.0",
+  "id": "expert-first-entry-v1",
+  "locale": "fr-FR",
+  "completionStorageKey": "robotIdiot.expert.tutorial.v1.completed",
+  "showRule": "On first entry into Expert, before the game board; show again if tutorial closed before final validation; explicit skip marks completed",
+  "replayEntry": "Help (?) > Revoir le tutoriel du Laboratoire",
+  "skipAllowed": true,
+  "pages": [
+    {
+      "id": "intro",
+      "title": "Bienvenue au Laboratoire",
+      "body": "Dans l’Aventure, tu aides le robot à atteindre le drapeau en utilisant le moins d’actions possible. Ici, tu apprends à le rendre autonome.",
+      "visualHint": "showSameRobotDifferentModes",
+      "primaryCTA": "Suivant",
+      "secondaryCTA": "Passer"
+    },
+    {
+      "id": "repeat",
+      "title": "Fais travailler ton robot",
+      "body": "REPETE recommence les commandes à l’intérieur de la boucle. Pas besoin d’indiquer combien de fois : le robot s’arrête dès qu’il atteint le drapeau.",
+      "visualHint": "animatedExampleRepeat",
+      "exampleProgram": [
+        {
+          "command": "REPETE",
+          "body": [
+            {
+              "command": "AVANCE"
+            },
+            {
+              "command": "TOURNE_DROITE"
+            }
+          ]
+        }
+      ],
+      "primaryCTA": "Suivant"
+    },
+    {
+      "id": "if",
+      "title": "Il pourra bientôt décider",
+      "body": "Plus tard, tu débloqueras SI. Le robot vérifiera une situation, comme « obstacle devant ». Si c’est vrai, il exécutera la commande placée dans le SI. Sinon, il la sautera.",
+      "visualHint": "conditionTrueFalsePreview",
+      "conditionPreviewLocked": true,
+      "primaryCTA": "Suivant"
+    },
+    {
+      "id": "stars",
+      "title": "Ici, le plus court gagne",
+      "body": "Dans le Laboratoire, les étoiles dépendent du nombre de blocs écrits, pas du nombre de déplacements du robot. REPETE et SI ne comptent chacun qu’une fois. Une étoile suffit pour continuer ; les trois étoiles sont un défi facultatif.",
+      "example": {
+        "expandedActions": 12,
+        "writtenBlocks": 4
+      },
+      "visualHint": "compareBlocksVsActions",
+      "primaryCTA": "Suivant"
+    },
+    {
+      "id": "start",
+      "title": "Prêt pour une simulation ?",
+      "body": "Chaque réussite fait monter ta jauge de maîtrise. Une nouvelle simulation arrive automatiquement, sans mondes ni carte de niveaux. Tu pourras revoir les anciennes simulations quand tu voudras.",
+      "visualHint": "progressGauge",
+      "primaryCTA": "Commencer l’entraînement"
+    }
+  ],
+  "microTutorials": [
+    {
+      "onFirstStartSimulation": "EX-001",
+      "title": "Nouvelle commande : REPETE",
+      "body": "Dépose des commandes dans REPETE puis lance le robot. La boucle recommencera jusqu’au drapeau.",
+      "shownOnceKey": "expert.tip.repeat"
+    },
+    {
+      "onFirstStartSimulation": "EX-009",
+      "title": "Nouvelle commande : SI",
+      "body": "Place une action dans SI OBSTACLE_DEVANT. Le robot vérifie cette condition à chaque passage dans la boucle.",
+      "shownOnceKey": "expert.tip.if"
+    },
+    {
+      "onFirstStartSimulation": "EX-017",
+      "title": "De nouveaux capteurs",
+      "body": "SI CLE_ICI et SI CADENAS_DEVANT détectent les objets au bon endroit, au bon moment.",
+      "shownOnceKey": "expert.tip.key"
+    },
+    {
+      "onFirstStartSimulation": "EX-021",
+      "title": "Le capteur de bouton",
+      "body": "SI SUR_BOUTON peut déclencher ACTIVE quand le robot se trouve sur un bouton encore inactif.",
+      "shownOnceKey": "expert.tip.plate"
+    },
+    {
+      "onFirstStartSimulation": "EX-030",
+      "title": "La caisse détectée",
+      "body": "SI CAISSE_DEVANT permet de pousser au moment opportun.",
+      "shownOnceKey": "expert.tip.crate"
+    },
+    {
+      "onFirstStartSimulation": "EX-033",
+      "title": "Les portails",
+      "body": "Un portail transporte le robot à sa paire sans modifier son orientation.",
+      "shownOnceKey": "expert.tip.portal"
+    }
+  ],
+  "accessibility": {
+    "voiceOver": true,
+    "dynamicType": true,
+    "reduceMotion": true,
+    "skipAnimatedDemo": true
+  },
+  "exitBehavior": {
+    "closeBeforeCompletion": "do not mark completed; show on next entry",
+    "pressSkip": "mark as completed explicitly",
+    "pressStart": "mark completed then open next available simulation",
+    "replayTutorial": "do not reset completion or progress"
+  }
+}
