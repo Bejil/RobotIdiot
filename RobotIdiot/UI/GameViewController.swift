@@ -6,6 +6,7 @@ final class GameViewController: UIViewController {
     private let level: Level
     private let campaign: LevelAddress?
     private let daily: DailyPlayContext?
+    private let expert: ExpertPlayContext?
     private var engine: SimulationEngine
     private let boardScene: BoardScene
 
@@ -59,14 +60,23 @@ final class GameViewController: UIViewController {
     private var bonusRemainingCount = 0
     private var backdrop: AmbientBackdropView!
 
-    init(level: Level, campaign: LevelAddress? = nil, daily: DailyPlayContext? = nil) {
-        let keepNative = level.id.hasPrefix("RI-") || level.id.hasPrefix("DAILY-")
+    init(
+        level: Level,
+        campaign: LevelAddress? = nil,
+        daily: DailyPlayContext? = nil,
+        expert: ExpertPlayContext? = nil
+    ) {
+        let keepNative = level.id.hasPrefix("RI-")
+            || level.id.hasPrefix("DAILY-")
+            || level.id.hasPrefix("EX-")
         let framed = keepNative ? level : LevelFraming.playfield(level)
         self.level = framed
         self.campaign = campaign
         self.daily = daily
+        self.expert = expert
         self.tempo = PlaySettings.fastAnimation ? .fast : .normal
-        engine = SimulationEngine(level: framed, program: Program())
+        let limits: SafetyLimits = expert != nil ? .expert : .standard
+        engine = SimulationEngine(level: framed, program: Program(), safetyLimits: limits)
         boardScene = BoardScene(level: framed, contrast: PlaySettings.contrast)
         super.init(nibName: nil, bundle: nil)
     }
@@ -98,6 +108,7 @@ final class GameViewController: UIViewController {
 
         boardScene.show(engine.state.game)
         skView.presentScene(boardScene)
+        presentExpertMicroTutorialIfNeeded()
         bonusRemainingCount = level.collectibles.count
         updateStatusIdle()
         updateControls()
@@ -182,7 +193,11 @@ final class GameViewController: UIViewController {
         worldTitleLabel.isAccessibilityElement = false
 
         // Sous le titre nav : consignes / limites (ex-label à gauche d'Aide).
-        if let daily, daily.kind == .bug, let instructions = daily.instructions, !instructions.isEmpty {
+        if let expert {
+            navigationItem.title = "Le Laboratoire"
+            let mastery = ExpertStore.shared.masteryPercent
+            levelTitleLabel.text = "\(expert.simulationName) · maîtrise \(mastery) %"
+        } else if let daily, daily.kind == .bug, let instructions = daily.instructions, !instructions.isEmpty {
             levelTitleLabel.text = instructions
         } else if let daily {
             levelTitleLabel.text = daily.titleOverride
@@ -321,13 +336,23 @@ final class GameViewController: UIViewController {
     }
 
     private func configureEditor() {
-        let lockedPalette = (campaign != nil && CatalogCampaign.showsLockedAdventureButtons)
-            ? CatalogCampaign.adventureLockedCommands
-            : []
+        let lockedPalette: [CommandType]
+        if let expert, let simulation = ExpertCatalog.simulation(id: expert.simulationId) {
+            lockedPalette = ExpertCatalog.lockedControls(for: simulation)
+            editor.setAllowedConditions(ExpertCatalog.unlockedConditions(for: simulation))
+        } else if campaign != nil && CatalogCampaign.showsLockedAdventureButtons {
+            lockedPalette = CatalogCampaign.adventureLockedCommands
+            editor.setAllowedConditions(nil)
+        } else {
+            lockedPalette = []
+            editor.setAllowedConditions(nil)
+        }
         editor.setAllowedCommands(level.allowedCommands, lockedVisible: lockedPalette)
         editor.setProgramLimit(level.programConstraints)
         if let daily, daily.kind == .bug, let baseline = daily.baselineProgram {
             editor.enableSinglePrimitiveReplace(baseline: baseline)
+        } else if let expert, let saved = ExpertStore.shared.program(for: expert.simulationId) {
+            editor.replaceProgram(saved)
         } else if let campaign, let saved = CampaignStore.shared.program(at: campaign) {
             let locked = Set(CatalogCampaign.adventureLockedCommands)
             if saved.containsAny(of: locked) {
@@ -338,7 +363,9 @@ final class GameViewController: UIViewController {
         }
         editor.onProgramChange = { [weak self] program in
             guard let self else { return }
-            if let campaign = self.campaign {
+            if let expert = self.expert {
+                ExpertStore.shared.saveProgram(program, for: expert.simulationId)
+            } else if let campaign = self.campaign {
                 CampaignStore.shared.save(program, at: campaign)
             }
             // Pendant l'édition au repos, ne pas resetter le plateau :
@@ -1225,7 +1252,7 @@ final class GameViewController: UIViewController {
         hideFullscreenOverlay(helpAlert)
         helpCommandsAlert.present(kind: kind, level: level)
         showFullscreenOverlay(helpCommandsAlert)
-        boardScene.showHelpTrail(coordinates: HelpCommandResolver.pathCoordinates(kind: kind, level: level))
+        boardScene.showHelpTrail(HelpCommandResolver.helpTrail(kind: kind, level: level))
     }
 
     @objc private func clearAllCommands() {
@@ -1528,30 +1555,49 @@ final class GameViewController: UIViewController {
                 referenceNote: "La solution optimale compte \(optimum) \(word)."
             )
         }
-        let rating = ScoreEvaluator.rating(
-            succeeded: true,
-            blockCount: editor.program.blockCount,
-            executedInstructions: metrics.executedInstructions,
-            rules: rules,
-            bonusCollected: bonusCollected
-        )
-        let score = LevelScore(
-            stars: rating.count,
-            blockCount: editor.program.blockCount,
-            executedInstructions: metrics.executedInstructions
-        )
-        if let campaign {
-            CampaignStore.shared.record(score, at: campaign)
-            let finishedCampaignArc = campaign.world == CatalogCampaign.worldCount
-                && campaign.level == CatalogCampaign.levelsPerWorld
-            pendingStoryEpilogue = finishedCampaignArc && !PlaySettings.hasSeenStory(RobotStory.epilogueID)
-        } else {
+        let writtenBlocks = ExpertScoring.countWrittenBlocks(editor.program)
+        let rating: StarRating
+        if let expert, let simulation = ExpertCatalog.simulation(id: expert.simulationId) {
+            rating = ExpertScoring.rating(
+                writtenBlocks: writtenBlocks,
+                threeStarsMax: simulation.starTargets.threeStarsMax,
+                twoStarsMax: simulation.starTargets.twoStarsMax
+            )
+            ExpertStore.shared.recordVictory(
+                id: expert.simulationId,
+                stars: rating.count,
+                writtenBlocks: writtenBlocks
+            )
             pendingStoryEpilogue = false
+        } else {
+            rating = ScoreEvaluator.rating(
+                succeeded: true,
+                blockCount: editor.program.blockCount,
+                executedInstructions: metrics.executedInstructions,
+                rules: rules,
+                bonusCollected: bonusCollected
+            )
+            let score = LevelScore(
+                stars: rating.count,
+                blockCount: editor.program.blockCount,
+                executedInstructions: metrics.executedInstructions
+            )
+            if let campaign {
+                CampaignStore.shared.record(score, at: campaign)
+                let finishedCampaignArc = campaign.world == CatalogCampaign.worldCount
+                    && campaign.level == CatalogCampaign.levelsPerWorld
+                pendingStoryEpilogue = finishedCampaignArc && !PlaySettings.hasSeenStory(RobotStory.epilogueID)
+            } else {
+                pendingStoryEpilogue = false
+            }
         }
         var boltsGained = 0
         var worldBonusBolts = 0
         var showBoltRecap = false
-        if let daily {
+        if expert != nil {
+            // Mode Expert : aucun écrou Aventure / quotidien.
+            showBoltRecap = false
+        } else if let daily {
             switch daily.kind {
             case .challenge:
                 boltsGained = DailyStore.shared.creditChallengeVictory(on: daily.civilDate)
@@ -1579,8 +1625,22 @@ final class GameViewController: UIViewController {
             }
             showBoltRecap = boltsGained > 0 || bonusCollected
         }
-        let exitTitle = daily != nil ? "Retour" : (campaign != nil ? "Carte du monde" : "Retour")
-        var note = PlayerCopy.improvement(rating: rating, rules: rules, bonusCollected: bonusCollected)
+        let exitTitle: String
+        if expert != nil {
+            exitTitle = "Laboratoire"
+        } else if daily != nil {
+            exitTitle = "Retour"
+        } else if campaign != nil {
+            exitTitle = "Carte du monde"
+        } else {
+            exitTitle = "Retour"
+        }
+        var note: String
+        if let expert, let simulation = ExpertCatalog.simulation(id: expert.simulationId) {
+            note = "\(writtenBlocks) blocs écrits · objectif 3★ : ≤ \(simulation.starTargets.threeStarsMax)"
+        } else {
+            note = PlayerCopy.improvement(rating: rating, rules: rules, bonusCollected: bonusCollected)
+        }
         if let daily, daily.kind == .bug, !editor.hasModifiedFromBaseline {
             note = "Modifie une commande avant de rejouer pour gagner la récompense."
         } else if worldBonusBolts > 0 {
@@ -1591,21 +1651,29 @@ final class GameViewController: UIViewController {
             note = note.isEmpty ? boltNote : "\(boltNote) \(note)"
         } else if daily != nil {
             note = note.isEmpty ? "Récompense déjà obtenue aujourd'hui." : "\(note) (déjà obtenu)"
-        } else if bonusCollected {
+        } else if bonusCollected, expert == nil {
             note = note.isEmpty
                 ? "Écrou déjà obtenu sur ce niveau."
                 : "\(note) (écrou déjà obtenu)"
         }
+        let nextTitle: String?
+        if expert != nil {
+            nextTitle = nextLevelTitle
+        } else if daily == nil {
+            nextTitle = nextLevelTitle
+        } else {
+            nextTitle = nil
+        }
         overlay.present(
             rating: rating,
-            blockCount: editor.program.blockCount,
+            blockCount: expert != nil ? writtenBlocks : editor.program.blockCount,
             executed: metrics.executedInstructions,
             moves: metrics.moves,
             note: note,
             boltsGained: boltsGained,
             boltBalance: BoltWallet.shared.balance,
             showBoltRecap: showBoltRecap,
-            nextTitle: daily == nil ? nextLevelTitle : nil,
+            nextTitle: nextTitle,
             exitTitle: exitTitle
         )
         refreshBoltBadge(animated: boltsGained > 0)
@@ -1635,23 +1703,24 @@ final class GameViewController: UIViewController {
             let remaining = outcome.state.game.remainingCollectibles.count
             let justCollected = remaining < bonusRemainingCount
             bonusRemainingCount = remaining
+            // Bruit de pas à chaque déplacement (y compris en exécution continue / rapide).
+            Soundscape.shared.play("move")
             if justCollected {
                 statusLabel.text = "Écrou récupéré !"
                 Soundscape.shared.play("collect")
             } else {
                 statusLabel.text = forward ? "Le robot avance." : "Le robot recule."
-                if !wantsContinuous { Soundscape.shared.play("move") }
             }
         case .teleported:
             let remaining = outcome.state.game.remainingCollectibles.count
             let justCollected = remaining < bonusRemainingCount
             bonusRemainingCount = remaining
+            Soundscape.shared.play("move")
             if justCollected {
                 statusLabel.text = "Écrou récupéré !"
                 Soundscape.shared.play("collect")
             } else {
                 statusLabel.text = "Le robot traverse un portail."
-                if !wantsContinuous { Soundscape.shared.play("move") }
             }
         case .turned(_, let direction, _):
             statusLabel.text = "Le robot regarde vers \(PlayerCopy.directionPhrase(direction))."
@@ -1769,6 +1838,10 @@ final class GameViewController: UIViewController {
     }
 
     private var nextLevelTitle: String? {
+        if let expert, let current = ExpertCatalog.simulation(id: expert.simulationId) {
+            let next = ExpertCatalog.orderedSimulations.first { $0.sequence == current.sequence + 1 }
+            return next == nil ? nil : "Simulation suivante"
+        }
         if let campaign {
             let next = CampaignRules.nextAddress(after: campaign, layout: CatalogCampaign.layout)
             guard CatalogCampaign.level(at: next) != nil else { return nil }
@@ -1782,6 +1855,10 @@ final class GameViewController: UIViewController {
     }
 
     private func openNextLevel() {
+        if expert != nil {
+            openNextExpertSimulation()
+            return
+        }
         if campaign != nil {
             openNextCampaignLevel()
             return
@@ -1796,6 +1873,38 @@ final class GameViewController: UIViewController {
         stack.removeLast()
         stack.append(GameViewController(level: next))
         navigation.setViewControllers(stack, animated: true)
+    }
+
+    private func openNextExpertSimulation() {
+        guard let expert, let current = ExpertCatalog.simulation(id: expert.simulationId),
+              let navigation = navigationController else { return }
+        guard let next = ExpertCatalog.orderedSimulations.first(where: { $0.sequence == current.sequence + 1 }) else {
+            leaveAfterVictory()
+            return
+        }
+        navigationController?.setNavigationBarHidden(false, animated: true)
+        hideFullscreenOverlay(overlay)
+        let level = ExpertCatalog.playableLevel(for: next)
+        let context = ExpertPlayContext(simulationId: next.id, simulationName: next.name)
+        var stack = navigation.viewControllers
+        stack.removeLast()
+        stack.append(GameViewController(level: level, expert: context))
+        navigation.setViewControllers(stack, animated: true)
+    }
+
+    private func presentExpertMicroTutorialIfNeeded() {
+        guard let expert else { return }
+        guard let tip = ExpertCatalog.tutorial.microTutorials.first(where: {
+            $0.onFirstStartSimulation == expert.simulationId
+        }) else { return }
+        guard !ExpertStore.shared.hasSeenMicroTutorial(tip.shownOnceKey) else { return }
+        ExpertStore.shared.markMicroTutorialSeen(tip.shownOnceKey)
+        ChartedConfirmAlertView.presentNotice(
+            from: self,
+            ribbon: tip.title,
+            message: tip.body,
+            confirmTitle: "Compris"
+        )
     }
 
     private func openNextCampaignLevel() {
@@ -2410,6 +2519,17 @@ private struct HelpCommandRow {
     let condition: ConditionType?
 }
 
+/// Parcours d’aide découpé en segments : une téléportation coupe le trait.
+struct HelpTrailPath: Equatable {
+    var segments: [[GridCoordinate]]
+
+    static let empty = HelpTrailPath(segments: [])
+
+    var isEmpty: Bool { segments.allSatisfy(\.isEmpty) }
+
+    var allCoordinates: [GridCoordinate] { segments.flatMap { $0 } }
+}
+
 private enum HelpCommandResolver {
     static func hintRows(for level: Level) -> [HelpCommandRow] {
         let commands = openingCommands(for: level)
@@ -2429,12 +2549,12 @@ private enum HelpCommandResolver {
         }
     }
 
-    static func pathCoordinates(kind: HelpRevealKind, level: Level) -> [GridCoordinate] {
+    static func helpTrail(kind: HelpRevealKind, level: Level) -> HelpTrailPath {
         switch kind {
         case .hint:
             return path(level: level, commands: hintRows(for: level).map(\.command))
         case .solution:
-            guard let program = referenceProgram(for: level) else { return [] }
+            guard let program = referenceProgram(for: level) else { return .empty }
             return path(level: level, program: program)
         }
     }
@@ -2468,44 +2588,58 @@ private enum HelpCommandResolver {
         return nil
     }
 
-    private static func path(level: Level, commands: [CommandType]) -> [GridCoordinate] {
+    private static func path(level: Level, commands: [CommandType]) -> HelpTrailPath {
         var game = GameState.initial(from: level)
-        var path = [game.robot.position]
+        var segments: [[GridCoordinate]] = [[game.robot.position]]
         for command in commands {
             guard case .success(let applied) = WorldRules.apply(command: command, to: game, level: level) else {
                 break
             }
             game = applied.game
-            if path.last != game.robot.position {
-                path.append(game.robot.position)
-            }
+            append(event: applied.event, into: &segments)
         }
-        return path
+        return HelpTrailPath(segments: sanitize(segments))
     }
 
-    private static func path(level: Level, program: Program) -> [GridCoordinate] {
+    private static func path(level: Level, program: Program) -> HelpTrailPath {
         var engine = SimulationEngine(level: level, program: program)
-        var path = [engine.state.game.robot.position]
+        var segments: [[GridCoordinate]] = [[engine.state.game.robot.position]]
         var steps = 0
         while !engine.state.status.isTerminal, steps < 96 {
             let outcome = engine.step()
             steps += 1
-            switch outcome.event {
-            case .moved(_, let to, _, _), .enteredHazard(_, let to, _, _, _):
-                if path.last != to {
-                    path.append(to)
-                }
-            case .teleported(_, let entrance, let exit, _, _):
-                if path.last != entrance {
-                    path.append(entrance)
-                }
-                if path.last != exit {
-                    path.append(exit)
-                }
-            default:
-                break
-            }
+            guard let event = outcome.event else { continue }
+            append(event: event, into: &segments)
         }
-        return path
+        return HelpTrailPath(segments: sanitize(segments))
+    }
+
+    private static func append(event: SimulationEvent, into segments: inout [[GridCoordinate]]) {
+        switch event {
+        case .moved(_, let to, _, _), .enteredHazard(_, let to, _, _, _):
+            appendVisit(to, into: &segments)
+        case .pushed(_, let robotDestination, _):
+            // `from` de l’événement = case de la caisse, où le robot arrive après la poussée.
+            appendVisit(robotDestination, into: &segments)
+        case .teleported(_, let entrance, let exit, _, _):
+            appendVisit(entrance, into: &segments)
+            segments.append([exit])
+        default:
+            break
+        }
+    }
+
+    private static func appendVisit(_ coordinate: GridCoordinate, into segments: inout [[GridCoordinate]]) {
+        if segments.isEmpty {
+            segments = [[coordinate]]
+            return
+        }
+        if segments[segments.count - 1].last != coordinate {
+            segments[segments.count - 1].append(coordinate)
+        }
+    }
+
+    private static func sanitize(_ segments: [[GridCoordinate]]) -> [[GridCoordinate]] {
+        segments.filter { !$0.isEmpty }
     }
 }

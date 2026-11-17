@@ -142,6 +142,7 @@ final class ChartedConfirmAlertView: UIView {
 
     private var onCancel: (() -> Void)?
     private var onConfirm: (() -> Void)?
+    private var onChoices: [() -> Void] = []
 
     private let composition = UIView()
     private let robot = UIImageView()
@@ -153,7 +154,10 @@ final class ChartedConfirmAlertView: UIView {
     private let detailLabel = UILabel()
     private let cancelButton = UIButton(type: .system)
     private let confirmButton = UIButton(type: .system)
+    private let choicesScroll = UIScrollView()
+    private let choicesStack = UIStackView()
     private let actions = UIStackView()
+    private var choicesScrollHeight: NSLayoutConstraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -214,9 +218,23 @@ final class ChartedConfirmAlertView: UIView {
         cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
         confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
 
+        choicesStack.axis = .vertical
+        choicesStack.spacing = 10
+        choicesStack.alignment = .fill
+        choicesStack.translatesAutoresizingMaskIntoConstraints = false
+        choicesScroll.translatesAutoresizingMaskIntoConstraints = false
+        choicesScroll.showsVerticalScrollIndicator = true
+        choicesScroll.alwaysBounceVertical = false
+        choicesScroll.addSubview(choicesStack)
+        choicesScroll.isHidden = true
+        let scrollHeight = choicesScroll.heightAnchor.constraint(equalToConstant: 0)
+        scrollHeight.priority = .defaultHigh
+        choicesScrollHeight = scrollHeight
+
         actions.axis = .vertical
         actions.spacing = 10
         actions.alignment = .fill
+        actions.addArrangedSubview(choicesScroll)
         actions.addArrangedSubview(confirmButton)
         actions.addArrangedSubview(cancelButton)
 
@@ -250,7 +268,14 @@ final class ChartedConfirmAlertView: UIView {
             column.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
 
             confirmButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 48),
-            cancelButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
+            cancelButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+
+            choicesStack.topAnchor.constraint(equalTo: choicesScroll.contentLayoutGuide.topAnchor),
+            choicesStack.leadingAnchor.constraint(equalTo: choicesScroll.contentLayoutGuide.leadingAnchor),
+            choicesStack.trailingAnchor.constraint(equalTo: choicesScroll.contentLayoutGuide.trailingAnchor),
+            choicesStack.bottomAnchor.constraint(equalTo: choicesScroll.contentLayoutGuide.bottomAnchor),
+            choicesStack.widthAnchor.constraint(equalTo: choicesScroll.frameLayoutGuide.widthAnchor),
+            scrollHeight
         ])
     }
 
@@ -345,6 +370,45 @@ final class ChartedConfirmAlertView: UIView {
         )
     }
 
+    /// Choix multiple (ex. condition d’un SI), même chrome que les autres alertes du jeu.
+    @discardableResult
+    static func presentChoices(
+        from controller: UIViewController,
+        ribbon: String,
+        headline: String,
+        detail: String = "",
+        choices: [(title: String, systemImage: String?)],
+        cancelTitle: String = "Annuler",
+        accent: Accent = .primary,
+        onCancel: (() -> Void)? = nil,
+        onChoose: @escaping (Int) -> Void
+    ) -> ChartedConfirmAlertView {
+        let host = AlertOverlayHost.view(for: controller)
+        host.subviews.compactMap { $0 as? ChartedConfirmAlertView }.forEach { $0.removeFromSuperview() }
+        let alert = ChartedConfirmAlertView()
+        alert.configureChoices(
+            ribbon: ribbon,
+            headline: headline,
+            detail: detail,
+            choices: choices,
+            cancelTitle: cancelTitle,
+            accent: accent,
+            onCancel: onCancel,
+            onChoose: onChoose
+        )
+        alert.translatesAutoresizingMaskIntoConstraints = false
+        host.addSubview(alert)
+        NSLayoutConstraint.activate([
+            alert.topAnchor.constraint(equalTo: host.topAnchor),
+            alert.leadingAnchor.constraint(equalTo: host.leadingAnchor),
+            alert.trailingAnchor.constraint(equalTo: host.trailingAnchor),
+            alert.bottomAnchor.constraint(equalTo: host.bottomAnchor)
+        ])
+        host.bringSubviewToFront(alert)
+        alert.playEntrance()
+        return alert
+    }
+
     private func configure(
         ribbon title: String,
         headline: String,
@@ -354,6 +418,54 @@ final class ChartedConfirmAlertView: UIView {
         accent: Accent,
         confirmSystemImage: String?
     ) {
+        applyChrome(ribbon: title, headline: headline, detail: detail, accent: accent)
+        choicesScroll.isHidden = true
+        choicesScrollHeight?.constant = 0
+        confirmButton.isHidden = false
+        styleFilled(confirmButton, title: confirmTitle, systemImage: confirmSystemImage, color: accent.confirm)
+        applyCancel(cancelTitle)
+        confirmButton.accessibilityLabel = confirmTitle
+        let announcement = "\(title). \(headline) \(detail)"
+        accessibilityLabel = announcement
+        UIAccessibility.post(notification: .screenChanged, argument: announcement)
+    }
+
+    private func configureChoices(
+        ribbon title: String,
+        headline: String,
+        detail: String,
+        choices: [(title: String, systemImage: String?)],
+        cancelTitle: String,
+        accent: Accent,
+        onCancel: (() -> Void)?,
+        onChoose: @escaping (Int) -> Void
+    ) {
+        applyChrome(ribbon: title, headline: headline, detail: detail, accent: accent)
+        self.onCancel = onCancel
+        onConfirm = nil
+        confirmButton.isHidden = true
+        choicesScroll.isHidden = false
+        choicesStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        onChoices = choices.indices.map { index in { onChoose(index) } }
+        for (index, choice) in choices.enumerated() {
+            let button = UIButton(type: .system)
+            styleFilled(button, title: choice.title, systemImage: choice.systemImage, color: accent.confirm)
+            button.tag = index
+            button.accessibilityLabel = choice.title
+            button.heightAnchor.constraint(greaterThanOrEqualToConstant: 48).isActive = true
+            button.addTarget(self, action: #selector(choiceTapped(_:)), for: .touchUpInside)
+            choicesStack.addArrangedSubview(button)
+        }
+        let rowHeight: CGFloat = 58
+        let contentHeight = CGFloat(max(choices.count, 1)) * rowHeight - 10
+        choicesScrollHeight?.constant = min(contentHeight, 280)
+        applyCancel(cancelTitle)
+        let announcement = "\(title). \(headline) \(detail)"
+        accessibilityLabel = announcement
+        UIAccessibility.post(notification: .screenChanged, argument: announcement)
+    }
+
+    private func applyChrome(ribbon title: String, headline: String, detail: String, accent: Accent) {
         ribbon.backgroundColor = accent.ribbon
         ribbonTitle.text = title
         badge.backgroundColor = accent.badge
@@ -363,7 +475,9 @@ final class ChartedConfirmAlertView: UIView {
         headlineLabel.text = headline
         detailLabel.text = detail
         detailLabel.isHidden = detail.isEmpty
-        styleFilled(confirmButton, title: confirmTitle, systemImage: confirmSystemImage, color: accent.confirm)
+    }
+
+    private func applyCancel(_ cancelTitle: String?) {
         if let cancelTitle {
             cancelButton.isHidden = false
             if var configuration = cancelButton.configuration {
@@ -374,10 +488,6 @@ final class ChartedConfirmAlertView: UIView {
         } else {
             cancelButton.isHidden = true
         }
-        confirmButton.accessibilityLabel = confirmTitle
-        let announcement = "\(title). \(headline) \(detail)"
-        accessibilityLabel = announcement
-        UIAccessibility.post(notification: .screenChanged, argument: announcement)
     }
 
     private func playEntrance() {
@@ -465,6 +575,12 @@ final class ChartedConfirmAlertView: UIView {
 
     @objc private func confirmTapped() {
         let handler = onConfirm
+        dismiss(then: handler)
+    }
+
+    @objc private func choiceTapped(_ sender: UIButton) {
+        guard onChoices.indices.contains(sender.tag) else { return }
+        let handler = onChoices[sender.tag]
         dismiss(then: handler)
     }
 }

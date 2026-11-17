@@ -1,11 +1,41 @@
 {
   "schemaVersion": "1.0",
   "game": "Robot Idiot",
-  "type": "dailyConfig",
-  "timezone": "Europe/Paris",
-  "epochDate": "2026-11-04",
-  "challengeRewardBolts": 2,
-  "bugRewardBolts": 1,
-  "tiers": 10,
-  "itemsPerTier": 10
+  "contentPolicy": "offline_fixed_catalog_only_no_runtime_generation",
+  "contentVersion": "2026-11-13-V14.1-primitive-only-daily-audit",
+  "catalogs": {
+    "dailyChallenges": "robot_idiot_daily_challenges_100.json",
+    "dailyBugs": "robot_idiot_daily_bugs_100.json"
+  },
+  "dailyResetTime": "00:00:00",
+  "dailyTimeZone": "Europe/Paris",
+  "tierSelection": {
+    "progressionMetric": "highestUnlockedCampaignWorld",
+    "eligibleTiers": "1..highestUnlockedCampaignWorld",
+    "avoidLockedCommands": true,
+    "dailyDifficultyStrategy": "use highest unlocked campaign tier, frozen when daily content first opened for the date",
+    "sameTierSameDateSameChallengeForAllPlayers": true,
+    "selectionAlgorithm": "tier = highestUnlockedCampaignWorld frozen at first opening for that Europe/Paris calendar day;\nindex = (wholeDaysSince2026_11_04 + tier*3) % 10 for dailyChallenges;\nindex = (wholeDaysSince2026_11_04 + tier*3 + 5) % 10 for dailyBugs;\nselect nth ascending worldLevel item in corresponding tier. A new tier becomes eligible next day.",
+    "newWorldUnlock": "new world tier becomes eligible the next day; do not swap today’s chosen challenge mid-day",
+    "repeatWarning": "each tier currently has 10 distinct challenges and 10 bugs; stable-tier daily repetition every 10 days at latest",
+    "commandPolicy": "Follow V14.1 Aventure cumulative primitive-only unlocks: 1 turn+forward, 2 backward, 3 pick, 4 use, 5 push, 6 activate, 7..10 no new command. SI and REPETE locked in daily modes."
+  },
+  "rewardPolicy": {
+    "dailyCompletionBolts": 2,
+    "dailyBugBolts": 1,
+    "awardOnFirstWinThatDateOnly": true,
+    "noReplayFarming": true
+  },
+  "claimKey": "(dateISO,tier,challengeId,kind)",
+  "score": {
+    "metric": "executedPrimitiveActions",
+    "threeStarsMax": "perLevel.starTargets.withoutBonus.threeStarsMax"
+  },
+  "bugMode": {
+    "editRule": "Player may change exactly one primitive command anywhere in the shown broken program; do not permit insertion/deletion; original altered index is hidden.",
+    "validation": "Accept any change of exactly one existing primitive line that wins. SI/REPETE never appear in the daily reference or broken programs.",
+    "authoringProof": "For every bug, the originally corrupted line has a unique winning replacement among commands unlocked for its tier; any other valid single-line fix is also accepted."
+  },
+  "sourceDisclosure": "Daily levels are old fixed V7 geometry variants; reference programs for tiers 7..10 have been flattened to proven primitive winning routes and bugs reauthored to match V14.1.",
+  "repeatWarning": "Each tier has 10 challenges and 10 bugs, so daily selection repeats after ten dates if player stays in the same tier. This is a deliberate offline catalog limitation."
 }

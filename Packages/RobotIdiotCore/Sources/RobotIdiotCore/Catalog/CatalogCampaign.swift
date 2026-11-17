@@ -290,6 +290,16 @@ public enum CatalogCampaign {
             return .obstacleAhead
         case "CASE_DEVANT_LIBRE", "SI_CASE_DEVANT_LIBRE":
             return .cellAheadFree
+        case "CLE_ICI", "SI_CLE_ICI":
+            return .keyHere
+        case "CADENAS_DEVANT", "SI_CADENAS_DEVANT":
+            return .lockAhead
+        case "CAISSE_DEVANT", "SI_CAISSE_DEVANT":
+            return .crateAhead
+        case "SUR_BOUTON", "SI_SUR_BOUTON":
+            return .onPlate
+        case "SI_CLE_DEVANT", "CLE_DEVANT":
+            return .keyAhead
         default:
             return ConditionType(rawValue: raw)
         }

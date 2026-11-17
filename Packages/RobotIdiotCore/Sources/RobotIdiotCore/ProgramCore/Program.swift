@@ -57,6 +57,10 @@ public enum ConditionType: String, Codable, Hashable, Sendable, CaseIterable {
     case keyAhead = "SI_CLE_DEVANT"
     case lockAhead = "SI_CADENAS_DEVANT"
     case crateAhead = "SI_CAISSE_DEVANT"
+    /// Mode Expert : clé encore ramassable sur la case du robot.
+    case keyHere = "CLE_ICI"
+    /// Mode Expert : robot sur un bouton pas encore activé.
+    case onPlate = "SUR_BOUTON"
 
     /// Décode les conditions actives ; les anciennes balises cercle/losange
     /// sont migrées vers `obstacleAhead` pour ne pas faire planter les saves.
@@ -70,6 +74,12 @@ public enum ConditionType: String, Codable, Hashable, Sendable, CaseIterable {
         switch raw {
         case "SI_SUR_CERCLE", "SI_SUR_LOSANGE", "SUR_CERCLE", "SUR_LOSANGE":
             self = .obstacleAhead
+        case "CADENAS_DEVANT":
+            self = .lockAhead
+        case "CAISSE_DEVANT":
+            self = .crateAhead
+        case "CLE_DEVANT", "SI_CLE_ICI":
+            self = .keyHere
         default:
             throw DecodingError.dataCorruptedError(
                 in: container,
@@ -173,10 +183,14 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
     }
 
     /// Ajoute une commande à la racine, ou dans le conteneur `parentID`.
-    /// Un nouveau SI reçoit la condition case devant libre.
+    /// Un nouveau SI reçoit `condition`, ou « case devant libre » par défaut.
     @discardableResult
-    public mutating func append(_ command: CommandType, toParent parentID: UUID?) -> UUID? {
-        let instruction = Self.make(command)
+    public mutating func append(
+        _ command: CommandType,
+        condition: ConditionType? = nil,
+        toParent parentID: UUID?
+    ) -> UUID? {
+        let instruction = Self.make(command, condition: condition)
         guard let parentID else {
             instructions.append(instruction)
             return instruction.id
@@ -280,11 +294,14 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
         return built
     }
 
-    private static func make(_ command: CommandType) -> Instruction {
-        Instruction(
-            command: command,
-            condition: command == .ifBlock ? .cellAheadFree : nil
-        )
+    private static func make(_ command: CommandType, condition: ConditionType? = nil) -> Instruction {
+        let resolved: ConditionType?
+        if command == .ifBlock {
+            resolved = condition ?? .cellAheadFree
+        } else {
+            resolved = nil
+        }
+        return Instruction(command: command, condition: resolved)
     }
 
     private func insert(_ instruction: Instruction, parent: UUID, into nodes: inout [Instruction]) -> Bool {
@@ -319,7 +336,7 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
         instructions.insert(item, at: clamped)
     }
 
-    /// Déplace une instruction devant une autre, dans un conteneur, ou à la fin du programme.
+    /// Déplace une instruction devant / derrière une autre, dans un conteneur, ou à la fin du programme.
     /// Refuse de poser un bloc dans sa propre descendance.
     @discardableResult
     public mutating func relocate(_ id: UUID, to placement: ProgramPlacement) -> Bool {
@@ -327,7 +344,7 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
         switch placement {
         case .atRootEnd:
             break
-        case .before(let anchor):
+        case .before(let anchor), .after(let anchor):
             if anchor == id || moving.contains(anchor) { return false }
             guard instruction(id: anchor) != nil else { return false }
         case .into(let parent):
@@ -341,6 +358,8 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
             return true
         case .before(let anchor):
             return insert(moving, before: anchor)
+        case .after(let anchor):
+            return insert(moving, after: anchor)
         case .into(let parent):
             return insert(moving, parent: parent, into: &instructions)
         }
@@ -350,6 +369,20 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
         func walk(_ nodes: inout [Instruction]) -> Bool {
             if let index = nodes.firstIndex(where: { $0.id == anchor }) {
                 nodes.insert(node, at: index)
+                return true
+            }
+            for index in nodes.indices where walk(&nodes[index].children) {
+                return true
+            }
+            return false
+        }
+        return walk(&instructions)
+    }
+
+    private mutating func insert(_ node: Instruction, after anchor: UUID) -> Bool {
+        func walk(_ nodes: inout [Instruction]) -> Bool {
+            if let index = nodes.firstIndex(where: { $0.id == anchor }) {
+                nodes.insert(node, at: index + 1)
                 return true
             }
             for index in nodes.indices where walk(&nodes[index].children) {
@@ -392,6 +425,7 @@ public struct Program: Codable, Hashable, Sendable, Identifiable {
 public enum ProgramPlacement: Equatable, Sendable {
     case atRootEnd
     case before(UUID)
+    case after(UUID)
     case into(UUID)
 }
 

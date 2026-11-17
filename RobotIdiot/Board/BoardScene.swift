@@ -75,7 +75,7 @@ final class BoardScene: SKScene {
     private var playbackCompletion: (() -> Void)?
 
     private var artTextures: [String: SKTexture] = [:]
-    private var helpTrailCoordinates: [GridCoordinate] = []
+    private var helpTrailPath = HelpTrailPath.empty
 
     private func textured(_ piece: GameArt.BoardPiece, side: CGFloat) -> SKSpriteNode {
         let key = "\(level.worldNumber)-\(piece.rawValue)"
@@ -93,9 +93,12 @@ final class BoardScene: SKScene {
     }
 
     /// La bordure de murs n'est pas une tuile : le bord du 7×7 est la seule limite.
-    /// Les niveaux du pack gardent chaque mur dessiné à sa place.
+    /// Les niveaux du pack gardent chaque mur / objectif dessiné à sa place
+    /// (pas de buissons décoratifs aux coins qui masqueraient un Goal en extrémité).
     private var isHandcraftedPackLevel: Bool {
-        level.id.hasPrefix("RI-") || level.id.hasPrefix("DAILY-")
+        level.id.hasPrefix("RI-")
+            || level.id.hasPrefix("DAILY-")
+            || level.id.hasPrefix("EX-")
     }
 
     private func playfield() -> (minX: Int, maxX: Int, minY: Int, maxY: Int) {
@@ -127,6 +130,10 @@ final class BoardScene: SKScene {
         guard last > 0 else { return }
         for (x, y) in [(0, 0), (last, 0), (0, last), (last, last)] {
             let logical = GridCoordinate(x: x - columnShift, y: y - rowShift)
+            // Ne jamais peindre un buisson sur l’objectif (souvent un coin en Mode Expert).
+            if level.objectives.contains(where: { $0.kind == .reachFlag && $0.position == logical }) {
+                continue
+            }
             guard presented.grid.cell(at: logical)?.terrain == .floor else { continue }
             let spot = displayCenter(x: x, y: y)
             let bush = textured(.bush, side: tileSpan)
@@ -328,6 +335,8 @@ final class BoardScene: SKScene {
                 let spot = displayCenter(x: x, y: y)
                 tile.name = isGoal ? "goal-ground" : "ground-\(x)-\(y)"
                 tile.position = spot
+                // Goal au même plan que le sol : les halos (`attachGoalShine`, z ≥ 0.42)
+                // doivent rester au-dessus, comme en Aventure / quotidien.
                 tile.zPosition = terrain?.blocksMovement == true ? 0.4 : 0
                 addChild(tile)
                 if isGoal {
@@ -372,13 +381,14 @@ final class BoardScene: SKScene {
     }
 
     /// Traînée lumineuse pour un indice / une solution (discrète, sous le robot).
-    func showHelpTrail(coordinates: [GridCoordinate]) {
-        helpTrailCoordinates = Self.deduplicatedTrail(coordinates)
+    /// Les segments sont coupés aux portails : pas de trait entre entrée et sortie.
+    func showHelpTrail(_ path: HelpTrailPath) {
+        helpTrailPath = HelpTrailPath(segments: path.segments.map(Self.deduplicatedTrail))
         renderHelpTrail()
     }
 
     func clearHelpTrail() {
-        helpTrailCoordinates = []
+        helpTrailPath = .empty
         childNode(withName: "help-trail")?.removeFromParent()
     }
 
@@ -1516,18 +1526,21 @@ final class BoardScene: SKScene {
 
     private func renderHelpTrail() {
         childNode(withName: "help-trail")?.removeFromParent()
-        guard !helpTrailCoordinates.isEmpty, cellSize > 4 else { return }
+        let segments = helpTrailPath.segments.filter { !$0.isEmpty }
+        guard !segments.isEmpty, cellSize > 4 else { return }
 
         let root = SKNode()
         root.name = "help-trail"
         root.zPosition = 1.15
         root.alpha = 0
 
-        let points = helpTrailCoordinates.map(center(of:))
         let warm = UIColor(hex: 0xFFE66D)
         let soft = UIColor(hex: 0xFFF4B8)
+        let segmentPoints = segments.map { $0.map(center(of:)) }
+        let flatCoordinates = segments.flatMap { $0 }
+        let flatPoints = flatCoordinates.map(center(of:))
 
-        if points.count >= 2 {
+        for points in segmentPoints where points.count >= 2 {
             let path = CGMutablePath()
             path.move(to: points[0])
             for point in points.dropFirst() {
@@ -1556,8 +1569,8 @@ final class BoardScene: SKScene {
             root.addChild(core)
         }
 
-        for (index, point) in points.enumerated() {
-            let isEnd = index == points.count - 1
+        for (index, point) in flatPoints.enumerated() {
+            let isEnd = index == flatPoints.count - 1
             let isStart = index == 0
             let disc = SKSpriteNode(texture: Self.haloTexture)
             let side = cellSize * (isEnd ? 0.82 : (isStart ? 0.64 : 0.5))
@@ -1569,45 +1582,22 @@ final class BoardScene: SKScene {
             disc.alpha = isEnd ? 0.36 : 0.2
             disc.zPosition = 2
             root.addChild(disc)
-            if !PlaySettings.prefersReducedMotion {
-                let pulse = SKAction.sequence([
-                    .group([.fadeAlpha(to: disc.alpha * 0.55, duration: 0.9), .scale(to: 0.88, duration: 0.9)]),
-                    .group([.fadeAlpha(to: disc.alpha, duration: 0.9), .scale(to: 1.08, duration: 0.9)])
-                ])
-                disc.run(.repeatForever(pulse))
-            }
         }
 
         if !PlaySettings.prefersReducedMotion {
-            let sparkles = makeHelpTrailEmitter()
-            sparkles.position = points[0]
-            sparkles.zPosition = 3
-            root.addChild(sparkles)
-            if points.count >= 2 {
-                var travel: [SKAction] = points.dropFirst().map {
-                    .move(to: $0, duration: 0.7)
-                }
-                travel.append(.wait(forDuration: 0.55))
-                travel.append(.move(to: points[0], duration: 0))
-                sparkles.run(.repeatForever(.sequence(travel)), withKey: "help-trail-travel")
-            }
-
-            let breathe = SKAction.sequence([
-                .group([.fadeAlpha(to: 0.68, duration: 1.05), .scale(to: 0.97, duration: 1.05)]),
-                .group([.fadeAlpha(to: 1, duration: 1.05), .scale(to: 1.03, duration: 1.05)])
-            ])
-            root.run(.repeatForever(breathe), withKey: "help-trail-pulse")
-            attachHelpGhost(in: root, coordinates: helpTrailCoordinates)
+            attachHelpGhost(in: root, segments: segments)
         }
 
         addChild(root)
         root.run(.fadeAlpha(to: 1, duration: PlaySettings.prefersReducedMotion ? 0.05 : 0.35))
     }
 
-    /// Fantôme du robot : 1–2 pas sur la traînée, puis disparaît et recommence.
-    private func attachHelpGhost(in root: SKNode, coordinates: [GridCoordinate]) {
-        guard coordinates.count >= 2 else { return }
-        let steps = Array(coordinates.prefix(min(3, coordinates.count)))
+    /// Fantôme du robot : parcourt toute la solution, disparaît à l’entrée d’un portail et réapparaît à la sortie.
+    private func attachHelpGhost(in root: SKNode, segments: [[GridCoordinate]]) {
+        let usable = segments.filter { !$0.isEmpty }
+        guard usable.count >= 1, usable.flatMap({ $0 }).count >= 2 else { return }
+
+        let ghostAlpha: CGFloat = 0.78
         let ghost = SKSpriteNode(texture: SKTexture(image: facingImage(for: presented.robot.orientation)))
         let side = cellSize * 0.78
         ghost.size = CGSize(width: side, height: side)
@@ -1617,7 +1607,7 @@ final class BoardScene: SKScene {
         ghost.name = "help-ghost"
         ghost.blendMode = .alpha
         ghost.color = UIColor(hex: 0xFFE66D)
-        ghost.colorBlendFactor = 0.35
+        ghost.colorBlendFactor = 0.22
         root.addChild(ghost)
 
         func facing(from a: GridCoordinate, to b: GridCoordinate) -> Direction {
@@ -1629,59 +1619,46 @@ final class BoardScene: SKScene {
             return dy >= 0 ? .north : .south
         }
 
-        var walk: [SKAction] = [
-            .run { [weak self] in
-                guard let self else { return }
-                ghost.texture = SKTexture(image: self.facingImage(for: self.presented.robot.orientation))
-                ghost.position = self.robotAnchor(of: steps[0])
-            },
-            .fadeAlpha(to: 0.42, duration: 0.2)
-        ]
-        for index in 1..<steps.count {
-            let from = steps[index - 1]
-            let to = steps[index]
-            let direction = facing(from: from, to: to)
-            walk.append(.run { [weak self] in
-                guard let self else { return }
-                ghost.texture = SKTexture(image: self.facingImage(for: direction))
-            })
-            walk.append(.move(to: robotAnchor(of: to), duration: 0.48))
+        var walk: [SKAction] = []
+        for (segmentIndex, segment) in usable.enumerated() {
+            let start = segment[0]
+            if segmentIndex == 0 {
+                walk.append(.run { [weak self] in
+                    guard let self else { return }
+                    ghost.texture = SKTexture(image: self.facingImage(for: self.presented.robot.orientation))
+                    ghost.position = self.robotAnchor(of: start)
+                })
+                walk.append(.fadeAlpha(to: ghostAlpha, duration: 0.2))
+            } else {
+                // Téléportation : réapparition à la sortie du portail.
+                walk.append(.run { [weak self] in
+                    guard let self else { return }
+                    ghost.texture = SKTexture(image: self.facingImage(for: self.presented.robot.orientation))
+                    ghost.position = self.robotAnchor(of: start)
+                })
+                walk.append(.fadeAlpha(to: ghostAlpha, duration: 0.18))
+            }
+
+            for index in 1..<segment.count {
+                let from = segment[index - 1]
+                let to = segment[index]
+                let direction = facing(from: from, to: to)
+                walk.append(.run { [weak self] in
+                    guard let self else { return }
+                    ghost.texture = SKTexture(image: self.facingImage(for: direction))
+                })
+                walk.append(.move(to: robotAnchor(of: to), duration: 0.42))
+            }
+
+            if segmentIndex < usable.count - 1 {
+                // Entrée de portail : disparaît avant le saut.
+                walk.append(.fadeOut(withDuration: 0.18))
+                walk.append(.wait(forDuration: 0.12))
+            }
         }
+
         walk.append(.fadeOut(withDuration: 0.28))
         walk.append(.wait(forDuration: 1.1))
         ghost.run(.repeatForever(.sequence(walk)), withKey: "help-ghost-walk")
-    }
-
-    private func makeHelpTrailEmitter() -> SKEmitterNode {
-        let factor = particleSizeFactor
-        let emitter = SKEmitterNode()
-        emitter.name = "help-trail-sparkles"
-        emitter.particleTexture = Self.sparkTexture
-        emitter.particleBlendMode = .add
-        emitter.particleBirthRate = 7
-        emitter.particleLifetime = 0.85
-        emitter.particleLifetimeRange = 0.2
-        emitter.particleSpeed = cellSize * 0.04
-        emitter.particleSpeedRange = cellSize * 0.02
-        emitter.emissionAngle = 0
-        emitter.emissionAngleRange = .pi * 2
-        emitter.particlePositionRange = CGVector(dx: tileSpan * 0.1, dy: tileSpan * 0.1)
-        emitter.particleScale = 0.22 * factor
-        emitter.particleScaleRange = emitter.particleScale * 0.25
-        emitter.particleScaleSequence = particleScaleSequence([0.35, 1, 0.2], times: [0, 0.4, 1])
-        emitter.particleColorBlendFactor = 1
-        emitter.particleColorSequence = SKKeyframeSequence(
-            keyframeValues: [
-                UIColor(hex: 0xFFF6C8),
-                UIColor(hex: 0xFFE14A),
-                UIColor(hex: 0xFFD200)
-            ],
-            times: [0, 0.55, 1]
-        )
-        emitter.particleAlphaSequence = SKKeyframeSequence(
-            keyframeValues: [0, 0.45, 0.2, 0],
-            times: [0, 0.2, 0.65, 1]
-        )
-        return emitter
     }
 }

@@ -113,4 +113,13 @@ final class BoltWallet {
         credited = []
         lock.unlock()
     }
+
+#if DEBUG
+    /// Remplace le solde (outil de debug uniquement).
+    func debugSetBalance(_ value: Int) {
+        lock.lock()
+        defer { lock.unlock() }
+        balance = max(0, value)
+    }
+#endif
 }

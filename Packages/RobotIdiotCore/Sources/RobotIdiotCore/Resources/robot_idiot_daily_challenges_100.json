@@ -3,8 +3,8 @@
   "game": "Robot Idiot",
   "type": "dailyChallengeCatalog",
   "count": 100,
-  "origin": "derived offline from validated V7 campaign; geometry transformations and safe blocking obstacles",
-  "description": "100 fixed 7x7 daily challenges, 10 per tier, no random generation in the mobile app.",
+  "origin": "Derived from fixed validated V7 variants; programs synchronized with V14.1 locked advanced commands (2026-11-13)",
+  "description": "100 fixed 7x7 daily challenges, 10 per tier; eight primitive commands only, no SI/REPETE in daily mode.",
   "sourceCampaignSchema": "7.0",
   "gridLegend": {
     "g": "BoardGrass (passable default terrain)",
@@ -44,7 +44,8 @@
     "inventory": "Integer key count; each RAMASSE adds one; each UTILISE on a distinct locked cell consumes one. No one-key-only assumption.",
     "pairedDoors": "BoardDoor is never decorative or optional: it blocks a mandatory passage and remains closed until the paired BoardPlate is activated using ACTIVE. linkId defines one-to-one active link for this pack.",
     "multipleCrates": "All BoardCrate states tracked as independent positions. A push moves only the crate immediately ahead.",
-    "BoardBolt": "Automatically picked up when robot enters its tile; no RAMASSE. Never more than one per level, and never mandatory to win. Credited once only after victory."
+    "BoardBolt": "Automatically picked up when robot enters its tile; no RAMASSE. Never more than one per level, and never mandatory to win. Credited once only after victory.",
+    "dailyAllowedProgramCommands": "All daily programs contain primitive commands only; REPETE and SI remain implemented in game engine but locked in daily modes aligned with V14.1 Aventure."
   },
   "levels": [
     {
@@ -227,7 +228,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 8
+        "minActions": 8,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -420,7 +424,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 8
+        "minActions": 8,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -603,7 +610,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 7
+        "minActions": 7,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -786,7 +796,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 8
+        "minActions": 8,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -984,7 +997,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 9
+        "minActions": 9,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -1197,7 +1213,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 13
+        "minActions": 13,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -1395,7 +1414,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 11
+        "minActions": 11,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -1598,7 +1620,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 10
+        "minActions": 10,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -1806,7 +1831,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 12
+        "minActions": 12,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -2004,7 +2032,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 11
+        "minActions": 11,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -2208,7 +2239,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 10
+        "minActions": 10,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -2417,7 +2451,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 12
+        "minActions": 12,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -2621,7 +2658,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 12
+        "minActions": 12,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -2830,7 +2870,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 11
+        "minActions": 11,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -3039,7 +3082,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 12
+        "minActions": 12,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -3263,7 +3309,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 16
+        "minActions": 16,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -3492,7 +3541,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 15
+        "minActions": 15,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -3721,7 +3773,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 16
+        "minActions": 16,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -3940,7 +3995,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 15
+        "minActions": 15,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -4164,7 +4222,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 14
+        "minActions": 14,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -4393,7 +4454,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 14
+        "minActions": 14,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -4632,7 +4696,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 17
+        "minActions": 17,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -4871,7 +4938,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 15
+        "minActions": 15,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -5100,7 +5170,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 14
+        "minActions": 14,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -5334,7 +5407,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 16
+        "minActions": 16,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -5578,7 +5654,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 16
+        "minActions": 16,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -5827,7 +5906,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 18
+        "minActions": 18,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -5936,16 +6018,13 @@
             "command": "AVANCE"
           },
           {
-            "command": "RAMASSE"
-          },
-          {
             "command": "AVANCE"
           },
           {
-            "command": "TOURNE_GAUCHE"
+            "command": "TOURNE_DROITE"
           },
           {
-            "command": "AVANCE"
+            "command": "RECULE"
           }
         ],
         "expandedOptimalCommands": [
@@ -5987,12 +6066,12 @@
           "RECULE"
         ],
         "actionCount": 17,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "RAMASSE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -6070,13 +6149,16 @@
             "tile": "BoardSpikes"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 17
+        "minActions": 17,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -6161,37 +6243,34 @@
             "command": "AVANCE"
           },
           {
+            "command": "TOURNE_DROITE"
+          },
+          {
+            "command": "RECULE"
+          },
+          {
+            "command": "RECULE"
+          },
+          {
+            "command": "TOURNE_GAUCHE"
+          },
+          {
+            "command": "RECULE"
+          },
+          {
+            "command": "RECULE"
+          },
+          {
             "command": "RAMASSE"
           },
           {
-            "command": "TOURNE_GAUCHE"
+            "command": "RECULE"
           },
           {
-            "command": "AVANCE"
+            "command": "RECULE"
           },
           {
-            "command": "AVANCE"
-          },
-          {
-            "command": "TOURNE_GAUCHE"
-          },
-          {
-            "command": "AVANCE"
-          },
-          {
-            "command": "AVANCE"
-          },
-          {
-            "command": "RAMASSE"
-          },
-          {
-            "command": "AVANCE"
-          },
-          {
-            "command": "AVANCE"
-          },
-          {
-            "command": "TOURNE_GAUCHE"
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -6241,12 +6320,12 @@
           "AVANCE"
         ],
         "actionCount": 18,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "RAMASSE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -6334,13 +6413,16 @@
             "tile": "BoardWater"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 18
+        "minActions": 18,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -6428,37 +6510,34 @@
             "command": "AVANCE"
           },
           {
+            "command": "TOURNE_DROITE"
+          },
+          {
+            "command": "RECULE"
+          },
+          {
+            "command": "RECULE"
+          },
+          {
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "AVANCE"
+            "command": "RECULE"
           },
           {
-            "command": "AVANCE"
-          },
-          {
-            "command": "TOURNE_GAUCHE"
-          },
-          {
-            "command": "AVANCE"
-          },
-          {
-            "command": "RAMASSE"
-          },
-          {
-            "command": "AVANCE"
+            "command": "RECULE"
           },
           {
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "AVANCE"
+            "command": "RECULE"
           },
           {
-            "command": "AVANCE"
+            "command": "RECULE"
           },
           {
-            "command": "TOURNE_DROITE"
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -6510,12 +6589,12 @@
           "AVANCE"
         ],
         "actionCount": 19,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "RAMASSE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -6598,13 +6677,16 @@
             "tile": "BoardStone"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 19
+        "minActions": 19,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -6854,7 +6936,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 18
+        "minActions": 18,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -7124,7 +7209,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 20
+        "minActions": 20,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -7406,7 +7494,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 21
+        "minActions": 21,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -7698,7 +7789,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 24
+        "minActions": 24,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -7985,7 +8079,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 21
+        "minActions": 21,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -8277,7 +8374,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 23
+        "minActions": 23,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -8599,7 +8699,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 30
+        "minActions": 30,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -8906,7 +9009,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 25
+        "minActions": 25,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -9203,7 +9309,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 24
+        "minActions": 24,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -9551,7 +9660,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 33
+        "minActions": 33,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -9806,7 +9918,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 18
+        "minActions": 18,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -9885,40 +10000,13 @@
       "solution": {
         "program": [
           {
-            "command": "AVANCE"
+            "command": "RECULE"
           },
           {
-            "command": "TOURNE_DROITE"
+            "command": "RECULE"
           },
           {
-            "command": "AVANCE"
-          },
-          {
-            "command": "AVANCE"
-          },
-          {
-            "command": "TOURNE_DROITE"
-          },
-          {
-            "command": "AVANCE"
-          },
-          {
-            "command": "AVANCE"
-          },
-          {
-            "command": "RAMASSE"
-          },
-          {
-            "command": "TOURNE_GAUCHE"
-          },
-          {
-            "command": "AVANCE"
-          },
-          {
-            "command": "UTILISE"
-          },
-          {
-            "command": "AVANCE"
+            "command": "RECULE"
           },
           {
             "command": "TOURNE_DROITE"
@@ -9936,22 +10024,13 @@
             "command": "AVANCE"
           },
           {
-            "command": "POUSSE"
-          },
-          {
-            "command": "TOURNE_GAUCHE"
-          },
-          {
             "command": "AVANCE"
           },
           {
-            "command": "AVANCE"
+            "command": "TOURNE_DROITE"
           },
           {
-            "command": "TOURNE_GAUCHE"
-          },
-          {
-            "command": "AVANCE"
+            "command": "RECULE"
           }
         ],
         "expandedOptimalCommands": [
@@ -9981,14 +10060,14 @@
           "RECULE"
         ],
         "actionCount": 11,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "POUSSE",
           "RAMASSE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 1,
@@ -10065,13 +10144,16 @@
             "tile": "BoardBush"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 11
+        "minActions": 11,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -10376,7 +10458,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 24
+        "minActions": 24,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -10711,7 +10796,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 28
+        "minActions": 28,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -11046,7 +11134,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 29
+        "minActions": 29,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -11366,7 +11457,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 27
+        "minActions": 27,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -11707,7 +11801,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 28
+        "minActions": 28,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -12043,7 +12140,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 28
+        "minActions": 28,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -12384,7 +12484,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 30
+        "minActions": 30,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -12750,7 +12853,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 33
+        "minActions": 33,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -13068,7 +13174,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 27
+        "minActions": 27,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -13445,7 +13554,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 32
+        "minActions": 32,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -13807,7 +13919,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 27
+        "minActions": 27,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -14222,7 +14337,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 34
+        "minActions": 34,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -14616,7 +14734,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 36
+        "minActions": 36,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -15046,7 +15167,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 36
+        "minActions": 36,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -15517,7 +15641,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 40
+        "minActions": 40,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -15988,7 +16115,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 41
+        "minActions": 41,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -16454,7 +16584,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 38
+        "minActions": 38,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -16925,7 +17058,10 @@
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 40
+        "minActions": 40,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -16958,7 +17094,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "conditions_intro",
+      "family": "loop_plus_existing",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -16967,8 +17103,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -17138,12 +17273,12 @@
           "AVANCE"
         ],
         "actionCount": 27,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 0,
@@ -17181,7 +17316,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -17190,7 +17325,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g61-1",
@@ -17233,13 +17368,16 @@
             "tile": "BoardShutter"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 27
+        "minActions": 27,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -17272,7 +17410,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "conditions_intro",
+      "family": "loop_plus_existing",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -17281,8 +17419,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -17489,14 +17626,14 @@
           "AVANCE"
         ],
         "actionCount": 30,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "RAMASSE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 1,
@@ -17536,7 +17673,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -17545,7 +17682,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g62-1",
@@ -17611,13 +17748,16 @@
             "tile": "BoardLava"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 30
+        "minActions": 30,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -17650,7 +17790,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "conditions_intro",
+      "family": "loop_plus_existing",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -17659,8 +17799,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -17862,13 +18001,13 @@
           "AVANCE"
         ],
         "actionCount": 29,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 0,
@@ -17909,7 +18048,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -17918,7 +18057,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g63-1",
@@ -17979,13 +18118,16 @@
             "tile": "BoardStone"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 29
+        "minActions": 29,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -18018,7 +18160,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "conditions_intro",
+      "family": "loop_plus_existing",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -18027,8 +18169,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -18270,7 +18411,7 @@
           "AVANCE"
         ],
         "actionCount": 33,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
@@ -18278,7 +18419,7 @@
           "RAMASSE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -18320,7 +18461,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -18329,7 +18470,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g64-1",
@@ -18385,13 +18526,16 @@
             "tile": "BoardStone"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 33
+        "minActions": 33,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -18424,7 +18568,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "conditions_intro",
+      "family": "loop_plus_existing",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -18433,8 +18577,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -18691,7 +18834,7 @@
           "AVANCE"
         ],
         "actionCount": 36,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
@@ -18699,7 +18842,7 @@
           "RAMASSE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -18741,7 +18884,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -18750,7 +18893,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g65-1",
@@ -18816,13 +18959,16 @@
             "tile": "BoardStone"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 36
+        "minActions": 36,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -18855,7 +19001,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "conditions_intro",
+      "family": "loop_plus_existing",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -18864,8 +19010,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -19127,7 +19272,7 @@
           "AVANCE"
         ],
         "actionCount": 37,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
@@ -19135,7 +19280,7 @@
           "RAMASSE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -19177,7 +19322,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -19186,7 +19331,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g66-1",
@@ -19247,13 +19392,16 @@
             "tile": "BoardBush"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 37
+        "minActions": 37,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -19286,7 +19434,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "conditions_intro",
+      "family": "loop_plus_existing",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -19295,8 +19443,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -19568,7 +19715,7 @@
           "AVANCE"
         ],
         "actionCount": 38,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
@@ -19576,7 +19723,7 @@
           "RAMASSE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -19619,7 +19766,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -19628,7 +19775,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g67-1",
@@ -19684,13 +19831,16 @@
             "tile": "BoardCracked"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 38
+        "minActions": 38,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -19723,7 +19873,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "conditions_intro",
+      "family": "loop_plus_existing",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -19732,8 +19882,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -20005,7 +20154,7 @@
           "AVANCE"
         ],
         "actionCount": 38,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
@@ -20013,7 +20162,7 @@
           "RAMASSE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -20056,7 +20205,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -20065,7 +20214,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g68-1",
@@ -20131,13 +20280,16 @@
             "tile": "BoardCracked"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 38
+        "minActions": 38,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -20170,7 +20322,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "conditions_intro",
+      "family": "loop_plus_existing",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -20179,8 +20331,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -20462,7 +20613,7 @@
           "AVANCE"
         ],
         "actionCount": 40,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
@@ -20470,7 +20621,7 @@
           "RAMASSE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -20513,7 +20664,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -20522,7 +20673,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g69-1",
@@ -20583,13 +20734,16 @@
             "tile": "BoardCracked"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 40
+        "minActions": 40,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -20622,7 +20776,7 @@
         "type": "reach_flag",
         "requiresItemHeld": false
       },
-      "family": "conditions_intro",
+      "family": "loop_plus_existing",
       "unlockedCommands": [
         "AVANCE",
         "TOURNE_GAUCHE",
@@ -20631,8 +20785,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -20914,7 +21067,7 @@
           "AVANCE"
         ],
         "actionCount": 40,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
@@ -20922,7 +21075,7 @@
           "RAMASSE",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": null,
+        "loopIterationsBeforeVictory": 0,
         "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
@@ -20965,7 +21118,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -20974,7 +21127,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g70-1",
@@ -21030,13 +21183,16 @@
             "tile": "BoardShutter"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 40
+        "minActions": 40,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -21078,9 +21234,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -21115,28 +21269,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -21214,12 +21353,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -21287,19 +21424,14 @@
           "AVANCE"
         ],
         "actionCount": 30,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
-          "POUSSE",
-          "REPETE",
-          "SI"
+          "POUSSE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 0,
           "locksOpened": 0,
@@ -21336,7 +21468,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -21345,7 +21477,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g71-1",
@@ -21398,13 +21530,16 @@
             "tile": "BoardBush"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 30
+        "minActions": 30,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -21446,9 +21581,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -21500,28 +21633,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -21617,12 +21735,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -21702,20 +21818,15 @@
           "AVANCE"
         ],
         "actionCount": 36,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 1,
           "locksOpened": 1,
@@ -21754,7 +21865,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -21763,7 +21874,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g72-1",
@@ -21824,13 +21935,16 @@
             "tile": "BoardBush"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 36
+        "minActions": 36,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -21872,9 +21986,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -21946,15 +22058,6 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
@@ -21967,13 +22070,7 @@
             "command": "RAMASSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -22069,12 +22166,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -22158,21 +22253,16 @@
           "AVANCE"
         ],
         "actionCount": 38,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -22213,7 +22303,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -22222,7 +22312,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g73-1",
@@ -22278,13 +22368,16 @@
             "tile": "BoardStone"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 38
+        "minActions": 38,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -22326,9 +22419,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -22400,28 +22491,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -22523,12 +22599,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -22612,21 +22686,16 @@
           "AVANCE"
         ],
         "actionCount": 38,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -22667,7 +22736,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -22676,7 +22745,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g74-1",
@@ -22742,13 +22811,16 @@
             "tile": "BoardLava"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 38
+        "minActions": 38,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -22790,9 +22862,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -22864,28 +22934,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -22987,12 +23042,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -23076,21 +23129,16 @@
           "AVANCE"
         ],
         "actionCount": 38,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -23131,7 +23179,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -23140,7 +23188,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g75-1",
@@ -23201,13 +23249,16 @@
             "tile": "BoardWater"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 38
+        "minActions": 38,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -23249,9 +23300,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -23323,28 +23372,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -23446,12 +23480,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -23535,21 +23567,16 @@
           "AVANCE"
         ],
         "actionCount": 38,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -23590,7 +23617,7 @@
         "maxConsecutiveMovesSameDirection": 2,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -23599,7 +23626,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g76-1",
@@ -23655,13 +23682,16 @@
             "tile": "BoardStone"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 38
+        "minActions": 38,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -23703,9 +23733,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -23789,28 +23817,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -23921,12 +23934,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -24016,21 +24027,16 @@
           "AVANCE"
         ],
         "actionCount": 41,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -24072,7 +24078,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -24081,7 +24087,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g77-1",
@@ -24160,13 +24166,16 @@
             "tile": "BoardLava"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 41
+        "minActions": 41,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -24208,9 +24217,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -24294,28 +24301,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -24426,12 +24418,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -24521,21 +24511,16 @@
           "AVANCE"
         ],
         "actionCount": 41,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -24577,7 +24562,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -24586,7 +24571,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g78-1",
@@ -24660,13 +24645,16 @@
             "tile": "BoardSpikes"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 41
+        "minActions": 41,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -24708,9 +24696,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -24794,15 +24780,6 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
@@ -24812,13 +24789,7 @@
             "command": "RAMASSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -24935,12 +24906,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -25036,21 +25005,16 @@
           "AVANCE"
         ],
         "actionCount": 44,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -25092,7 +25056,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -25101,7 +25065,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g79-1",
@@ -25170,13 +25134,16 @@
             "tile": "BoardBush"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 44
+        "minActions": 44,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -25218,9 +25185,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -25304,15 +25269,6 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
@@ -25322,13 +25278,7 @@
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -25433,12 +25383,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -25526,21 +25474,16 @@
           "AVANCE"
         ],
         "actionCount": 40,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -25582,7 +25525,7 @@
         "maxConsecutiveMovesSameDirection": 3,
         "optimalActionCount": null
       },
-      "newCommand": "SI",
+      "newCommand": null,
       "rendering": {
         "ground": "BoardGrass",
         "orientation": "topDown",
@@ -25591,7 +25534,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g80-1",
@@ -25670,13 +25613,16 @@
             "tile": "BoardLava"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 40
+        "minActions": 40,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -25718,9 +25664,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -25765,25 +25709,10 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -25876,12 +25805,13 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -25959,21 +25889,16 @@
           "AVANCE"
         ],
         "actionCount": 35,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 3,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 1,
           "locksOpened": 1,
@@ -26019,7 +25944,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g81-1",
@@ -26067,13 +25992,16 @@
             "tile": "BoardWater"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 35
+        "minActions": 35,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -26115,9 +26043,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -26189,28 +26115,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -26312,12 +26223,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -26401,21 +26310,16 @@
           "AVANCE"
         ],
         "actionCount": 38,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -26465,7 +26369,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g82-1",
@@ -26521,13 +26425,16 @@
             "tile": "BoardStone"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 38
+        "minActions": 38,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -26569,9 +26476,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -26643,28 +26548,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "RAMASSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -26772,12 +26662,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -26865,21 +26753,16 @@
           "AVANCE"
         ],
         "actionCount": 40,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -26929,7 +26812,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g83-1",
@@ -26995,13 +26878,16 @@
             "tile": "BoardLava"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 40
+        "minActions": 40,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -27043,9 +26929,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -27117,28 +27001,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "POUSSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -27249,12 +27118,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -27344,21 +27211,16 @@
           "AVANCE"
         ],
         "actionCount": 41,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -27408,7 +27270,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g84-1",
@@ -27469,13 +27331,16 @@
             "tile": "BoardBush"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 41
+        "minActions": 41,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -27517,9 +27382,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -27591,28 +27454,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -27729,12 +27577,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -27828,21 +27674,16 @@
           "AVANCE"
         ],
         "actionCount": 43,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -27892,7 +27733,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g85-1",
@@ -27948,13 +27789,16 @@
             "tile": "BoardShutter"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 43
+        "minActions": 43,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -27996,9 +27840,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -28070,28 +27912,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -28211,12 +28038,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -28312,21 +28137,16 @@
           "AVANCE"
         ],
         "actionCount": 44,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -28376,7 +28196,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g86-1",
@@ -28442,13 +28262,16 @@
             "tile": "BoardBush"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 44
+        "minActions": 44,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -28490,9 +28313,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -28574,15 +28395,6 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
@@ -28592,13 +28404,7 @@
             "command": "RAMASSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -28727,12 +28533,10 @@
             "command": "UTILISE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -28836,21 +28640,16 @@
           "AVANCE"
         ],
         "actionCount": 48,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 3,
           "locksOpened": 3,
@@ -28901,7 +28700,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g87-1",
@@ -28962,13 +28761,16 @@
             "tile": "BoardBush"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 48
+        "minActions": 48,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -29010,9 +28812,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -29094,28 +28894,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -29229,12 +29014,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -29326,21 +29109,16 @@
           "AVANCE"
         ],
         "actionCount": 42,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 3,
           "locksOpened": 3,
@@ -29391,7 +29169,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g88-1",
@@ -29447,13 +29225,16 @@
             "tile": "BoardSpikes"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 42
+        "minActions": 42,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -29495,9 +29276,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -29579,25 +29358,10 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -29729,12 +29493,10 @@
             "command": "UTILISE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -29836,21 +29598,16 @@
           "AVANCE"
         ],
         "actionCount": 47,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 3,
           "locksOpened": 3,
@@ -29901,7 +29658,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g89-1",
@@ -29967,13 +29724,16 @@
             "tile": "BoardBush"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 47
+        "minActions": 47,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -30015,9 +29775,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -30099,15 +29857,6 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
@@ -30117,13 +29866,7 @@
             "command": "RAMASSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -30237,12 +29980,10 @@
             "command": "UTILISE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -30336,21 +30077,16 @@
           "AVANCE"
         ],
         "actionCount": 43,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 3,
           "locksOpened": 3,
@@ -30401,7 +30137,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g90-1",
@@ -30462,13 +30198,16 @@
             "tile": "BoardSpikes"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 43
+        "minActions": 43,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -30510,9 +30249,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -30584,15 +30321,6 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
@@ -30605,13 +30333,7 @@
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -30710,12 +30432,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -30801,21 +30521,16 @@
           "AVANCE"
         ],
         "actionCount": 39,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -30865,7 +30580,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g91-1",
@@ -30921,13 +30636,16 @@
             "tile": "BoardShutter"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 39
+        "minActions": 39,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -30969,9 +30687,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -31043,28 +30759,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -31175,12 +30876,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -31270,21 +30969,16 @@
           "AVANCE"
         ],
         "actionCount": 41,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -31334,7 +31028,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g92-1",
@@ -31400,13 +31094,16 @@
             "tile": "BoardStone"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 41
+        "minActions": 41,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -31448,9 +31145,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -31522,15 +31217,6 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
@@ -31540,13 +31226,7 @@
             "command": "RAMASSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -31654,12 +31334,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -31749,21 +31427,16 @@
           "AVANCE"
         ],
         "actionCount": 41,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -31813,7 +31486,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g93-1",
@@ -31874,13 +31547,16 @@
             "tile": "BoardLava"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 41
+        "minActions": 41,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -31922,9 +31598,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -31996,28 +31670,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -32119,12 +31778,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -32208,21 +31865,16 @@
           "AVANCE"
         ],
         "actionCount": 38,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -32272,7 +31924,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g94-1",
@@ -32328,13 +31980,16 @@
             "tile": "BoardWater"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 38
+        "minActions": 38,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -32376,9 +32031,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -32450,15 +32103,6 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
@@ -32468,13 +32112,7 @@
             "command": "RAMASSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -32591,12 +32229,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -32692,21 +32328,16 @@
           "AVANCE"
         ],
         "actionCount": 44,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 2,
           "locksOpened": 2,
@@ -32756,7 +32387,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g95-1",
@@ -32822,13 +32453,16 @@
             "tile": "BoardWater"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 44
+        "minActions": 44,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -32870,9 +32504,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -32971,28 +32603,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "AVANCE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -33127,12 +32744,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -33238,21 +32853,16 @@
           "AVANCE"
         ],
         "actionCount": 49,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 3,
           "locksOpened": 3,
@@ -33305,7 +32915,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g96-1",
@@ -33379,13 +32989,16 @@
             "tile": "BoardLava"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 49
+        "minActions": 49,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -33427,9 +33040,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -33516,28 +33127,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "POUSSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
+            "command": "TOURNE_DROITE"
           },
           {
             "command": "AVANCE"
@@ -33669,12 +33265,10 @@
             "command": "TOURNE_DROITE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -33778,21 +33372,16 @@
           "AVANCE"
         ],
         "actionCount": 48,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 3,
           "locksOpened": 3,
@@ -33844,7 +33433,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g97-1",
@@ -33900,13 +33489,16 @@
             "tile": "BoardCracked"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 48
+        "minActions": 48,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -33948,9 +33540,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -34037,28 +33627,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "POUSSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -34184,12 +33759,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -34289,21 +33862,16 @@
           "AVANCE"
         ],
         "actionCount": 46,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 3,
           "locksOpened": 3,
@@ -34355,7 +33923,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g98-1",
@@ -34421,13 +33989,16 @@
             "tile": "BoardCracked"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 46
+        "minActions": 46,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -34469,9 +34040,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -34570,28 +34139,13 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
             "command": "POUSSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -34708,12 +34262,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -34807,21 +34359,16 @@
           "AVANCE"
         ],
         "actionCount": 43,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 3,
           "locksOpened": 3,
@@ -34874,7 +34421,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g99-1",
@@ -34948,13 +34495,16 @@
             "tile": "BoardLava"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 43
+        "minActions": 43,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     },
     {
@@ -34996,9 +34546,7 @@
         "RAMASSE",
         "UTILISE",
         "POUSSE",
-        "ACTIVE",
-        "REPETE",
-        "SI"
+        "ACTIVE"
       ],
       "mechanics": [
         {
@@ -35097,15 +34645,6 @@
       "solution": {
         "program": [
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_DROITE"
-              }
-            ]
-          },
-          {
             "command": "AVANCE"
           },
           {
@@ -35115,13 +34654,7 @@
             "command": "RAMASSE"
           },
           {
-            "command": "SI",
-            "condition": "OBSTACLE_DEVANT",
-            "body": [
-              {
-                "command": "TOURNE_GAUCHE"
-              }
-            ]
+            "command": "TOURNE_GAUCHE"
           },
           {
             "command": "AVANCE"
@@ -35235,12 +34768,10 @@
             "command": "TOURNE_GAUCHE"
           },
           {
-            "command": "REPETE",
-            "body": [
-              {
-                "command": "AVANCE"
-              }
-            ]
+            "command": "AVANCE"
+          },
+          {
+            "command": "AVANCE"
           }
         ],
         "expandedOptimalCommands": [
@@ -35334,21 +34865,16 @@
           "AVANCE"
         ],
         "actionCount": 43,
-        "optimality": "VALID_SOLUTION_NOT_PROVEN_OPTIMAL",
+        "optimality": "SHORTEST_PRIMITIVE_WITNESS_INHERITED_FROM_V7_VARIANT",
         "validated": true,
         "requiredCommandUsage": [
           "ACTIVE",
           "POUSSE",
           "RAMASSE",
-          "REPETE",
-          "SI",
           "UTILISE"
         ],
-        "loopIterationsBeforeVictory": 2,
-        "conditionBranches": {
-          "true": 1,
-          "false": 1
-        },
+        "loopIterationsBeforeVictory": 0,
+        "conditionBranches": null,
         "observedInteractions": {
           "keysCollected": 3,
           "locksOpened": 3,
@@ -35401,7 +34927,7 @@
           7
         ]
       },
-      "validationNote": "V6: every BoardDoor is a mandatory passage bottleneck, opens only via its linked BoardPlate.ACTIVE; solution replay verified (not necessarily optimal).",
+      "validationNote": "Fixed V14.1 daily content: verified primitive-only winning program. SI/REPETE locked. Optimality inherited from V7 proven symmetry witness; Swift engine replay required.",
       "interactionLinks": [
         {
           "linkId": "g100-1",
@@ -35470,13 +34996,16 @@
             "tile": "BoardCracked"
           }
         ],
-        "sourceProgramFlattened": false
+        "sourceProgramFlattened": true
       },
       "validation": {
         "witnessReplayed": true,
         "optimalWitnessReplayed": true,
         "minimumActionsInheritedBySymmetryAndBlockingOnlyChanges": true,
-        "minActions": 43
+        "minActions": 43,
+        "primitiveOnlyWitnessReplayed": true,
+        "advancedCommandsLocked": true,
+        "alignedWithCampaignV14_1": true
       }
     }
   ]

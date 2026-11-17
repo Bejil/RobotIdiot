@@ -13,6 +13,7 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     private let hintLabel = UILabel()
     private let targetButton = UIButton(type: .system)
     private let tableView = UITableView(frame: .zero, style: .plain)
+    private let dropSlotView = UIView()
     private let bannerLabel = UILabel()
     private let banner = UIView()
     private let palette = UIStackView()
@@ -42,9 +43,20 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     private var failedID: UUID?
     private var ancestorIDs: Set<UUID> = []
     private var insertionParentID: UUID?
+    /// Cible de drop live + index d’insertion du trou (décale les lignes).
+    private var liveDropPlacement: ProgramPlacement?
+    private var dropGapProgramIndex: Int?
+    private var dropGapDepth: Int = 0
+    private var dropGapCanOutdent = false
+    private var isUpdatingDropGap = false
+    private var pendingDropCandidate: DropCandidate?
+    /// Commande (et sous-arbre) retirée visuellement de la liste pendant le drag.
+    private var dragHiddenID: UUID?
     private var allowed: [CommandType] = CommandType.movement
     /// Commandes visibles mais non insérables (SI/REPETE en Aventure V14.1).
     private var lockedVisible: [CommandType] = []
+    /// Conditions choisissables pour SI (nil = toutes). Mode Expert filtre par déblocage.
+    private var allowedConditions: [ConditionType]?
     private var constraintsLimit: ProgramConstraints = .flat
     private var textDraft: String?
     private var displayedLineIDs: [UUID?] = []
@@ -87,6 +99,11 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         lockedVisible = locked.filter { !commands.contains($0) }
         rebuildPalette()
         refreshHint()
+    }
+
+    func setAllowedConditions(_ conditions: [ConditionType]?) {
+        allowedConditions = conditions
+        tableView.reloadData()
     }
 
     func setProgramLimit(_ constraints: ProgramConstraints) {
@@ -233,12 +250,16 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 44
         tableView.register(CommandBlockCell.self, forCellReuseIdentifier: CommandBlockCell.reuseID)
+        tableView.register(DropGapCell.self, forCellReuseIdentifier: DropGapCell.reuseID)
         tableView.dragInteractionEnabled = true
         tableView.allowsSelection = true
         tableView.allowsSelectionDuringEditing = true
 
         tableView.dragDelegate = self
         tableView.dropDelegate = self
+
+        dropSlotView.isHidden = true
+        dropSlotView.isUserInteractionEnabled = false
 
         emptyLabel.text = "Ajoute une commande."
         emptyLabel.font = AppTheme.font(16, .medium, textStyle: .body)
@@ -651,9 +672,51 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
             return
         }
         let parent = insertionParentID
+        if command == .ifBlock {
+            presentConditionPicker { [weak self] condition in
+                self?.insertCommand(.ifBlock, condition: condition, parent: parent)
+            }
+            return
+        }
+        insertCommand(command, condition: nil, parent: parent)
+    }
+
+    /// Conditions proposées à l’ajout / au menu d’un SI (déblocage Expert ou toutes).
+    private var selectableConditions: [ConditionType] {
+        let choices = allowedConditions ?? Array(ConditionType.allCases)
+        return choices.isEmpty ? Array(ConditionType.allCases) : choices
+    }
+
+    private func presentConditionPicker(onPick: @escaping (ConditionType) -> Void) {
+        let conditions = selectableConditions
+        guard let host = nearestViewController else {
+            onPick(conditions.first ?? .cellAheadFree)
+            return
+        }
+        let choices = conditions.map { condition -> (title: String, systemImage: String?) in
+            let title = PlayerCopy.conditionTitle(condition)
+            let labeled = title.prefix(1).uppercased() + title.dropFirst()
+            return (labeled, "questionmark.circle")
+        }
+        ChartedConfirmAlertView.presentChoices(
+            from: host,
+            ribbon: "Si",
+            headline: "Quelle condition ?",
+            detail: "Choisis ce que le robot doit vérifier.",
+            choices: choices,
+            cancelTitle: "Annuler",
+            accent: .primary
+        ) { [weak self] index in
+            guard let self, conditions.indices.contains(index) else { return }
+            Soundscape.shared.play("select")
+            onPick(conditions[index])
+        }
+    }
+
+    private func insertCommand(_ command: CommandType, condition: ConditionType?, parent: UUID?) {
         var inserted: UUID?
         commit { program in
-            inserted = program.append(command, toParent: parent)
+            inserted = program.append(command, condition: condition, toParent: parent)
         }
         guard let inserted else {
             insertionParentID = nil
@@ -745,8 +808,37 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     }
 
     private func reload() {
+        dropGapProgramIndex = nil
+        dropGapDepth = 0
+        dropGapCanOutdent = false
+        liveDropPlacement = nil
+        dragHiddenID = nil
+        pendingDropCandidate = nil
+        isUpdatingDropGap = false
         tableView.reloadData()
         refreshChrome()
+    }
+
+    /// Lignes affichées : pendant un drag, le sous-arbre déplacé est exclu.
+    private var displayRows: [ProgramRow] {
+        guard let dragged = dragHiddenID else { return program.rows }
+        return program.rows.filter { !isInDraggedSubtree($0.id, dragged: dragged) }
+    }
+
+    /// Index dans `displayRows` pour une ligne table (nil = trou de drop).
+    private func displayIndex(forTableRow tableRow: Int) -> Int? {
+        guard let gap = dropGapProgramIndex else { return tableRow }
+        if tableRow == gap { return nil }
+        return tableRow > gap ? tableRow - 1 : tableRow
+    }
+
+    private func tableIndex(forDisplayIndex displayIndex: Int) -> Int {
+        guard let gap = dropGapProgramIndex else { return displayIndex }
+        return displayIndex >= gap ? displayIndex + 1 : displayIndex
+    }
+
+    private func isInDraggedSubtree(_ id: UUID, dragged: UUID) -> Bool {
+        id == dragged || program.ancestorIDs(of: id).contains(dragged)
     }
 
     private func applySinglePrimitiveReplace(_ command: CommandType) {
@@ -849,10 +941,23 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        program.rows.count
+        displayRows.count + (dropGapProgramIndex == nil ? 0 : 1)
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        dropGapProgramIndex == indexPath.row ? 48 : UITableView.automaticDimension
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        dropGapProgramIndex == indexPath.row ? 48 : 44
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if dropGapProgramIndex == indexPath.row {
+            let cell = tableView.dequeueReusableCell(withIdentifier: DropGapCell.reuseID, for: indexPath) as! DropGapCell
+            cell.apply(depth: dropGapDepth, canOutdent: dropGapCanOutdent)
+            return cell
+        }
         let cell = tableView.dequeueReusableCell(withIdentifier: CommandBlockCell.reuseID, for: indexPath) as! CommandBlockCell
         configure(cell, at: indexPath)
         return cell
@@ -860,8 +965,10 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        guard !isLocked, program.rows.indices.contains(indexPath.row) else { return }
-        let instruction = program.rows[indexPath.row].instruction
+        guard !isLocked,
+              let rowIndex = displayIndex(forTableRow: indexPath.row),
+              displayRows.indices.contains(rowIndex) else { return }
+        let instruction = displayRows[rowIndex].instruction
         if isSinglePrimitiveReplaceMode {
             guard !instruction.command.isContainer else {
                 setErrorMessage("Les blocs Répète et Si ne se modifient pas ici.")
@@ -887,21 +994,28 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     }
 
     private func configure(_ cell: CommandBlockCell, at indexPath: IndexPath) {
-        let row = program.rows[indexPath.row]
+        guard let rowIndex = displayIndex(forTableRow: indexPath.row),
+              displayRows.indices.contains(rowIndex) else { return }
+        let row = displayRows[rowIndex]
         let instruction = row.instruction
         let allowsStructural = !isLocked && !isSinglePrimitiveReplaceMode
         let isReplaceTarget = isSinglePrimitiveReplaceMode
             && (instruction.id == selectedReplaceID || instruction.id == replacedID)
+        cell.isHidden = false
+        cell.alpha = 1
+        cell.contentView.alpha = 1
+        cell.contentView.isHidden = false
         cell.apply(
             instruction: instruction,
             depth: row.depth,
-            position: indexPath.row + 1,
-            total: program.rows.count,
+            position: rowIndex + 1,
+            total: displayRows.count,
             isActive: instruction.id == activeID || isReplaceTarget,
             isAncestor: ancestorIDs.contains(instruction.id),
             isFailed: instruction.id == failedID,
             isInsertionTarget: instruction.id == insertionParentID,
-            allowsEditing: allowsStructural
+            allowsEditing: allowsStructural,
+            conditionChoices: allowedConditions ?? ConditionType.allCases
         )
         cell.onDelete = { [weak self] in
             guard let self, !self.isSinglePrimitiveReplaceMode else { return }
@@ -968,8 +1082,10 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard !isLocked, !isSinglePrimitiveReplaceMode, program.rows.indices.contains(indexPath.row) else { return nil }
-        let instruction = program.rows[indexPath.row].instruction
+        guard !isLocked, !isSinglePrimitiveReplaceMode,
+              let rowIndex = displayIndex(forTableRow: indexPath.row),
+              displayRows.indices.contains(rowIndex) else { return nil }
+        let instruction = displayRows[rowIndex].instruction
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             let up = UIAction(title: "Monter", image: UIImage(systemName: "arrow.up")) { _ in
                 Soundscape.shared.play("select")
@@ -988,8 +1104,10 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
     }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        guard !isLocked, !isSinglePrimitiveReplaceMode, program.rows.indices.contains(indexPath.row) else { return nil }
-        let instruction = program.rows[indexPath.row].instruction
+        guard !isLocked, !isSinglePrimitiveReplaceMode,
+              let rowIndex = displayIndex(forTableRow: indexPath.row),
+              displayRows.indices.contains(rowIndex) else { return nil }
+        let instruction = displayRows[rowIndex].instruction
         let duplicate = UIContextualAction(style: .normal, title: "Dupliquer") { [weak self] _, _, done in
             Soundscape.shared.play("select")
             self?.commit { $0.duplicate(id: instruction.id) }
@@ -1262,46 +1380,308 @@ final class BlockEditorView: UIView, UITableViewDataSource, UITableViewDelegate,
         commit { $0.relocate(id, to: placement) }
     }
 
+    private struct DropCandidate {
+        var placement: ProgramPlacement
+        var depth: Int
+        /// Index d’insertion dans la séquence `program.rows` (0…count).
+        var gapIndex: Int
+    }
+
+    /// Tous les emplacements possibles : avant/après chaque commande, dans un conteneur vide,
+    /// et après un bloc SI/REPETE entier (pour sortir). Index = `displayRows` (sans le drag).
+    private func dropCandidates(excludingDragged dragged: UUID) -> [DropCandidate] {
+        let rows = displayRows
+        var result: [DropCandidate] = []
+
+        func endOfSubtree(startingAt index: Int) -> Int {
+            let depth = rows[index].depth
+            var end = index
+            var next = index + 1
+            while next < rows.count, rows[next].depth > depth {
+                end = next
+                next += 1
+            }
+            return end
+        }
+
+        func walk(_ nodes: [Instruction], depth: Int, parent: UUID?) {
+            let visible = nodes.filter { !isInDraggedSubtree($0.id, dragged: dragged) }
+            if let parent, visible.isEmpty, !isInDraggedSubtree(parent, dragged: dragged),
+               let parentIndex = rows.firstIndex(where: { $0.id == parent }) {
+                result.append(DropCandidate(placement: .into(parent), depth: depth, gapIndex: parentIndex + 1))
+                return
+            }
+            for node in visible {
+                guard let index = rows.firstIndex(where: { $0.id == node.id }) else { continue }
+                result.append(DropCandidate(placement: .before(node.id), depth: depth, gapIndex: index))
+                if node.command.isContainer {
+                    walk(node.children, depth: depth + 1, parent: node.id)
+                }
+                let end = endOfSubtree(startingAt: index)
+                result.append(DropCandidate(placement: .after(node.id), depth: depth, gapIndex: end + 1))
+            }
+        }
+
+        walk(program.instructions, depth: 0, parent: nil)
+        if result.isEmpty {
+            result.append(DropCandidate(placement: .atRootEnd, depth: 0, gapIndex: rows.count))
+        }
+        return result.filter { candidate in
+            var trial = program
+            return trial.relocate(dragged, to: candidate.placement)
+        }
+    }
+
+    private func estimatedGapY(programGapIndex: Int) -> CGFloat {
+        if let gap = dropGapProgramIndex, gap == programGapIndex {
+            return tableView.rectForRow(at: IndexPath(row: gap, section: 0)).midY
+        }
+        let count = displayRows.count
+        if count == 0 {
+            return tableView.contentInset.top + 8
+        }
+        if programGapIndex <= 0 {
+            return tableView.rectForRow(at: IndexPath(row: tableIndex(forDisplayIndex: 0), section: 0)).minY
+        }
+        if programGapIndex >= count {
+            return tableView.rectForRow(at: IndexPath(row: tableIndex(forDisplayIndex: count - 1), section: 0)).maxY
+        }
+        return tableView.rectForRow(at: IndexPath(row: tableIndex(forDisplayIndex: programGapIndex), section: 0)).minY
+    }
+
+    private func nearestDropCandidate(at point: CGPoint, dragged: UUID) -> DropCandidate? {
+        let candidates = dropCandidates(excludingDragged: dragged)
+        guard !candidates.isEmpty else { return nil }
+        var best: DropCandidate?
+        var bestScore = CGFloat.greatestFiniteMagnitude
+        for candidate in candidates {
+            let y = estimatedGapY(programGapIndex: candidate.gapIndex)
+            let indentCenter = CGFloat(12 + candidate.depth * 18) + 72
+            let score = abs(point.y - y) + abs(point.x - indentCenter) * 0.45
+            if score < bestScore {
+                bestScore = score
+                best = candidate
+            }
+        }
+        return best
+    }
+
+    /// Vrai seulement si le *même* trou d’insertion admet une lecture moins profonde
+    /// (ex. après le dernier enfant d’une boucle = aussi après la boucle).
+    /// Évite la flèche sur un simple « avant/après » imbriqué sans alternative de niveau.
+    private func canOutdent(from candidate: DropCandidate, among candidates: [DropCandidate]) -> Bool {
+        guard candidate.depth > 0 else { return false }
+        return candidates.contains { other in
+            other.gapIndex == candidate.gapIndex && other.depth < candidate.depth
+        }
+    }
+
+    private func refreshDropGapCell(at tableRow: Int? = nil) {
+        let row = tableRow ?? dropGapProgramIndex
+        guard let row,
+              let cell = tableView.cellForRow(at: IndexPath(row: row, section: 0)) as? DropGapCell else { return }
+        cell.apply(depth: dropGapDepth, canOutdent: dropGapCanOutdent)
+    }
+
+    private func applyDropGap(_ candidate: DropCandidate) {
+        liveDropPlacement = candidate.placement
+        let newIndex = candidate.gapIndex
+        let newDepth = candidate.depth
+        let dragged = dragHiddenID
+        let all = dragged.map { dropCandidates(excludingDragged: $0) } ?? []
+        // Jamais de flèche à la racine (profondeur 0), même un frame.
+        let newCanOutdent = newDepth > 0 && canOutdent(from: candidate, among: all)
+        dropGapDepth = newDepth
+        dropGapCanOutdent = newCanOutdent
+        if dropGapProgramIndex == newIndex {
+            refreshDropGapCell(at: newIndex)
+            return
+        }
+        if isUpdatingDropGap {
+            pendingDropCandidate = candidate
+            return
+        }
+        isUpdatingDropGap = true
+        pendingDropCandidate = nil
+        let old = dropGapProgramIndex
+        // Mettre à jour le style *avant* le move : sinon la flèche voyage un instant avec la cellule.
+        if let old {
+            refreshDropGapCell(at: old)
+        }
+        tableView.performBatchUpdates({
+            if let old {
+                dropGapProgramIndex = newIndex
+                tableView.moveRow(
+                    at: IndexPath(row: old, section: 0),
+                    to: IndexPath(row: newIndex, section: 0)
+                )
+            } else {
+                dropGapProgramIndex = newIndex
+                tableView.insertRows(at: [IndexPath(row: newIndex, section: 0)], with: .automatic)
+            }
+        }, completion: { [weak self] _ in
+            guard let self else { return }
+            self.isUpdatingDropGap = false
+            self.refreshDropGapCell()
+            if let pending = self.pendingDropCandidate {
+                self.pendingDropCandidate = nil
+                self.applyDropGap(pending)
+            }
+        })
+    }
+
+    private func clearDropGap(animated: Bool = true) {
+        pendingDropCandidate = nil
+        liveDropPlacement = nil
+        guard let old = dropGapProgramIndex else { return }
+        dropGapProgramIndex = nil
+        dropGapDepth = 0
+        dropGapCanOutdent = false
+        guard animated, !isUpdatingDropGap else {
+            isUpdatingDropGap = false
+            tableView.reloadData()
+            return
+        }
+        isUpdatingDropGap = true
+        tableView.performBatchUpdates({
+            tableView.deleteRows(at: [IndexPath(row: old, section: 0)], with: .automatic)
+        }, completion: { [weak self] _ in
+            self?.isUpdatingDropGap = false
+        })
+    }
+
+    func tableView(_ tableView: UITableView, canHandle session: UIDropSession) -> Bool {
+        session.localDragSession != nil
+    }
+
     func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-        guard !isLocked, !isSinglePrimitiveReplaceMode, program.rows.indices.contains(indexPath.row) else { return [] }
-        let identifier = program.rows[indexPath.row].id
+        guard !isLocked, !isSinglePrimitiveReplaceMode,
+              let rowIndex = displayIndex(forTableRow: indexPath.row),
+              displayRows.indices.contains(rowIndex) else { return [] }
+        let identifier = displayRows[rowIndex].id
         let item = UIDragItem(itemProvider: NSItemProvider(object: identifier.uuidString as NSString))
         item.localObject = identifier
+        // Figer l’aperçu *maintenant* : la cellule sera retirée au willBegin.
+        let frozen = (tableView.cellForRow(at: indexPath) as? CommandBlockCell)?.frozenDragPreview()
+        item.previewProvider = {
+            frozen.map(CommandBlockCell.makeDragPreview(from:))
+        }
         return [item]
     }
 
+    func tableView(_ tableView: UITableView, dragPreviewParametersForRowAt indexPath: IndexPath) -> UIDragPreviewParameters? {
+        guard let cell = tableView.cellForRow(at: indexPath) as? CommandBlockCell else {
+            let parameters = UIDragPreviewParameters()
+            parameters.backgroundColor = .clear
+            return parameters
+        }
+        return cell.dragPreviewParameters()
+    }
+
+    func tableView(_ tableView: UITableView, dragSessionWillBegin session: UIDragSession) {
+        guard let dragged = session.items.first?.localObject as? UUID else { return }
+        // Après le lift système, pour ne pas vider le preview en cours.
+        DispatchQueue.main.async { [weak self] in
+            self?.hideDraggedRows(dragged)
+        }
+    }
+
+    /// Retire vraiment les lignes du sous-arbre déplacé (pas seulement alpha/hauteur).
+    private func hideDraggedRows(_ dragged: UUID) {
+        guard dragHiddenID != dragged else { return }
+        let sourceRows = program.rows
+        let paths = sourceRows.enumerated().compactMap { index, row -> IndexPath? in
+            isInDraggedSubtree(row.id, dragged: dragged) ? IndexPath(row: index, section: 0) : nil
+        }
+        dropGapProgramIndex = nil
+        dropGapDepth = 0
+        dropGapCanOutdent = false
+        liveDropPlacement = nil
+        pendingDropCandidate = nil
+        dragHiddenID = dragged
+        guard !paths.isEmpty else { return }
+        isUpdatingDropGap = true
+        tableView.performBatchUpdates({
+            tableView.deleteRows(at: paths, with: .fade)
+        }, completion: { [weak self] _ in
+            self?.isUpdatingDropGap = false
+        })
+    }
+
     func tableView(_ tableView: UITableView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
-        guard !isLocked, session.localDragSession != nil else {
+        guard !isLocked, session.localDragSession != nil,
+              let dragged = session.items.first?.localObject as? UUID else {
+            clearDropGap()
             return UITableViewDropProposal(operation: .cancel)
         }
-        if let row = destinationIndexPath?.row,
-           program.rows.indices.contains(row),
-           program.rows[row].instruction.command.isContainer,
-           let dragged = session.items.first?.localObject as? UUID,
-           dragged != program.rows[row].id {
-            return UITableViewDropProposal(operation: .move, intent: .insertIntoDestinationIndexPath)
+        if dragHiddenID != dragged {
+            hideDraggedRows(dragged)
         }
-        return UITableViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+        guard !isUpdatingDropGap else {
+            return UITableViewDropProposal(operation: .move, intent: .unspecified)
+        }
+        let point = session.location(in: tableView)
+        guard let candidate = nearestDropCandidate(at: point, dragged: dragged) else {
+            clearDropGap()
+            return UITableViewDropProposal(operation: .cancel)
+        }
+        applyDropGap(candidate)
+        return UITableViewDropProposal(operation: .move, intent: .unspecified)
+    }
+
+    func tableView(_ tableView: UITableView, dropSessionDidExit session: UIDropSession) {
+        clearDropGap()
+    }
+
+    func tableView(_ tableView: UITableView, dropSessionDidEnd session: UIDropSession) {
+        endDragPresentation()
+    }
+
+    func tableView(_ tableView: UITableView, dragSessionDidEnd session: UIDragSession) {
+        endDragPresentation()
+    }
+
+    /// Retire le trou et réaffiche la commande si le drop n’a pas rechargé la table.
+    private func endDragPresentation() {
+        pendingDropCandidate = nil
+        liveDropPlacement = nil
+        dropGapProgramIndex = nil
+        dropGapDepth = 0
+        dropGapCanOutdent = false
+        dragHiddenID = nil
+        isUpdatingDropGap = false
+        tableView.reloadData()
     }
 
     func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
-        guard let dragged = coordinator.items.first?.dragItem.localObject as? UUID else { return }
+        guard let item = coordinator.items.first else {
+            endDragPresentation()
+            return
+        }
+        guard let dragged = item.dragItem.localObject as? UUID else {
+            endDragPresentation()
+            return
+        }
+        let point = coordinator.session.location(in: tableView)
+        let placement = nearestDropCandidate(at: point, dragged: dragged)?.placement ?? liveDropPlacement
+        // Nettoyer l’état drag avant relocate → reload.
+        pendingDropCandidate = nil
+        liveDropPlacement = nil
+        dropGapProgramIndex = nil
+        dropGapDepth = 0
+        dropGapCanOutdent = false
+        dragHiddenID = nil
+        isUpdatingDropGap = false
+        guard let placement else {
+            tableView.reloadData()
+            return
+        }
         Soundscape.shared.play("select")
-        if coordinator.proposal.intent == .insertIntoDestinationIndexPath,
-           let row = coordinator.destinationIndexPath?.row,
-           program.rows.indices.contains(row) {
-            tryRelocate(dragged, to: .into(program.rows[row].id))
-            return
-        }
-        guard let row = coordinator.destinationIndexPath?.row else {
-            tryRelocate(dragged, to: .atRootEnd)
-            return
-        }
-        if program.rows.indices.contains(row) {
-            tryRelocate(dragged, to: .before(program.rows[row].id))
-        } else {
-            tryRelocate(dragged, to: .atRootEnd)
-        }
+        coordinator.drop(
+            item.dragItem,
+            to: UIDragPreviewTarget(container: tableView, center: point)
+        )
+        tryRelocate(dragged, to: placement)
     }
 
     func textViewDidChange(_ textView: UITextView) {
@@ -1399,6 +1779,96 @@ private final class PalettePlaceholderSlot: UIView {
     }
 }
 
+/// Trou animé pendant un drag : les autres commandes s’écartent pour laisser la place.
+private final class DropGapCell: UITableViewCell {
+    static let reuseID = "DropGapCell"
+
+    private let slot = UIView()
+    private let outdentArrow = UIImageView()
+    private var indentConstraint: NSLayoutConstraint!
+    private var arrowLeadingConstraint: NSLayoutConstraint!
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+        selectionStyle = .none
+        isUserInteractionEnabled = false
+
+        slot.translatesAutoresizingMaskIntoConstraints = false
+        slot.layer.cornerRadius = 12
+        slot.layer.cornerCurve = .continuous
+        slot.layer.borderWidth = 2
+        contentView.addSubview(slot)
+
+        outdentArrow.translatesAutoresizingMaskIntoConstraints = false
+        outdentArrow.contentMode = .scaleAspectFit
+        outdentArrow.image = UIImage(
+            systemName: "arrow.left",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 12, weight: .bold)
+        )
+        outdentArrow.isHidden = true
+        contentView.addSubview(outdentArrow)
+
+        indentConstraint = slot.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12)
+        arrowLeadingConstraint = outdentArrow.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 4)
+        NSLayoutConstraint.activate([
+            slot.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 2),
+            indentConstraint,
+            slot.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
+            slot.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -2),
+            slot.heightAnchor.constraint(equalToConstant: 44),
+
+            arrowLeadingConstraint,
+            outdentArrow.centerYAnchor.constraint(equalTo: slot.centerYAnchor),
+            outdentArrow.widthAnchor.constraint(equalToConstant: 14),
+            outdentArrow.heightAnchor.constraint(equalToConstant: 14),
+            outdentArrow.trailingAnchor.constraint(lessThanOrEqualTo: slot.leadingAnchor, constant: -2)
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    func apply(depth: Int, canOutdent: Bool) {
+        let color = Self.color(for: depth)
+        let showArrow = canOutdent && depth > 0
+        indentConstraint.constant = 12 + CGFloat(depth) * 18
+        slot.backgroundColor = color.withAlphaComponent(0.42)
+        slot.layer.borderColor = color.cgColor
+        outdentArrow.tintColor = color
+        outdentArrow.isHidden = !showArrow
+        // Flèche dans la marge du niveau parent (profondeur − 1).
+        arrowLeadingConstraint.constant = showArrow
+            ? 12 + CGFloat(max(depth - 1, 0)) * 18
+            : 4
+        accessibilityLabel = showArrow
+            ? "Emplacement profondeur \(depth), glisse à gauche pour remonter"
+            : "Emplacement profondeur \(depth)"
+    }
+
+    private static func color(for depth: Int) -> UIColor {
+        // Pas de rouge/corail : réservé à la suppression.
+        switch depth {
+        case 0: return AppTheme.move
+        case 1: return AppTheme.control
+        case 2: return AppTheme.interaction
+        case 3: return AppTheme.tealDark
+        default: return AppTheme.gold
+        }
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        indentConstraint.constant = 12
+        arrowLeadingConstraint.constant = 4
+        outdentArrow.isHidden = true
+        slot.backgroundColor = AppTheme.move.withAlphaComponent(0.42)
+        slot.layer.borderColor = AppTheme.move.cgColor
+    }
+}
+
 private final class CommandBlockCell: UITableViewCell {
     static let reuseID = "CommandBlockCell"
 
@@ -1415,6 +1885,53 @@ private final class CommandBlockCell: UITableViewCell {
     private var gripWidth: NSLayoutConstraint!
     var onDelete: (() -> Void)?
     var onCondition: ((ConditionType) -> Void)?
+
+    struct FrozenDragPreview {
+        var image: UIImage
+        var size: CGSize
+        var cornerRadius: CGFloat
+    }
+
+    /// Fond transparent + découpe sur la carte (évite le rectangle noir système).
+    func dragPreviewParameters() -> UIDragPreviewParameters {
+        let parameters = UIDragPreviewParameters()
+        parameters.backgroundColor = .clear
+        parameters.visiblePath = UIBezierPath(roundedRect: card.frame, cornerRadius: card.layer.cornerRadius)
+        return parameters
+    }
+
+    /// Capture immédiate du rendu (avant suppression de la ligne dans la table).
+    func frozenDragPreview() -> FrozenDragPreview? {
+        card.layoutIfNeeded()
+        let size = card.bounds.size
+        guard size.width > 1, size.height > 1 else { return nil }
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        format.scale = traitCollection.displayScale
+        let image = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            card.drawHierarchy(in: CGRect(origin: .zero, size: size), afterScreenUpdates: true)
+        }
+        return FrozenDragPreview(image: image, size: size, cornerRadius: card.layer.cornerRadius)
+    }
+
+    /// Aperçu un peu transparent, reconstruit depuis une image figée.
+    static func makeDragPreview(from frozen: FrozenDragPreview) -> UIDragPreview {
+        let container = UIView(frame: CGRect(origin: .zero, size: frozen.size))
+        container.backgroundColor = .clear
+        container.isOpaque = false
+        let imageView = UIImageView(image: frozen.image)
+        imageView.frame = container.bounds
+        imageView.alpha = 0.78
+        imageView.contentMode = .scaleToFill
+        container.addSubview(imageView)
+        let parameters = UIDragPreviewParameters()
+        parameters.backgroundColor = .clear
+        parameters.visiblePath = UIBezierPath(
+            roundedRect: container.bounds,
+            cornerRadius: frozen.cornerRadius
+        )
+        return UIDragPreview(view: container, parameters: parameters)
+    }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -1531,7 +2048,8 @@ private final class CommandBlockCell: UITableViewCell {
         isAncestor: Bool,
         isFailed: Bool,
         isInsertionTarget: Bool,
-        allowsEditing: Bool
+        allowsEditing: Bool,
+        conditionChoices: [ConditionType] = ConditionType.allCases
     ) {
         if instruction.command == .ifBlock, let condition = instruction.condition {
             titleLabel.text = "Si · \(PlayerCopy.conditionTitle(condition))"
@@ -1563,7 +2081,8 @@ private final class CommandBlockCell: UITableViewCell {
         conditionWidth.constant = showsCondition ? 36 : 0
         if showsCondition {
             let current = instruction.condition
-            conditionButton.menu = UIMenu(children: ConditionType.allCases.map { condition in
+            let choices = conditionChoices.isEmpty ? ConditionType.allCases : conditionChoices
+            conditionButton.menu = UIMenu(children: choices.map { condition in
                 UIAction(
                     title: PlayerCopy.conditionTitle(condition),
                     state: condition == current ? .on : .off
@@ -1591,5 +2110,9 @@ private final class CommandBlockCell: UITableViewCell {
         onCondition = nil
         accessibilityCustomActions = nil
         conditionButton.menu = nil
+        isHidden = false
+        alpha = 1
+        contentView.alpha = 1
+        contentView.isHidden = false
     }
 }

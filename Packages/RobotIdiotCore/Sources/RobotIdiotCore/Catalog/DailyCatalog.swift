@@ -65,6 +65,92 @@ public struct DailyConfig: Codable, Equatable, Sendable {
     public var bugRewardBolts: Int
     public var tiers: Int
     public var itemsPerTier: Int
+    /// Version documentaire du pack (ex. V14.1) — optionnelle.
+    public var contentVersion: String?
+
+    public init(
+        schemaVersion: String,
+        game: String,
+        type: String,
+        timezone: String,
+        epochDate: String,
+        challengeRewardBolts: Int,
+        bugRewardBolts: Int,
+        tiers: Int,
+        itemsPerTier: Int,
+        contentVersion: String? = nil
+    ) {
+        self.schemaVersion = schemaVersion
+        self.game = game
+        self.type = type
+        self.timezone = timezone
+        self.epochDate = epochDate
+        self.challengeRewardBolts = challengeRewardBolts
+        self.bugRewardBolts = bugRewardBolts
+        self.tiers = tiers
+        self.itemsPerTier = itemsPerTier
+        self.contentVersion = contentVersion
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, game, type, timezone, epochDate
+        case challengeRewardBolts, bugRewardBolts, tiers, itemsPerTier
+        case dailyTimeZone, rewardPolicy, contentVersion
+    }
+
+    private enum RewardPolicyKeys: String, CodingKey {
+        case dailyCompletionBolts, dailyBugBolts
+    }
+
+    /// Accepte l’ancien schéma plat et le schéma V14.1 (`dailyTimeZone` + `rewardPolicy`).
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try container.decode(String.self, forKey: .schemaVersion)
+        game = try container.decode(String.self, forKey: .game)
+        contentVersion = try container.decodeIfPresent(String.self, forKey: .contentVersion)
+
+        if let legacyTimezone = try container.decodeIfPresent(String.self, forKey: .timezone) {
+            type = try container.decodeIfPresent(String.self, forKey: .type) ?? "dailyConfig"
+            timezone = legacyTimezone
+            epochDate = try container.decodeIfPresent(String.self, forKey: .epochDate)
+                ?? DailySelection.defaultEpochDate
+            challengeRewardBolts = try container.decodeIfPresent(Int.self, forKey: .challengeRewardBolts) ?? 2
+            bugRewardBolts = try container.decodeIfPresent(Int.self, forKey: .bugRewardBolts) ?? 1
+            tiers = try container.decodeIfPresent(Int.self, forKey: .tiers) ?? 10
+            itemsPerTier = try container.decodeIfPresent(Int.self, forKey: .itemsPerTier) ?? 10
+            return
+        }
+
+        type = "dailyConfig"
+        timezone = try container.decodeIfPresent(String.self, forKey: .dailyTimeZone)
+            ?? DailySelection.defaultTimezoneIdentifier
+        // L’algorithme V14.1 conserve l’époque 2026-11-04 même si le champ n’est plus exporté.
+        epochDate = DailySelection.defaultEpochDate
+        if container.contains(.rewardPolicy) {
+            let rewards = try container.nestedContainer(keyedBy: RewardPolicyKeys.self, forKey: .rewardPolicy)
+            challengeRewardBolts = try rewards.decodeIfPresent(Int.self, forKey: .dailyCompletionBolts) ?? 2
+            bugRewardBolts = try rewards.decodeIfPresent(Int.self, forKey: .dailyBugBolts) ?? 1
+        } else {
+            challengeRewardBolts = 2
+            bugRewardBolts = 1
+        }
+        tiers = 10
+        itemsPerTier = 10
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(game, forKey: .game)
+        try container.encode(type, forKey: .type)
+        try container.encode(timezone, forKey: .timezone)
+        try container.encode(epochDate, forKey: .epochDate)
+        try container.encode(challengeRewardBolts, forKey: .challengeRewardBolts)
+        try container.encode(bugRewardBolts, forKey: .bugRewardBolts)
+        try container.encode(tiers, forKey: .tiers)
+        try container.encode(itemsPerTier, forKey: .itemsPerTier)
+        try container.encodeIfPresent(contentVersion, forKey: .contentVersion)
+    }
 }
 
 public enum DailyCatalogError: Error, Equatable, CustomStringConvertible {
